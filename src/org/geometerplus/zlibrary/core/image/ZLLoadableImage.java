@@ -59,4 +59,12 @@ public abstract class ZLLoadableImage extends ZLSingleImage {
 		}
 		return super.getBitmap();
 	}
+	
+	@Override
+	public boolean saveToFile(String url) {
+		if (!isSynchronized()) {
+			synchronize();
+		}
+		return super.saveToFile(url);
+	}
 }

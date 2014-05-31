@@ -654,7 +654,6 @@ public class BookCollection extends AbstractBookCollection {
 		if (image == null) {
 			return false;
 		}
-
 		return image.saveToFile(url);
 	}
 
