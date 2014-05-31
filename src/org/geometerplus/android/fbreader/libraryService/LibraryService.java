@@ -269,6 +269,11 @@ public class LibraryService extends Service {
 		public Bitmap getCover(String book) {
 			return myCollection.getCover(SerializerUtil.deserializeBook(book));
 		}
+		
+		@Override
+		public boolean saveCover(String book, String url) {
+			return myCollection.saveCover(SerializerUtil.deserializeBook(book), url);
+		}
 
 		public List<String> bookmarks(String query) {
 			return SerializerUtil.serializeBookmarkList(myCollection.bookmarks(

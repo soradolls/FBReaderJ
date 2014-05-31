@@ -24,4 +24,5 @@ import android.graphics.Bitmap;
 public interface ZLImage {
 	String getURI();
 	Bitmap getBitmap();
+	boolean saveToFile(String url);
 }

@@ -22,7 +22,6 @@ package org.geometerplus.fbreader.book;
 import java.util.List;
 
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
-
 import org.geometerplus.zlibrary.text.view.ZLTextPosition;
 
 import android.graphics.Bitmap;
@@ -82,6 +81,7 @@ public interface IBookCollection {
 	void markHyperlinkAsVisited(Book book, String linkId);
 
 	Bitmap getCover(Book book);
+	boolean saveCover(Book book, String url);
 	
 	List<Bookmark> bookmarks(BookmarkQuery query);
 	void saveBookmark(Bookmark bookmark);
