@@ -1,0 +1,24 @@
+<component name="ArtifactManager">
+  <artifact type="apk" name="FBReaderJ">
+    <output-path>$PROJECT_DIR$/out/artifacts/FBReaderJ</output-path>
+    <properties id="android-properties">
+      <options>
+        <option name="keyAlias" value="fbreader" />
+        <option name="keyPassword" value="MTExMTEx" />
+        <option name="keyStorePassword" value="MTExMTEx" />
+        <option name="keyStoreUrl" value="file://$PROJECT_DIR$/fbreader-keystore.jks" />
+        <option name="proGuardCfgFiles">
+          <list>
+            <option value="file://$PROJECT_DIR$/proguard.cfg" />
+            <option value="file://%MODULE_SDK_HOME%/tools/proguard/proguard-android.txt" />
+          </list>
+        </option>
+        <option name="runProGuard" value="true" />
+        <option name="signingMode" value="RELEASE_SIGNED" />
+      </options>
+    </properties>
+    <root id="archive" name="FBReaderJ.apk">
+      <element id="android-final-package" facet="FBReaderJ/android/Android" />
+    </root>
+  </artifact>
+</component>
