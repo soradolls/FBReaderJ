@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
+
 import org.geometerplus.fbreader.network.*;
 import org.geometerplus.fbreader.network.tree.*;
 
@@ -33,8 +35,11 @@ import org.geometerplus.android.fbreader.network.*;
 import org.geometerplus.android.util.PackageUtil;
 
 public class OpenCatalogAction extends Action {
-	public OpenCatalogAction(Activity activity) {
+	private final ZLNetworkContext myNetworkContext;
+
+	public OpenCatalogAction(Activity activity, ZLNetworkContext nc) {
 		super(activity, ActionCode.OPEN_CATALOG, "openCatalog", -1);
+		myNetworkContext = nc;
 	}
 
 	@Override
@@ -99,30 +104,7 @@ public class OpenCatalogAction extends Action {
 			}
 		}
 
-		final Authenticator authenticator = new Authenticator() {
-			public void run(String url) {
-				final Intent intent = new Intent(myActivity, AuthorisationScreen.class);
-				intent.setData(Uri.parse(url));
-				intent.putExtra(NetworkLibraryActivity.TREE_KEY_KEY, tree.getUniqueKey());
-				OrientationUtil.startActivityForResult(
-					myActivity, intent, NetworkLibraryActivity.REQUEST_AUTHORISATION_SCREEN
-				);
-			}
-		};
-
-		tree.startItemsLoader(authenticator, resumeNotLoad);
-		processExtraData(tree.Item.extraData(), new Runnable() {
-			public void run() {
-				doOpenTree(tree);
-			}
-		});
-	}
-
-	private void processExtraData(Map<String,String> extraData, final Runnable postRunnable) {
-		if (extraData != null && !extraData.isEmpty()) {
-			PackageUtil.runInstallPluginDialog(myActivity, extraData, postRunnable);
-		} else {
-			postRunnable.run();
-		}
+		tree.startItemsLoader(myNetworkContext, true, resumeNotLoad);
+		doOpenTree(tree);
 	}
 }

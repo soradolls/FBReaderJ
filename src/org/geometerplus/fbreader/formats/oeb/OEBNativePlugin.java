@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2011-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.geometerplus.zlibrary.core.encodings.EncodingCollection;
 import org.geometerplus.zlibrary.core.encodings.AutoEncodingCollection;
+import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 
 import org.geometerplus.fbreader.book.Book;
 import org.geometerplus.fbreader.bookmodel.BookModel;
@@ -61,5 +62,45 @@ public class OEBNativePlugin extends NativeFormatPlugin {
 	@Override
 	public void detectLanguageAndEncoding(Book book) {
 		book.setEncoding("auto");
+	}
+
+	@Override
+	public String readAnnotation(ZLFile file) {
+		file.setCached(true);
+		try {
+			return new OEBAnnotationReader().readAnnotation(getOpfFile(file));
+		} catch (BookReadingException e) {
+			return null;
+		} finally {
+			file.setCached(false);
+		}
+	}
+
+	private ZLFile getOpfFile(ZLFile oebFile) throws BookReadingException {
+		if ("opf".equals(oebFile.getExtension())) {
+			return oebFile;
+		}
+
+		final ZLFile containerInfoFile = ZLFile.createFile(oebFile, "META-INF/container.xml");
+		if (containerInfoFile.exists()) {
+			final ContainerFileReader reader = new ContainerFileReader();
+			reader.readQuietly(containerInfoFile);
+			final String opfPath = reader.getRootPath();
+			if (opfPath != null) {
+				return ZLFile.createFile(oebFile, opfPath);
+			}
+		}
+
+		for (ZLFile child : oebFile.children()) {
+			if (child.getExtension().equals("opf")) {
+				return child;
+			}
+		}
+		throw new BookReadingException("opfFileNotFound", oebFile);
+	}
+
+	@Override
+	public int priority() {
+		return 0;
 	}
 }

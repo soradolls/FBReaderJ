@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,10 +32,10 @@ class FontPreference extends ZLStringListPreference implements ReloadablePrefere
 	private final ZLStringOption myOption;
 	private final boolean myIncludeDummyValue;
 
-	private static String UNCHANGED = "unchanged";
+	private static String UNCHANGED = "inherit";
 
-	FontPreference(Context context, ZLResource resource, String resourceKey, ZLStringOption option, boolean includeDummyValue) {
-		super(context, resource, resourceKey);
+	FontPreference(Context context, ZLResource resource, ZLStringOption option, boolean includeDummyValue) {
+		super(context, resource);
 
 		myOption = option;
 		myIncludeDummyValue = includeDummyValue;

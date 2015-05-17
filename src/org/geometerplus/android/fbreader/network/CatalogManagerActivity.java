@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,8 +35,11 @@ import org.geometerplus.android.fbreader.FBReader;
 import org.geometerplus.android.fbreader.covers.CoverManager;
 
 import org.geometerplus.android.util.ViewUtil;
+import org.geometerplus.android.fbreader.util.AndroidImageSynchronizer;
 
 public class CatalogManagerActivity extends ListActivity {
+	private final AndroidImageSynchronizer myImageSynchronizer = new AndroidImageSynchronizer(this);
+
 	private final List<Item> myAllItems = new ArrayList<Item>();
 	private final List<Item> mySelectedItems = new ArrayList<Item>();
 
@@ -84,6 +87,13 @@ public class CatalogManagerActivity extends ListActivity {
 		}
 
 		setListAdapter(new CatalogsListAdapter());
+	}
+
+	@Override
+	protected void onDestroy() {
+		myImageSynchronizer.clear();
+
+		super.onDestroy();
 	}
 
 	@Override
@@ -185,7 +195,7 @@ public class CatalogManagerActivity extends ListActivity {
 				if (myCoverManager == null) {
 					view.measure(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 					final int coverHeight = view.getMeasuredHeight();
-					myCoverManager = new CoverManager(CatalogManagerActivity.this, coverHeight * 15 / 22, coverHeight);
+					myCoverManager = new CoverManager(CatalogManagerActivity.this, myImageSynchronizer, coverHeight * 15 / 22, coverHeight);
 					view.requestLayout();
 				}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -328,11 +328,13 @@ public class ApiServerImplementation extends ApiInterface.Stub implements Api, A
 	}
 
 	public String getBookLanguage() {
-		return getReader().Model.Book.getLanguage();
+		final Book book = getReader().getCurrentBook();
+		return book != null ? book.getLanguage() : null;
 	}
 
 	public String getBookTitle() {
-		return getReader().Model.Book.getTitle();
+		final Book book = getReader().getCurrentBook();
+		return book != null ? book.getTitle() : null;
 	}
 
 	public List<String> getBookTags() {
@@ -341,11 +343,16 @@ public class ApiServerImplementation extends ApiInterface.Stub implements Api, A
 	}
 
 	public String getBookFilePath() {
-		return getReader().Model.Book.File.getPath();
+		final Book book = getReader().getCurrentBook();
+		return book != null ? book.File.getPath() : null;
 	}
 
 	public String getBookHash() {
-		final UID uid = BookUtil.createSHA256Uid(getReader().Model.Book.File);
+		final Book book = getReader().getCurrentBook();
+		if (book == null) {
+			return null;
+		}
+		final UID uid = BookUtil.createUid(book.File, "SHA-256");
 		return uid != null ? uid.Id : null;
 	}
 
@@ -614,7 +621,7 @@ public class ApiServerImplementation extends ApiInterface.Stub implements Api, A
 			}
 		}
 	}
-			
+
 	public List<MenuNode> getMainMenuContent() {
 		final List<MenuNode> nodes = MenuData.topLevelNodes();
 		final List<MenuNode> copies = new ArrayList<MenuNode>(nodes.size());

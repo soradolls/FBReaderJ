@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2011-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ import org.geometerplus.fbreader.bookmodel.BookReadingException;
 import org.geometerplus.fbreader.formats.fb2.FB2NativePlugin;
 import org.geometerplus.fbreader.formats.oeb.OEBNativePlugin;
 
-public class NativeFormatPlugin extends FormatPlugin {
+public class NativeFormatPlugin extends BuiltinFormatPlugin {
 	public static NativeFormatPlugin create(String fileType) {
 		if ("fb2".equals(fileType)) {
 			return new FB2NativePlugin();
@@ -51,8 +51,8 @@ public class NativeFormatPlugin extends FormatPlugin {
 	}
 
 	@Override
-	synchronized public void readMetaInfo(Book book) throws BookReadingException {
-		final int code = readMetaInfoNative(book);
+	synchronized public void readMetainfo(Book book) throws BookReadingException {
+		final int code = readMetainfoNative(book);
 		if (code != 0) {
 			throw new BookReadingException(
 				"nativeCodeFailure",
@@ -62,7 +62,7 @@ public class NativeFormatPlugin extends FormatPlugin {
 		}
 	}
 
-	private native int readMetaInfoNative(Book book);
+	private native int readMetainfoNative(Book book);
 
 	@Override
 	public List<FileEncryptionInfo> readEncryptionInfos(Book book) {
@@ -78,7 +78,7 @@ public class NativeFormatPlugin extends FormatPlugin {
 	synchronized public void readUids(Book book) throws BookReadingException {
 		readUidsNative(book);
 		if (book.uids().isEmpty()) {
-			book.addUid(BookUtil.createSHA256Uid(book.File));
+			book.addUid(BookUtil.createUid(book.File, "SHA-256"));
 		}
 	}
 
@@ -93,9 +93,9 @@ public class NativeFormatPlugin extends FormatPlugin {
 
 	@Override
 	synchronized public void readModel(BookModel model) throws BookReadingException {
-		android.os.Debug.startMethodTracing("ep.trace", 32 * 1024 * 1024);
+		//android.os.Debug.startMethodTracing("ep.trace", 32 * 1024 * 1024);
 		final int code = readModelNative(model);
-		android.os.Debug.stopMethodTracing();
+		//android.os.Debug.stopMethodTracing();
 		switch (code) {
 			case 0:
 				return;
@@ -113,42 +113,29 @@ public class NativeFormatPlugin extends FormatPlugin {
 	private native int readModelNative(BookModel model);
 
 	@Override
-	public ZLImage readCover(final ZLFile file) {
-		return new ZLImageProxy() {
+	public ZLFileImageProxy readCover(ZLFile file) {
+		return new ZLFileImageProxy(file) {
 			@Override
-			public int sourceType() {
-				return SourceType.DISK;
-			}
-
-			@Override
-			public String getId() {
-				return file.getPath();
-			}
-
-			@Override
-			public ZLSingleImage getRealImage() {
-				final ZLImage[] box = new ZLImage[1];
-				readCoverInternal(file, box);
-				return (ZLSingleImage)box[0];
+			protected ZLFileImage retrieveRealImage() {
+				final ZLFileImage[] box = new ZLFileImage[1];
+				readCoverInternal(File, box);
+				return box[0];
 			}
 		};
 	}
 
-	protected native void readCoverInternal(ZLFile file, ZLImage[] box);
+	protected native void readCoverInternal(ZLFile file, ZLFileImage[] box);
 
-	// FIXME: temporary implementation; implement as a native code (?)
 	@Override
 	public String readAnnotation(ZLFile file) {
-		final FormatPlugin plugin = PluginCollection.Instance().getPlugin(file, FormatPlugin.Type.JAVA);
-		if (plugin != null) {
-			return plugin.readAnnotation(file);
-		}
-		return null;
+		return readAnnotationInternal(file);
 	}
 
+	protected native String readAnnotationInternal(ZLFile file);
+
 	@Override
-	public Type type() {
-		return Type.NATIVE;
+	public int priority() {
+		return 5;
 	}
 
 	@Override

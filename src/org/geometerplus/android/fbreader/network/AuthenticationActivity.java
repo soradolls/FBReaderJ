@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -66,18 +66,18 @@ public class AuthenticationActivity extends Activity {
 	static final String ERROR_KEY = "error";
 	static final String CUSTOM_AUTH_KEY = "customAuth";
 
-	static void initCredentialsCreator(Context context) {
+	static void initCredentialsCreator(Activity activity) {
 		final ZLNetworkManager manager = ZLNetworkManager.Instance();
 		if (manager.getCredentialsCreator() == null) {
-			manager.setCredentialsCreator(new CredentialsCreator(context));
+			manager.setCredentialsCreator(new CredentialsCreator(activity));
 		}
 	}
 
 	static class CredentialsCreator extends ZLNetworkManager.CredentialsCreator {
 		private final Context myContext;
 
-		CredentialsCreator(Context context) {
-			myContext = context.getApplicationContext();
+		CredentialsCreator(Activity activity) {
+			myContext = activity.getApplicationContext();
 		}
 
 		@Override

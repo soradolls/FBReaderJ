@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
 
 package org.geometerplus.fbreader.network.opds;
 
+import java.util.List;
+import java.util.LinkedList;
+
 import org.geometerplus.zlibrary.core.xml.ZLStringMap;
 
 import org.geometerplus.fbreader.network.atom.*;
@@ -27,6 +30,7 @@ class OPDSEntry extends ATOMEntry {
 	public String DCLanguage;
 	public String DCPublisher;
 	public DCDate DCIssued;
+	public final List<String> DCIdentifiers = new LinkedList<String>();
 
 	public String SeriesTitle;
 	public float SeriesIndex;

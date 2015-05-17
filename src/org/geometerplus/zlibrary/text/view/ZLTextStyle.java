@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,13 +41,23 @@ public abstract class ZLTextStyle {
 	public abstract boolean isUnderline();
 	public abstract boolean isStrikeThrough();
 
-	public abstract int getLeftIndent();
-	public abstract int getRightIndent();
-	public abstract int getFirstLineIndentDelta();
+	public final int getLeftIndent(ZLTextMetrics metrics) {
+		return getLeftMargin(metrics) + getLeftPadding(metrics);
+	}
+	public final int getRightIndent(ZLTextMetrics metrics) {
+		return getRightMargin(metrics) + getRightPadding(metrics);
+	}
+	public abstract int getLeftMargin(ZLTextMetrics metrics);
+	public abstract int getRightMargin(ZLTextMetrics metrics);
+	public abstract int getLeftPadding(ZLTextMetrics metrics);
+	public abstract int getRightPadding(ZLTextMetrics metrics);
+
+	public abstract int getFirstLineIndent(ZLTextMetrics metrics);
 	public abstract int getLineSpacePercent();
-	public abstract int getVerticalShift();
-	public abstract int getSpaceBefore();
-	public abstract int getSpaceAfter();
+	public abstract int getVerticalAlign(ZLTextMetrics metrics);
+	public abstract boolean isVerticallyAligned();
+	public abstract int getSpaceBefore(ZLTextMetrics metrics);
+	public abstract int getSpaceAfter(ZLTextMetrics metrics);
 	public abstract byte getAlignment();
 
 	public abstract boolean allowHyphenations();

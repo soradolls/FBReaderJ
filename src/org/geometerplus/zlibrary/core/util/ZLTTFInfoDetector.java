@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,15 @@ import java.util.*;
 import java.io.*;
 
 public class ZLTTFInfoDetector {
+	private static final List<String> STYLES = Arrays.asList(
+		"bold italic",
+		"bold oblique",
+		"roman",
+		"regular",
+		"bold",
+		"italic",
+		"oblique"
+	);
 	public Map<String,File[]> collectFonts(Iterable<File> files) {
 		final HashMap<String,File[]> fonts = new HashMap<String,File[]>();
 		if (files == null) {
@@ -35,24 +44,42 @@ public class ZLTTFInfoDetector {
 				stream = new FileInputStream(f);
 				final ZLTTFInfo info = detectInfo(stream);
 				if (info != null && info.FamilyName != null) {
-					File[] table = fonts.get(info.FamilyName);
+					String familyName = info.FamilyName;
+					String subfamilyName = info.SubFamilyName;
+					if (subfamilyName == null || !STYLES.contains(subfamilyName.toLowerCase())) {
+						final String full =
+							subfamilyName != null ? familyName + " " + subfamilyName : familyName;
+						final String lower = full.toLowerCase();
+						familyName = full;
+						subfamilyName = "";
+						for (String style : STYLES) {
+							if (lower.endsWith(" " + style)) {
+								familyName = full.substring(0, lower.length() - style.length() - 1);
+								subfamilyName = full.substring(lower.length() - style.length());
+								break;
+							}
+						}
+					}
+
+					File[] table = fonts.get(familyName);
 					if (table == null) {
 						table = new File[4];
-						fonts.put(info.FamilyName, table);
+						fonts.put(familyName, table);
 					}
-					if ("bold".equalsIgnoreCase(info.SubFamilyName)) {
+					if ("bold".equalsIgnoreCase(subfamilyName)) {
 						table[1] = f;
-					} else if ("italic".equalsIgnoreCase(info.SubFamilyName) ||
-							   "oblique".equalsIgnoreCase(info.SubFamilyName)) {
+					} else if ("italic".equalsIgnoreCase(subfamilyName) ||
+							   "oblique".equalsIgnoreCase(subfamilyName)) {
 						table[2] = f;
-					} else if ("bold italic".equalsIgnoreCase(info.SubFamilyName) ||
-							   "bold oblique".equalsIgnoreCase(info.SubFamilyName)) {
+					} else if ("bold italic".equalsIgnoreCase(subfamilyName) ||
+							   "bold oblique".equalsIgnoreCase(subfamilyName)) {
 						table[3] = f;
 					} else {
 						table[0] = f;
 					}
 				}
 			} catch (IOException e) {
+				e.printStackTrace();
 			} finally {
 				if (stream != null) {
 					try {
@@ -184,7 +211,7 @@ public class ZLTTFInfoDetector {
 						stringOffset + offset + length <= buffer.length) {
 						fontInfo.FamilyName = new String(
 							buffer, stringOffset + offset, length,
-							platformId == 1 ? "windows-1252" : "UTF-16BE"
+							platformId == 1 ? "ISO-8859-1" : "UTF-16BE"
 						);
 					}
 					break;
@@ -193,7 +220,7 @@ public class ZLTTFInfoDetector {
 						stringOffset + offset + length <= buffer.length) {
 						fontInfo.SubFamilyName = new String(
 							buffer, stringOffset + offset, length,
-							platformId == 1 ? "windows-1252" : "UTF-16BE"
+							platformId == 1 ? "ISO-8859-1" : "UTF-16BE"
 						);
 					}
 					break;

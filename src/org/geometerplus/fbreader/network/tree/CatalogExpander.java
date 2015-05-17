@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,30 +19,38 @@
 
 package org.geometerplus.fbreader.network.tree;
 
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 import org.geometerplus.fbreader.network.*;
 import org.geometerplus.fbreader.network.authentication.NetworkAuthenticationManager;
 
 class CatalogExpander extends NetworkItemsLoader {
-	private final Authenticator myAuthenticator;
-	private volatile boolean myAuthenticationRequested;
+	private final boolean myAuthenticate;
 	private final boolean myResumeNotLoad;
 
-	CatalogExpander(NetworkCatalogTree tree, Authenticator authenticator, boolean resumeNotLoad) {
-		super(tree);
-		myAuthenticator = authenticator;
+	CatalogExpander(ZLNetworkContext nc, NetworkCatalogTree tree, boolean authenticate, boolean resumeNotLoad) {
+		super(nc, tree);
+		myAuthenticate = authenticate;
 		myResumeNotLoad = resumeNotLoad;
 	}
 
 	@Override
 	public void doBefore() throws ZLNetworkException {
 		final INetworkLink link = getTree().getLink();
-		if (myAuthenticator != null && link != null && link.authenticationManager() != null) {
+		if (myAuthenticate && link != null && link.authenticationManager() != null) {
 			final NetworkAuthenticationManager mgr = link.authenticationManager();
 			try {
 				if (mgr.isAuthorised(true) && mgr.needsInitialization()) {
-					mgr.initialize();
+					new Thread() {
+						public void run() {
+							try {
+								mgr.initialize();
+							} catch (ZLNetworkException e) {
+								e.printStackTrace();
+							}
+						}
+					}.start();
 				}
 			} catch (ZLNetworkException e) {
 				mgr.logOut();
@@ -52,18 +60,10 @@ class CatalogExpander extends NetworkItemsLoader {
 
 	@Override
 	public void load() throws ZLNetworkException {
-		myAuthenticationRequested = false;
 		if (myResumeNotLoad) {
 			getTree().Item.resumeLoading(this);
 		} else {
-			try {
-				getTree().Item.loadChildren(this);
-			} catch (NetworkCatalogItem.AuthorisationFailed f) {
-				myAuthenticationRequested = true;
-				if (myAuthenticator != null) {
-					myAuthenticator.run(f.URL);
-				}
-			}
+			getTree().Item.loadChildren(this);
 		}
 	}
 
@@ -73,7 +73,7 @@ class CatalogExpander extends NetworkItemsLoader {
 			getTree().clearCatalog();
 		} else {
 			getTree().removeUnconfirmedItems();
-			if (!interrupted && !myAuthenticationRequested) {
+			if (!interrupted) {
 				if (exception != null) {
 					NetworkLibrary.Instance().fireModelChangedEvent(
 						NetworkLibrary.ChangeListener.Code.NetworkError, exception.getMessage()

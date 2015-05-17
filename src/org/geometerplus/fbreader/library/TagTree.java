@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -130,5 +130,5 @@ public final class TagTree extends FilteredTree {
 	@Override
 	protected boolean createSubtree(Book book) {
 		return createBookWithAuthorsSubtree(book);
-	} 
+	}
 }

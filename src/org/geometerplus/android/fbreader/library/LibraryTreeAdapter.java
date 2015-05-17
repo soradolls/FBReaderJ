@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ import org.geometerplus.zlibrary.ui.android.R;
 import org.geometerplus.fbreader.library.*;
 import org.geometerplus.fbreader.book.Book;
 
+import org.geometerplus.android.fbreader.tree.TreeActivity;
 import org.geometerplus.android.fbreader.tree.TreeAdapter;
 import org.geometerplus.android.fbreader.covers.CoverManager;
 
@@ -55,7 +56,7 @@ class LibraryTreeAdapter extends TreeAdapter {
 		} else {
 			nameView.setText(tree.getName());
 		}
-		
+
 		final TextView summaryView = ViewUtil.findTextView(view, R.id.library_tree_item_childrenlist);
 		if (unread) {
 			summaryView.setText(Html.fromHtml("<b>" + tree.getSummary()));
@@ -78,7 +79,8 @@ class LibraryTreeAdapter extends TreeAdapter {
 		if (myCoverManager == null) {
 			view.measure(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 			final int coverHeight = view.getMeasuredHeight();
-			myCoverManager = new CoverManager(getActivity(), coverHeight * 15 / 32, coverHeight);
+			final TreeActivity activity = getActivity();
+			myCoverManager = new CoverManager(activity, activity.ImageSynchronizer, coverHeight * 15 / 32, coverHeight);
 			view.requestLayout();
 		}
 
@@ -93,9 +95,11 @@ class LibraryTreeAdapter extends TreeAdapter {
 	private int getCoverResourceId(LibraryTree tree) {
 		if (tree.getBook() != null) {
 			return R.drawable.ic_list_library_book;
+		} else if (tree instanceof ExternalViewTree) {
+			return R.drawable.plugin_bookshelf;
 		} else if (tree instanceof FavoritesTree) {
 			return R.drawable.ic_list_library_favorites;
-		} else if (tree instanceof RecentBooksTree) {
+		} else if (tree instanceof RecentBooksTree || tree instanceof SyncTree) {
 			return R.drawable.ic_list_library_recent;
 		} else if (tree instanceof AuthorListTree) {
 			return R.drawable.ic_list_library_authors;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,12 +33,14 @@ import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.util.MimeType;
 
 import org.geometerplus.zlibrary.ui.android.R;
+import org.geometerplus.zlibrary.ui.android.network.SQLiteCookieDatabase;
 
 import org.geometerplus.fbreader.network.*;
 import org.geometerplus.fbreader.network.opds.OPDSCustomNetworkLink;
 import org.geometerplus.fbreader.network.urlInfo.*;
 
 import org.geometerplus.android.fbreader.api.FBReaderIntents;
+import org.geometerplus.android.fbreader.network.auth.ActivityNetworkContext;
 import org.geometerplus.android.util.UIUtil;
 
 public class AddCustomCatalogActivity extends Activity {
@@ -49,11 +51,14 @@ public class AddCustomCatalogActivity extends Activity {
 	private boolean myEditNotAdd;
 	private INetworkLink.Type myType = INetworkLink.Type.Custom;
 
+	private final ActivityNetworkContext myNetworkContext = new ActivityNetworkContext(this);
+
 	@Override
-	public void onCreate(Bundle icicle) {
+	protected void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		Thread.setDefaultUncaughtExceptionHandler(new org.geometerplus.zlibrary.ui.android.library.UncaughtExceptionHandler(this));
 
+		SQLiteCookieDatabase.init(this);
 		AuthenticationActivity.initCredentialsCreator(this);
 
 		setContentView(R.layout.add_custom_catalog);
@@ -93,7 +98,7 @@ public class AddCustomCatalogActivity extends Activity {
 		myEditNotAdd = Util.EDIT_CATALOG_ACTION.equals(intent.getAction());
 		myLink = null;
 
-		Util.initLibrary(this, new Runnable() {
+		Util.initLibrary(this, myNetworkContext, new Runnable() {
 			public void run() {
 				runOnUiThread(new Runnable() {
 					public void run() {
@@ -102,6 +107,17 @@ public class AddCustomCatalogActivity extends Activity {
 				});
 			}
 		});
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		myNetworkContext.onResume();
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		myNetworkContext.onActivityResult(requestCode, resultCode, data);
 	}
 
 	private void init(Intent intent) {
@@ -119,6 +135,8 @@ public class AddCustomCatalogActivity extends Activity {
 				final INetworkLink link = NetworkLibrary.Instance().getLinkByUrl(uri.toString());
 				if (link instanceof ICustomNetworkLink) {
 					myLink = (ICustomNetworkLink)link;
+				} else {
+					openCatalog(uri);
 				}
 			}
 
@@ -254,15 +272,14 @@ public class AddCustomCatalogActivity extends Activity {
 		}
 
 		setTextById(R.id.add_custom_catalog_url, textUrl);
-		final String siteName = uri.getHost();
-		if (isEmptyString(siteName)) {
+		if (isEmptyString(uri.getHost())) {
 			setErrorByKey("invalidUrl");
 			return;
 		}
 		final UrlInfoCollection<UrlInfoWithDate> infos = new UrlInfoCollection<UrlInfoWithDate>();
 		infos.addInfo(new UrlInfoWithDate(UrlInfo.Type.Catalog, textUrl, MimeType.APP_ATOM_XML));
 		myLink = new OPDSCustomNetworkLink(
-			ICustomNetworkLink.INVALID_ID, myType, siteName, null, null, null, infos
+			ICustomNetworkLink.INVALID_ID, myType, null, null, null, infos
 		);
 
 		final Runnable loadInfoRunnable = new Runnable() {
@@ -271,7 +288,7 @@ public class AddCustomCatalogActivity extends Activity {
 			public void run() {
 				try {
 					myError = null;
-					myLink.reloadInfo(false, false);
+					myLink.reloadInfo(myNetworkContext, false, false);
 				} catch (ZLNetworkException e) {
 					myError = e.getMessage();
 				}

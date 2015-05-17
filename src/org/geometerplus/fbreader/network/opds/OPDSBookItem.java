@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,23 +33,18 @@ import org.geometerplus.fbreader.network.atom.*;
 import org.geometerplus.fbreader.network.urlInfo.*;
 
 public class OPDSBookItem extends NetworkBookItem implements OPDSConstants {
-	public static OPDSBookItem create(INetworkLink link, String url) {
+	public static OPDSBookItem create(ZLNetworkContext nc, INetworkLink link, String url) throws ZLNetworkException {
 		if (link == null || url == null) {
 			return null;
 		}
 
 		final CreateBookHandler handler = new CreateBookHandler(link, url);
-		try {
-			ZLNetworkManager.Instance().perform(new ZLNetworkRequest(url) {
-				@Override
-				public void handleStream(InputStream inputStream, int length) throws IOException, ZLNetworkException {
-					new OPDSXMLReader(handler, true).read(inputStream);
-				}
-			});
-		} catch (ZLNetworkException e) {
-			e.printStackTrace();
-			// ignore
-		}
+		nc.perform(new ZLNetworkRequest.Get(url) {
+			@Override
+			public void handleStream(InputStream inputStream, int length) throws IOException, ZLNetworkException {
+				new OPDSXMLReader(handler, true).read(inputStream);
+			}
+		});
 		return handler.getBook();
 	}
 
@@ -115,16 +110,15 @@ public class OPDSBookItem extends NetworkBookItem implements OPDSConstants {
 		for (ATOMLink link: entry.Links) {
 			final String href = ZLNetworkUtil.url(baseUrl, link.getHref());
 			final MimeType mime = MimeType.get(link.getType());
-			final String rel = networkLink.relation(link.getRel(), mime);
+			String rel = link.getRel();
+			if (networkLink != null) {
+				rel = networkLink.relation(rel, mime);
+			}
 			final UrlInfo.Type referenceType = typeByRelation(rel);
 			if (REL_IMAGE_THUMBNAIL.equals(rel) || REL_THUMBNAIL.equals(rel)) {
-				if (MimeType.IMAGE_PNG.equals(mime) || MimeType.IMAGE_JPEG.equals(mime)) {
-					urls.addInfo(new UrlInfo(UrlInfo.Type.Thumbnail, href, mime));
-				}
+				urls.addInfo(new UrlInfo(UrlInfo.Type.Thumbnail, href, mime));
 			} else if ((rel != null && rel.startsWith(REL_IMAGE_PREFIX)) || REL_COVER.equals(rel)) {
-				if (MimeType.IMAGE_PNG.equals(mime) || MimeType.IMAGE_JPEG.equals(mime)) {
-					urls.addInfo(new UrlInfo(UrlInfo.Type.Image, href, mime));
-				}
+				urls.addInfo(new UrlInfo(UrlInfo.Type.Image, href, mime));
 			} else if (MimeType.APP_ATOM_XML.weakEquals(mime) &&
 						"entry".equals(mime.getParameter("type"))) {
 				urls.addInfo(new UrlInfo(UrlInfo.Type.SingleEntry, href, mime));
@@ -152,9 +146,8 @@ public class OPDSBookItem extends NetworkBookItem implements OPDSConstants {
 			} else if (referenceType == UrlInfo.Type.TOC) {
 				urls.addInfo(new UrlInfo(referenceType, href, mime));
 			} else if (referenceType != null) {
-				final BookUrlInfo.Format format = formatByMimeType(mime);
-				if (!BookUrlInfo.Format.NONE.equals(format)) {
-					urls.addInfo(new BookUrlInfo(referenceType, format, href, mime));
+				if (BookUrlInfo.isMimeSupported(mime)) {
+					urls.addInfo(new BookUrlInfo(referenceType, href, mime));
 				}
 			}
 		}
@@ -162,14 +155,14 @@ public class OPDSBookItem extends NetworkBookItem implements OPDSConstants {
 	}
 
 	private static UrlInfo.Type typeByRelation(String rel) {
-		if (rel == null || REL_ACQUISITION.equals(rel) || REL_ACQUISITION_OPEN.equals(rel)) {
+		if (rel == null || REL_ACQUISITION_SAMPLE_OR_FULL.equals(rel)) {
+			return UrlInfo.Type.BookFullOrDemo;
+		} else if (REL_ACQUISITION.equals(rel) || REL_ACQUISITION_OPEN.equals(rel)) {
 			return UrlInfo.Type.Book;
 		} else if (REL_ACQUISITION_SAMPLE.equals(rel)) {
 			return UrlInfo.Type.BookDemo;
 		} else if (REL_ACQUISITION_CONDITIONAL.equals(rel)) {
 			return UrlInfo.Type.BookConditional;
-		} else if (REL_ACQUISITION_SAMPLE_OR_FULL.equals(rel)) {
-			return UrlInfo.Type.BookFullOrDemo;
 		} else if (REL_ACQUISITION_BUY.equals(rel)) {
 			return UrlInfo.Type.BookBuy;
 		} else if (REL_RELATED.equals(rel)) {
@@ -194,28 +187,14 @@ public class OPDSBookItem extends NetworkBookItem implements OPDSConstants {
 		boolean added = false;
 		for (String f : opdsLink.Formats) {
 			final MimeType mime = MimeType.get(f);
-			final BookUrlInfo.Format format = formatByMimeType(mime);
-			if (!BookUrlInfo.Format.NONE.equals(format)) {
-				urls.addInfo(new BookBuyUrlInfo(type, format, href, mime, price));
+			if (BookUrlInfo.isMimeSupported(mime)) {
+				urls.addInfo(new BookBuyUrlInfo(type, href, mime, price));
 				added = true;
 			}
 		}
 		if (!added && addWithoutFormat) {
-			urls.addInfo(new BookBuyUrlInfo(type, BookUrlInfo.Format.NONE, href, MimeType.NULL, price));
+			urls.addInfo(new BookBuyUrlInfo(type, href, MimeType.NULL, price));
 		}
-	}
-
-	static BookUrlInfo.Format formatByMimeType(MimeType mime) {
-		if (MimeType.TYPES_FB2.contains(mime)) {
-			return BookUrlInfo.Format.FB2;
-		} else if (MimeType.TYPES_FB2_ZIP.contains(mime)) {
-			return BookUrlInfo.Format.FB2_ZIP;
-		} else if (MimeType.TYPES_EPUB.contains(mime)) {
-			return BookUrlInfo.Format.EPUB;
-		} else if (MimeType.TYPES_MOBIPOCKET.contains(mime)) {
-			return BookUrlInfo.Format.MOBIPOCKET;
-		}
-		return BookUrlInfo.Format.NONE;
 	}
 
 	public OPDSBookItem(
@@ -252,18 +231,18 @@ public class OPDSBookItem extends NetworkBookItem implements OPDSConstants {
 	}
 
 	@Override
-	public synchronized void loadFullInformation() throws ZLNetworkException {
+	public synchronized boolean loadFullInformation(ZLNetworkContext nc) {
 		if (myInformationIsFull) {
-			return;
+			return true;
 		}
 
 		final String url = getUrl(UrlInfo.Type.SingleEntry);
 		if (url == null) {
 			myInformationIsFull = true;
-			return;
+			return true;
 		}
 
-		ZLNetworkManager.Instance().perform(new ZLNetworkRequest(url) {
+		return nc.performQuietly(new ZLNetworkRequest.Get(url) {
 			@Override
 			public void handleStream(InputStream inputStream, int length) throws IOException, ZLNetworkException {
 				new OPDSXMLReader(new LoadInfoHandler(url), true).read(inputStream);

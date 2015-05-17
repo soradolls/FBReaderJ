@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import java.util.*;
 import org.geometerplus.zlibrary.core.image.ZLImage;
 import org.geometerplus.zlibrary.core.util.MimeType;
 
+import org.geometerplus.fbreader.network.urlInfo.UrlInfo;
 import org.geometerplus.fbreader.tree.FBTree;
 
 public abstract class NetworkTree extends FBTree {
@@ -60,12 +61,15 @@ public abstract class NetworkTree extends FBTree {
 		return parent != null ? parent.getLink() : null;
 	}
 
-	public static ZLImage createCover(NetworkItem item) {
-		final String imageUrl = item.getImageUrl();
-		if (imageUrl == null) {
+	public static ZLImage createCover(NetworkItem item, boolean thumbnail) {
+		String coverUrl = item.getUrl(thumbnail ? UrlInfo.Type.Thumbnail : UrlInfo.Type.Image);
+		if (coverUrl == null) {
+			coverUrl = item.getUrl(thumbnail ? UrlInfo.Type.Image : UrlInfo.Type.Thumbnail);
+		}
+		if (coverUrl == null) {
 			return null;
 		}
-		return createCover(imageUrl, null);
+		return createCover(coverUrl, null);
 	}
 
 	private static final String DATA_PREFIX = "data:";

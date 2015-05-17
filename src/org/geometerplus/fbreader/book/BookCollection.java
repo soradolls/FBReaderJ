@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,18 +22,22 @@ package org.geometerplus.fbreader.book;
 import java.io.File;
 import java.util.*;
 
-import org.geometerplus.zlibrary.core.filesystem.ZLFile;
-import org.geometerplus.zlibrary.core.filesystem.ZLPhysicalFile;
+import org.geometerplus.zlibrary.core.filesystem.*;
 import org.geometerplus.zlibrary.core.image.ZLImage;
+import org.geometerplus.zlibrary.core.util.MiscUtil;
 
+import org.geometerplus.zlibrary.text.view.ZLTextFixedPosition;
 import org.geometerplus.zlibrary.text.view.ZLTextPosition;
 
 import org.geometerplus.fbreader.bookmodel.BookReadingException;
 import org.geometerplus.fbreader.formats.*;
 
 public class BookCollection extends AbstractBookCollection {
+	private static final String ZERO_HASH = String.format("%040d", 0);
+
 	private final BooksDatabase myDatabase;
 	public final List<String> BookDirectories;
+	private Set<String> myActiveFormats;
 
 	private final Map<ZLFile,Book> myBooksByFile =
 		Collections.synchronizedMap(new LinkedHashMap<ZLFile,Book>());
@@ -51,6 +55,11 @@ public class BookCollection extends AbstractBookCollection {
 	public BookCollection(BooksDatabase db, List<String> bookDirectories) {
 		myDatabase = db;
 		BookDirectories = Collections.unmodifiableList(new ArrayList<String>(bookDirectories));
+
+		final String formats = db.getOptionValue("formats");
+		if (formats != null) {
+			myActiveFormats = new HashSet<String>(Arrays.asList(formats.split("\000")));
+		}
 	}
 
 	public int size() {
@@ -61,13 +70,15 @@ public class BookCollection extends AbstractBookCollection {
 		if (bookFile == null) {
 			return null;
 		}
-		final FormatPlugin plugin = PluginCollection.Instance().getPlugin(bookFile);
-		if (plugin == null) {
+
+		return getBookByFile(bookFile, PluginCollection.Instance().getPlugin(bookFile));
+	}
+
+	private Book getBookByFile(ZLFile bookFile, final FormatPlugin plugin) {
+		if (plugin == null || !isFormatActive(plugin)) {
 			return null;
 		}
-		if (!plugin.type().Builtin && bookFile != bookFile.getPhysicalFile()) {
-			return null;
-		}
+
 		try {
 			bookFile = plugin.realBookFile(bookFile);
 		} catch (BookReadingException e) {
@@ -107,9 +118,9 @@ public class BookCollection extends AbstractBookCollection {
 
 		try {
 			if (book == null) {
-				book = new Book(bookFile);
+				book = new Book(bookFile, plugin);
 			} else {
-				book.readMetaInfo();
+				book.readMetainfo(plugin);
 			}
 		} catch (BookReadingException e) {
 			return null;
@@ -126,7 +137,7 @@ public class BookCollection extends AbstractBookCollection {
 		}
 
 		book = myDatabase.loadBook(id);
-		if (book == null || book.File == null || !book.File.exists()) {
+		if (book == null || book.File == null || !book.File.exists() || !isBookFormatActive(book)) {
 			return null;
 		}
 		book.loadLists(myDatabase);
@@ -151,7 +162,7 @@ public class BookCollection extends AbstractBookCollection {
 		fileInfos.save();
 
 		try {
-			book.readMetaInfo();
+			book.readMetainfo();
 			// loaded from db
 			addBook(book, false);
 			return book;
@@ -170,6 +181,20 @@ public class BookCollection extends AbstractBookCollection {
 		return bookId != null ? getBookById(bookId) : null;
 	}
 
+	public Book getBookByHash(String hash) {
+		if (ZERO_HASH.equals(hash)) {
+			return getBookByFile(BookUtil.getHelpFile());
+		}
+
+		for (long id : myDatabase.bookIdsByHash(hash)) {
+			final Book book = getBookById(id);
+			if (book != null && book.File.exists()) {
+				return book;
+			}
+		}
+		return null;
+	}
+
 	private boolean addBook(Book book, boolean force) {
 		if (book == null) {
 			return false;
@@ -178,7 +203,7 @@ public class BookCollection extends AbstractBookCollection {
 		synchronized (myBooksByFile) {
 			final Book existing = myBooksByFile.get(book.File);
 			if (existing == null) {
-				if (book.getId() == -1 && !book.save(myDatabase, true)) {	
+				if (book.getId() == -1 && !book.save(myDatabase, true)) {
 					return false;
 				}
 
@@ -197,7 +222,7 @@ public class BookCollection extends AbstractBookCollection {
 				return true;
 			} else if (force) {
 				existing.updateFrom(book);
-				if (existing.save(myDatabase, false)) {	
+				if (existing.save(myDatabase, false)) {
 					fireBookEvent(BookEvent.Updated, existing);
 					return true;
 				}
@@ -216,10 +241,6 @@ public class BookCollection extends AbstractBookCollection {
 			myDuplicateResolver.removeFile(book.File);
 			myBooksById.remove(book.getId());
 
-			final List<Long> ids = myDatabase.loadRecentBookIds();
-			if (ids.remove(book.getId())) {
-				myDatabase.saveRecentBookIds(ids);
-			}
 			if (deleteFromDisk) {
 				book.File.getPhysicalFile().delete();
 			}
@@ -228,11 +249,34 @@ public class BookCollection extends AbstractBookCollection {
 		fireBookEvent(BookEvent.Removed, book);
 	}
 
+	public boolean canRemoveBook(Book book, boolean deleteFromDisk) {
+		if (deleteFromDisk) {
+			ZLFile file = book.File;
+			if (file.getPhysicalFile() == null) {
+				return false;
+			}
+			while (file instanceof ZLArchiveEntryFile) {
+				file = file.getParent();
+				if (file.children().size() != 1) {
+					return false;
+				}
+			}
+			return true;
+		} else {
+			// TODO: implement
+			return false;
+		}
+	}
+
 	public Status status() {
 		return myStatus;
 	}
 
 	public List<Book> books(BookQuery query) {
+		if (query == null) {
+			return Collections.emptyList();
+		}
+
 		final List<Book> allBooks;
 		synchronized (myBooksByFile) {
 			//allBooks = new ArrayList<Book>(new LinkedHashSet<Book>(myBooksByFile.values()));
@@ -284,8 +328,12 @@ public class BookCollection extends AbstractBookCollection {
 		return titles;
 	}
 
-	public List<Book> recentBooks() {
-		return books(myDatabase.loadRecentBookIds());
+	public List<Book> recentlyAddedBooks(int count) {
+		return books(myDatabase.loadRecentBookIds(BooksDatabase.HistoryEvent.Added, count));
+	}
+
+	public List<Book> recentlyOpenedBooks(int count) {
+		return books(myDatabase.loadRecentBookIds(BooksDatabase.HistoryEvent.Opened, count));
 	}
 
 	private List<Book> books(List<Long> ids) {
@@ -334,13 +382,7 @@ public class BookCollection extends AbstractBookCollection {
 	}
 
 	public List<String> labels() {
-		final Set<String> labels = new HashSet<String>();
-		synchronized (myBooksByFile) {
-			for (Book book : myBooksByFile.values()) {
-				labels.addAll(book.labels());
-			}
-		}
-		return new ArrayList<String>(labels);
+		return myDatabase.listLabels();
 	}
 
 	public boolean hasSeries() {
@@ -381,20 +423,18 @@ public class BookCollection extends AbstractBookCollection {
 	}
 
 	public Book getRecentBook(int index) {
-		final List<Long> recentIds = myDatabase.loadRecentBookIds();
+		final List<Long> recentIds = myDatabase.loadRecentBookIds(BooksDatabase.HistoryEvent.Opened, index + 1);
 		return recentIds.size() > index ? getBookById(recentIds.get(index)) : null;
 	}
 
-	public void addBookToRecentList(Book book) {
-		final List<Long> ids = myDatabase.loadRecentBookIds();
-		final Long bookId = book.getId();
-		ids.remove(bookId);
-		ids.add(0, bookId);
-		if (ids.size() > 12) {
-			ids.remove(12);
-		}
-		myDatabase.saveRecentBookIds(ids);
+	public void addToRecentlyOpened(Book book) {
+		myDatabase.addBookHistoryEvent(book.getId(), BooksDatabase.HistoryEvent.Opened);
 		fireBookEvent(BookEvent.Opened, book);
+	}
+
+	public void removeFromRecentlyOpened(Book book) {
+		myDatabase.removeBookHistoryEvents(book.getId(), BooksDatabase.HistoryEvent.Opened);
+		fireBookEvent(BookEvent.Updated, book);
 	}
 
 	private void setStatus(Status status) {
@@ -415,9 +455,13 @@ public class BookCollection extends AbstractBookCollection {
 					setStatus(Status.Succeeded);
 				} catch (Throwable t) {
 					setStatus(Status.Failed);
+					t.printStackTrace();
 				} finally {
 					synchronized (myFilesToRescan) {
 						processFilesQueue();
+					}
+					for (Book book : new ArrayList<Book>(myBooksByFile.values())) {
+						getHash(book, false);
 					}
 				}
 			}
@@ -435,7 +479,7 @@ public class BookCollection extends AbstractBookCollection {
 
 	private void processFilesQueue() {
 		synchronized (myFilesToRescan) {
-			if (!myStatus.IsCompleted) {
+			if (!myStatus.IsComplete) {
 				return;
 			}
 
@@ -459,6 +503,7 @@ public class BookCollection extends AbstractBookCollection {
 				final Book book = getBookByFile(file);
 				if (book != null) {
 					saveBook(book);
+					getHash(book, false);
 				}
 			}
 
@@ -481,14 +526,9 @@ public class BookCollection extends AbstractBookCollection {
 		// Step 0: get database books marked as "existing"
 		final FileInfoSet fileInfos = new FileInfoSet(myDatabase);
 		final Map<Long,Book> savedBooksByFileId = myDatabase.loadBooks(fileInfos, true);
-		final Map<Long,Book> savedBooksByBookId = new HashMap<Long,Book>();
-		for (Book b : savedBooksByFileId.values()) {
-			savedBooksByBookId.put(b.getId(), b);
-		}
 
 		// Step 1: check if files corresponding to "existing" books really exists;
 		//         add books to library if yes (and reload book info if needed);
-		//         remove from recent/favorites list if no;
 		//         collect newly "orphaned" books
 		final Set<Book> orphanedBooks = new HashSet<Book>();
 		final Set<ZLPhysicalFile> physicalFiles = new HashSet<ZLPhysicalFile>();
@@ -497,9 +537,18 @@ public class BookCollection extends AbstractBookCollection {
 			final ZLPhysicalFile file = book.File.getPhysicalFile();
 			if (file != null) {
 				physicalFiles.add(file);
-			}
-			if (file != book.File && file != null && file.getPath().endsWith(".epub")) {
-				continue;
+
+				// yes, we do add the file to physicalFiles set
+				//      for not testing it again later,
+				// but we do not store the book
+				if (!isBookFormatActive(book)) {
+					continue;
+				}
+
+				// a hack to skip obsolete *.epub:*.opf entries
+				if (file != book.File && file.getPath().endsWith(".epub")) {
+					continue;
+				}
 			}
 			if (book.File.exists()) {
 				boolean doAdd = true;
@@ -508,7 +557,7 @@ public class BookCollection extends AbstractBookCollection {
 				}
 				if (!fileInfos.check(file, true)) {
 					try {
-						book.readMetaInfo();
+						book.readMetainfo();
 						saveBook(book);
 					} catch (BookReadingException e) {
 						doAdd = false;
@@ -607,11 +656,16 @@ public class BookCollection extends AbstractBookCollection {
 			return;
 		}
 
+		final FormatPlugin plugin = PluginCollection.Instance().getPlugin(file);
+		if (plugin != null && !isFormatActive(plugin)) {
+			return;
+		}
+
 		try {
 			final Book book = orphanedBooksByFileId.get(fileId);
 			if (book != null) {
 				if (doReadMetaInfo) {
-					book.readMetaInfo();
+					book.readMetainfo();
 				}
 				newBooks.add(book);
 				return;
@@ -620,7 +674,7 @@ public class BookCollection extends AbstractBookCollection {
 			// ignore
 		}
 
-		final Book book = getBookByFile(file);
+		final Book book = getBookByFile(file, plugin);
 		if (book != null) {
 			newBooks.add(book);
 		} else if (file.isArchive()) {
@@ -634,19 +688,22 @@ public class BookCollection extends AbstractBookCollection {
 			}
 		}
 	}
-	
+
 	@Override
-	public boolean saveCover(Book book, String url) {
-		if (getBookById(book.getId()) == null) {
-			return false;
-		}
+	public ZLImage getCover(Book book, int maxWidth, int maxHeight) {
+		return BookUtil.getCover(book);
+	}
 
-		final ZLImage image = BookUtil.getCover(book);
-		if (image == null) {
-			return false;
-		}
+	@Override
+	public String getCoverUrl(Book book) {
+		// not implemented in non-shadow collection
+		return null;
+	}
 
-		return image.saveToFile(url);
+	@Override
+	public String getDescription(Book book) {
+		// not implemented in non-shadow collection
+		return null;
 	}
 
 	public List<Bookmark> bookmarks(BookmarkQuery query) {
@@ -657,7 +714,7 @@ public class BookCollection extends AbstractBookCollection {
 		if (bookmark != null) {
 			bookmark.setId(myDatabase.saveBookmark(bookmark));
 			if (bookmark.IsVisible) {
-				final Book book = getBookById(bookmark.getBookId());
+				final Book book = getBookById(bookmark.BookId);
 				if (book != null) {
 					book.HasBookmark = true;
 					fireBookEvent(BookEvent.BookmarksUpdated, book);
@@ -670,16 +727,24 @@ public class BookCollection extends AbstractBookCollection {
 		if (bookmark != null && bookmark.getId() != -1) {
 			myDatabase.deleteBookmark(bookmark);
 			if (bookmark.IsVisible) {
-				final Book book = getBookById(bookmark.getBookId());
+				final Book book = getBookById(bookmark.BookId);
 				if (book != null) {
-					book.HasBookmark = myDatabase.hasVisibleBookmark(bookmark.getBookId());
+					book.HasBookmark = myDatabase.hasVisibleBookmark(bookmark.BookId);
 					fireBookEvent(BookEvent.BookmarksUpdated, book);
 				}
 			}
 		}
 	}
 
-	public ZLTextPosition getStoredPosition(long bookId) {
+	public List<String> deletedBookmarkUids() {
+		return myDatabase.deletedBookmarkUids();
+	}
+
+	public void purgeBookmarks(List<String> uids) {
+		myDatabase.purgeBookmarks(uids);
+	}
+
+	public ZLTextFixedPosition.WithTimestamp getStoredPosition(long bookId) {
 		return myDatabase.getStoredPosition(bookId);
 	}
 
@@ -715,9 +780,94 @@ public class BookCollection extends AbstractBookCollection {
 		return new ArrayList<HighlightingStyle>(myStyles.values());
 	}
 
-	public void saveHighlightingStyle(HighlightingStyle style) {
-		myStyles.put(style.Id, style);
+	public synchronized void saveHighlightingStyle(HighlightingStyle style) {
 		myDatabase.saveStyle(style);
+		myStyles.clear();
 		fireBookEvent(BookEvent.BookmarkStyleChanged, null);
+	}
+
+	private final static String DEFAULT_STYLE_ID_KEY = "defaultStyle";
+	public int getDefaultHighlightingStyleId() {
+		try {
+			return Integer.parseInt(myDatabase.getOptionValue(DEFAULT_STYLE_ID_KEY));
+		} catch (Throwable t) {
+			return 1;
+		}
+	}
+
+	public void setDefaultHighlightingStyleId(int styleId) {
+		myDatabase.setOptionValue(DEFAULT_STYLE_ID_KEY, String.valueOf(styleId));
+	}
+
+	public String getHash(Book book, boolean force) {
+		final ZLPhysicalFile file = book.File.getPhysicalFile();
+		if (file == null) {
+			return ZERO_HASH;
+		}
+		String hash = null;
+		try {
+			hash = myDatabase.getHash(book.getId(), file.javaFile().lastModified());
+		} catch (BooksDatabase.NotAvailable e) {
+			if (!force) {
+				return null;
+			}
+		}
+		if (hash == null) {
+			final UID uid = BookUtil.createUid(book.File, "SHA-1");
+			if (uid == null) {
+				return null;
+			}
+			hash = uid.Id.toLowerCase();
+			try {
+				myDatabase.setHash(book.getId(), hash);
+			} catch (BooksDatabase.NotAvailable e) {
+				// ignore
+			}
+		}
+		return hash;
+	}
+
+	public void setHash(Book book, String hash) {
+		try {
+			myDatabase.setHash(book.getId(), hash);
+		} catch (BooksDatabase.NotAvailable e) {
+			// ignore
+		}
+	}
+
+	public List<FormatDescriptor> formats() {
+		final List<FormatPlugin> plugins = PluginCollection.Instance().plugins();
+		final List<FormatDescriptor> descriptors = new ArrayList<FormatDescriptor>(plugins.size());
+		for (FormatPlugin p : plugins) {
+			final FormatDescriptor d = new FormatDescriptor();
+			d.Id = p.supportedFileType();
+			d.Name = p.name();
+			d.IsActive = myActiveFormats == null || myActiveFormats.contains(d.Id);
+			descriptors.add(d);
+		}
+		return descriptors;
+	}
+
+	public boolean setActiveFormats(List<String> formatIds) {
+		final Set<String> activeFormats = new HashSet<String>(formatIds);
+		if (activeFormats.equals(myActiveFormats)) {
+			return false;
+		}
+
+		myActiveFormats = activeFormats;
+		myDatabase.setOptionValue("formats", MiscUtil.join(formatIds, "\000"));
+		return true;
+	}
+
+	private boolean isFormatActive(FormatPlugin plugin) {
+		return myActiveFormats == null || myActiveFormats.contains(plugin.supportedFileType());
+	}
+
+	private boolean isBookFormatActive(Book book) {
+		try {
+			return isFormatActive(book.getPlugin());
+		} catch (BookReadingException e) {
+			return false;
+		}
 	}
 }

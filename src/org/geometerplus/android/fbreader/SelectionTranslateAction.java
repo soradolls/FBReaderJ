@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,10 +32,11 @@ public class SelectionTranslateAction extends FBAndroidAction {
 		final FBView fbview = Reader.getTextView();
 		DictionaryUtil.openTextInDictionary(
 			BaseActivity,
-			fbview.getSelectedText(),
+			fbview.getSelectedSnippet().getText(),
 			fbview.getCountOfSelectedWords() == 1,
 			fbview.getSelectionStartY(),
-			fbview.getSelectionEndY()
+			fbview.getSelectionEndY(),
+			fbview.getSelectionSoul()
 		);
 		fbview.clearSelection();
 	}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,17 +48,18 @@ public final class ZLAndroidLibrary extends ZLibrary {
 	public final ZLBooleanOption ShowStatusBarOption = new ZLBooleanOption("LookNFeel", "ShowStatusBar", false);
 	public final ZLBooleanOption OldShowActionBarOption = new ZLBooleanOption("LookNFeel", "ShowActionBar", true);
 	public final ZLBooleanOption ShowActionBarOption = new ZLBooleanOption("LookNFeel", "ShowActionBarNew", false);
-	public final ZLIntegerOption ScreenHintStageOption = new ZLIntegerOption("LookNFeel", "ScreenHintStage", 0);
+	public final ZLBooleanOption EnableFullscreenModeOption = new ZLBooleanOption("LookNFeel", "FullscreenMode", true);
+	public final ZLBooleanOption DisableButtonLightsOption = new ZLBooleanOption("LookNFeel", "DisableButtonLights", !DeviceType.Instance().hasButtonLightsBug());
 	{
 		ShowStatusBarOption.setSpecialName("statusBar");
 		OldShowActionBarOption.setSpecialName("actionBar");
 		ShowActionBarOption.setSpecialName("actionBarNew");
+		EnableFullscreenModeOption.setSpecialName("enableFullscreen");
+		DisableButtonLightsOption.setSpecialName("disableButtonLights");
 	}
 	public final ZLIntegerRangeOption BatteryLevelToTurnScreenOffOption = new ZLIntegerRangeOption("LookNFeel", "BatteryLevelToTurnScreenOff", 0, 100, 50);
 	public final ZLBooleanOption DontTurnScreenOffDuringChargingOption = new ZLBooleanOption("LookNFeel", "DontTurnScreenOffDuringCharging", true);
 	public final ZLIntegerRangeOption ScreenBrightnessLevelOption = new ZLIntegerRangeOption("LookNFeel", "ScreenBrightnessLevel", 0, 100, 0);
-	public final ZLBooleanOption EnableFullscreenModeOption = new ZLBooleanOption("LookNFeel", "FullscreenMode", true);
-	public final ZLBooleanOption DisableButtonLightsOption = new ZLBooleanOption("LookNFeel", "DisableButtonLights", !DeviceType.Instance().hasButtonLightsBug());
 
 	private FBReader myActivity;
 	private final Application myApplication;
@@ -69,12 +70,6 @@ public final class ZLAndroidLibrary extends ZLibrary {
 
 	public void setActivity(FBReader activity) {
 		myActivity = activity;
-	}
-
-	public void finish() {
-		if (myActivity != null && !myActivity.isFinishing()) {
-			myActivity.finish();
-		}
 	}
 
 	public AssetManager getAssets() {
@@ -257,7 +252,7 @@ public final class ZLAndroidLibrary extends ZLibrary {
 			if (streamStatus() == StreamStatus.OK) {
 				return true;
 			}
-			final String path = getPath();	
+			final String path = getPath();
 			if ("".equals(path)) {
 				return true;
 			}

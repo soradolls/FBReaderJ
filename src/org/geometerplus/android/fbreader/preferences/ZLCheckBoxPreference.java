@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,10 +25,12 @@ import android.preference.CheckBoxPreference;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 public abstract class ZLCheckBoxPreference extends CheckBoxPreference {
-	protected ZLCheckBoxPreference(Context context, ZLResource rootResource, String resourceKey) {
+	protected final ZLResource Resource;
+
+	protected ZLCheckBoxPreference(Context context, ZLResource resource) {
 		super(context);
 
-		ZLResource resource = rootResource.getResource(resourceKey);
+		Resource = resource;
 		setTitle(resource.getValue());
 		setSummaryOn(resource.getResource("summaryOn").getValue());
 		setSummaryOff(resource.getResource("summaryOff").getValue());

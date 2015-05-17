@@ -51,7 +51,7 @@ public class ApiClientImplementation implements ServiceConnection, Api, ApiMetho
 
 	public synchronized void connect() {
 		if (myInterface == null) {
-			myContext.bindService(FBReaderIntents.defaultIntent(FBReaderIntents.Action.API), this, Context.BIND_AUTO_CREATE);
+			myContext.bindService(FBReaderIntents.defaultInternalIntent(FBReaderIntents.Action.API), this, Context.BIND_AUTO_CREATE);
 			myContext.registerReceiver(myEventReceiver, new IntentFilter(FBReaderIntents.Action.API_CALLBACK));
 		}
 	}
@@ -84,6 +84,10 @@ public class ApiClientImplementation implements ServiceConnection, Api, ApiMetho
 
 	public synchronized void onServiceDisconnected(ComponentName name) {
 		myInterface = null;
+	}
+
+	public synchronized boolean isConnected() {
+		return myInterface != null;
 	}
 
 	private synchronized void checkConnection() throws ApiException {

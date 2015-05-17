@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,22 +19,25 @@
 
 package org.geometerplus.fbreader.book;
 
-import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.util.*;
 
 import org.geometerplus.zlibrary.core.filesystem.*;
-import org.geometerplus.zlibrary.core.image.ZLImage;
 import org.geometerplus.zlibrary.core.util.MiscUtil;
 import org.geometerplus.zlibrary.core.util.RationalNumber;
 
 import org.geometerplus.fbreader.bookmodel.BookReadingException;
-import org.geometerplus.fbreader.formats.*;
+import org.geometerplus.fbreader.formats.PluginCollection;
+import org.geometerplus.fbreader.formats.FormatPlugin;
 import org.geometerplus.fbreader.sort.TitledEntity;
 
-public class Book extends TitledEntity {
+public class Book extends TitledEntity<Book> {
 	public static final String FAVORITE_LABEL = "favorite";
 	public static final String READ_LABEL = "read";
+	public static final String SYNCHRONISED_LABEL = "sync-success";
+	public static final String SYNC_FAILURE_LABEL = "sync-failure";
+	public static final String SYNC_DELETED_LABEL = "sync-deleted";
+	public static final String SYNC_TOSYNC_LABEL = "sync-tosync";
 
 	public final ZLFile File;
 
@@ -53,9 +56,6 @@ public class Book extends TitledEntity {
 
 	private volatile boolean myIsSaved;
 
-	private static final WeakReference<ZLImage> NULL_IMAGE = new WeakReference<ZLImage>(null);
-	private WeakReference<ZLImage> myCover;
-
 	Book(long id, ZLFile file, String title, String encoding, String language) {
 		super(title);
 		if (file == null) {
@@ -68,15 +68,14 @@ public class Book extends TitledEntity {
 		myIsSaved = true;
 	}
 
-	Book(ZLFile file) throws BookReadingException {
+	Book(ZLFile file, FormatPlugin plugin) throws BookReadingException {
 		super(null);
 		if (file == null) {
 			throw new IllegalArgumentException("Creating book with no file");
 		}
 		myId = -1;
-		final FormatPlugin plugin = getPlugin(file);
 		File = plugin.realBookFile(file);
-		readMetaInfo(plugin);
+		readMetainfo(plugin);
 		myIsSaved = false;
 	}
 
@@ -157,29 +156,25 @@ public class Book extends TitledEntity {
 
 	public void reloadInfoFromFile() {
 		try {
-			readMetaInfo();
+			readMetainfo(getPlugin());
 		} catch (BookReadingException e) {
 			// ignore
 		}
 	}
 
-	private static FormatPlugin getPlugin(ZLFile file) throws BookReadingException {
-		final FormatPlugin plugin = PluginCollection.Instance().getPlugin(file);
+	public FormatPlugin getPlugin() throws BookReadingException {
+		final FormatPlugin plugin = PluginCollection.Instance().getPlugin(File);
 		if (plugin == null) {
-			throw new BookReadingException("pluginNotFound", file);
+			throw new BookReadingException("pluginNotFound", File);
 		}
 		return plugin;
 	}
 
-	public FormatPlugin getPlugin() throws BookReadingException {
-		return getPlugin(File);
+	void readMetainfo() throws BookReadingException {
+		readMetainfo(getPlugin());
 	}
 
-	void readMetaInfo() throws BookReadingException {
-		readMetaInfo(getPlugin());
-	}
-
-	private void readMetaInfo(FormatPlugin plugin) throws BookReadingException {
+	void readMetainfo(FormatPlugin plugin) throws BookReadingException {
 		myEncoding = null;
 		myLanguage = null;
 		setTitle(null);
@@ -190,7 +185,7 @@ public class Book extends TitledEntity {
 
 		myIsSaved = false;
 
-		plugin.readMetaInfo(this);
+		plugin.readMetainfo(this);
 		if (myUids == null || myUids.isEmpty()) {
 			plugin.readUids(this);
 		}
@@ -213,11 +208,8 @@ public class Book extends TitledEntity {
 		myIsSaved = true;
 		if (myUids == null || myUids.isEmpty()) {
 			try {
-				final FormatPlugin plugin = getPlugin();
-				if (plugin != null) {
-					plugin.readUids(this);
-					save(database, false);
-				}
+				getPlugin().readUids(this);
+				save(database, false);
 			} catch (BookReadingException e) {
 			}
 		}
@@ -260,14 +252,15 @@ public class Book extends TitledEntity {
 	}
 
 	public void addAuthor(String name, String sortKey) {
-		String strippedName = name;
-		strippedName.trim();
+		if (name == null) {
+			return;
+		}
+		String strippedName = name.trim();
 		if (strippedName.length() == 0) {
 			return;
 		}
 
-		String strippedKey = sortKey;
-		strippedKey.trim();
+		String strippedKey = sortKey != null ? sortKey.trim() : "";
 		if (strippedKey.length() == 0) {
 			int index = strippedName.lastIndexOf(' ');
 			if (index == -1) {
@@ -290,6 +283,13 @@ public class Book extends TitledEntity {
 
 	@Override
 	public void setTitle(String title) {
+		if (title == null) {
+			return;
+		}
+		title = title.trim();
+		if (title.length() == 0) {
+			return;
+		}
 		if (!getTitle().equals(title)) {
 			super.setTitle(title);
 			myIsSaved = false;
@@ -503,6 +503,7 @@ public class Book extends TitledEntity {
 			return false;
 		}
 
+		final boolean[] result = new boolean[] { true };
 		database.executeAsTransaction(new Runnable() {
 			public void run() {
 				if (myId >= 0) {
@@ -510,11 +511,16 @@ public class Book extends TitledEntity {
 					database.updateBookInfo(myId, fileInfos.getId(File), myEncoding, myLanguage, getTitle());
 				} else {
 					myId = database.insertBookInfo(File, myEncoding, myLanguage, getTitle());
-					if (myId != -1 && myVisitedHyperlinks != null) {
+					if (myId == -1) {
+						result[0] = false;
+						return;
+					}
+					if (myVisitedHyperlinks != null) {
 						for (String linkId : myVisitedHyperlinks) {
 							database.addVisitedHyperlink(myId, linkId);
 						}
 					}
+					database.addBookHistoryEvent(myId, BooksDatabase.HistoryEvent.Added);
 				}
 
 				long index = 0;
@@ -548,8 +554,12 @@ public class Book extends TitledEntity {
 			}
 		});
 
-		myIsSaved = true;
-		return true;
+		if (result[0]) {
+			myIsSaved = true;
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private Set<String> myVisitedHyperlinks;
@@ -575,25 +585,6 @@ public class Book extends TitledEntity {
 				database.addVisitedHyperlink(myId, linkId);
 			}
 		}
-	}
-
-	synchronized ZLImage getCover() {
-		if (myCover == NULL_IMAGE) {
-			return null;
-		} else if (myCover != null) {
-			final ZLImage image = myCover.get();
-			if (image != null) {
-				return image;
-			}
-		}
-		ZLImage image = null;
-		try {
-			image = getPlugin().readCover(File);
-		} catch (BookReadingException e) {
-			// ignore
-		}
-		myCover = image != null ? new WeakReference<ZLImage>(image) : NULL_IMAGE;
-		return image;
 	}
 
 	@Override

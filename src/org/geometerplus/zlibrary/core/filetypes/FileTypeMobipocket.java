@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2012-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package org.geometerplus.zlibrary.core.filetypes;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
@@ -26,7 +27,7 @@ import org.geometerplus.zlibrary.core.util.MimeType;
 
 class FileTypeMobipocket extends FileTypePalm {
 	FileTypeMobipocket() {
-		super("Mobipocket", "BOOKMOBI");
+		super("mobi", "BOOKMOBI");
 	}
 
 	@Override
@@ -34,10 +35,9 @@ class FileTypeMobipocket extends FileTypePalm {
 		if (super.acceptsFile(file)) {
 			return true;
 		}
-		final String extension = file.getExtension();
 		return
-			("mobi".equalsIgnoreCase(extension) || "azw3".equalsIgnoreCase(extension)) && 
-			"BOOKMOBI".equals(palmFileType(file));
+			Arrays.asList("mobi", "azw", "azw3").contains(file.getExtension().toLowerCase())
+			&& "BOOKMOBI".equals(palmFileType(file));
 	}
 
 	@Override

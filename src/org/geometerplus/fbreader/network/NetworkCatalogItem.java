@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,23 +22,13 @@ package org.geometerplus.fbreader.network;
 import java.util.*;
 
 import org.geometerplus.zlibrary.core.util.ZLBoolean3;
-import org.geometerplus.zlibrary.core.network.ZLNetworkManager;
-import org.geometerplus.zlibrary.core.network.ZLNetworkRequest;
-import org.geometerplus.zlibrary.core.network.ZLNetworkException;
+import org.geometerplus.zlibrary.core.network.*;
 
 import org.geometerplus.fbreader.network.authentication.NetworkAuthenticationManager;
 import org.geometerplus.fbreader.network.urlInfo.UrlInfoCollection;
 import org.geometerplus.fbreader.network.tree.NetworkItemsLoader;
 
 public abstract class NetworkCatalogItem extends NetworkItem {
-	public static class AuthorisationFailed extends Exception {
-		public final String URL;
-
-		public AuthorisationFailed(String url) {
-			URL = url;
-		}
-	}
-
 	// bit mask for flags parameter
 	public static final int FLAG_SHOW_AUTHOR                              = 1 << 0;
 	public static final int FLAG_GROUP_BY_AUTHOR                          = 1 << 1;
@@ -90,7 +80,7 @@ public abstract class NetworkCatalogItem extends NetworkItem {
 
 	public abstract boolean canBeOpened();
 
-	public abstract void loadChildren(NetworkItemsLoader loader) throws ZLNetworkException, AuthorisationFailed;
+	public abstract void loadChildren(NetworkItemsLoader loader) throws ZLNetworkException;
 
 	public boolean supportsResumeLoading() {
 		return false;
@@ -122,22 +112,19 @@ public abstract class NetworkCatalogItem extends NetworkItem {
 				return ZLBoolean3.B3_FALSE;
 			case ALWAYS:
 				return ZLBoolean3.B3_TRUE;
+			case HAS_BOOKS:
+				if (Link.getBasketItem() != null && Link.getBasketItem().bookIds().size() > 0) {
+					return ZLBoolean3.B3_TRUE;
+				}
+				// go through!
 			case SIGNED_IN:
 				if (mgr == null) {
 					return ZLBoolean3.B3_FALSE;
 				}
 				try {
-					return mgr.isAuthorised(false) ?
-							ZLBoolean3.B3_TRUE : ZLBoolean3.B3_UNDEFINED;
+					return mgr.isAuthorised(false) ?  ZLBoolean3.B3_TRUE : ZLBoolean3.B3_UNDEFINED;
 				} catch (ZLNetworkException e) {
 					return ZLBoolean3.B3_UNDEFINED;
-				}
-			case HAS_BOOKS:
-				if ((Link.getBasketItem() != null && Link.getBasketItem().bookIds().size() > 0) ||
-					(mgr != null && mgr.purchasedBooks().size() > 0)) {
-					return ZLBoolean3.B3_TRUE;
-				} else {
-					return ZLBoolean3.B3_FALSE;
 				}
 		}
 	}
@@ -155,7 +142,7 @@ public abstract class NetworkCatalogItem extends NetworkItem {
 	 */
 	protected final void doLoadChildren(NetworkOperationData data, ZLNetworkRequest networkRequest) throws ZLNetworkException {
 		if (networkRequest != null) {
-			ZLNetworkManager.Instance().perform(networkRequest);
+			data.Loader.NetworkContext.perform(networkRequest);
 			data.Loader.confirmInterruption();
 		}
 	}

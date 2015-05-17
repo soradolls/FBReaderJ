@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,7 +42,7 @@ public abstract class BasketItem extends NetworkCatalogItem {
 			Accessibility.ALWAYS,
 			FLAGS_DEFAULT & ~FLAGS_GROUP
 		);
-		myBooksInBasketOption = new ZLStringListOption(Link.getSiteName(), "Basket", Collections.<String>emptyList(), ",");
+		myBooksInBasketOption = new ZLStringListOption(Link.getStringId(), "Basket", Collections.<String>emptyList(), ",");
 	}
 
 	public void addItem(NetworkBookItem book) {
@@ -73,7 +73,7 @@ public abstract class BasketItem extends NetworkCatalogItem {
 
 	@Override
 	public String getStringId() {
-		return "@Basket:" + Link.getSiteName();
+		return "@Basket:" + Link.getStringId();
 	}
 
 	public long getGeneration() {
@@ -147,7 +147,7 @@ public abstract class BasketItem extends NetworkCatalogItem {
 				if (info == null) {
 					return null;
 				}
-				if (b.getStatus() == NetworkBookItem.Status.CanBePurchased) {
+				if (b.getStatus(null) == NetworkBookItem.Status.CanBePurchased) {
 					if (info.Price == null) {
 						return null;
 					}

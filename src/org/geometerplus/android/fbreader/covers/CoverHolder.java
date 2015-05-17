@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import java.util.concurrent.Future;
 import android.widget.ImageView;
 import android.graphics.Bitmap;
 
-import org.geometerplus.zlibrary.core.image.ZLLoadableImage;
+import org.geometerplus.zlibrary.core.image.ZLImageProxy;
 
 import org.geometerplus.fbreader.tree.FBTree;
 
@@ -58,10 +58,10 @@ class CoverHolder {
 	}
 
 	class CoverSyncRunnable implements Runnable {
-		private final ZLLoadableImage myImage;
+		private final ZLImageProxy myImage;
 		private final FBTree.Key myKey;
 
-		CoverSyncRunnable(ZLLoadableImage image) {
+		CoverSyncRunnable(ZLImageProxy image) {
 			myImage = image;
 			synchronized (CoverHolder.this) {
 				myKey = Key;
@@ -101,10 +101,10 @@ class CoverHolder {
 	}
 
 	class CoverBitmapRunnable implements Runnable {
-		private final ZLLoadableImage myImage;
+		private final ZLImageProxy myImage;
 		private final FBTree.Key myKey;
 
-		CoverBitmapRunnable(ZLLoadableImage image) {
+		CoverBitmapRunnable(ZLImageProxy image) {
 			myImage = image;
 			synchronized (CoverHolder.this) {
 				myKey = Key;

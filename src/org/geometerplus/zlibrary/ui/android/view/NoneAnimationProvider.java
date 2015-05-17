@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,5 +76,10 @@ class NoneAnimationProvider extends AnimationProvider {
 				return myStartY < y ? ZLView.PageIndex.next : ZLView.PageIndex.previous;
 		}
 		return ZLView.PageIndex.current;
+	}
+
+	@Override
+	protected void drawFooterBitmap(Canvas canvas, Bitmap footerBitmap, int voffset) {
+		canvas.drawBitmap(footerBitmap, 0, voffset, myPaint);
 	}
 }

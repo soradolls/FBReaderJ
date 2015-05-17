@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,9 +41,9 @@ public abstract class OPDSNetworkLink extends AbstractNetworkLink {
 	private final Map<String,String> myExtraData = new HashMap<String,String>();
 	private NetworkAuthenticationManager myAuthenticationManager;
 
-	OPDSNetworkLink(int id, String siteName, String title, String summary, String language,
+	OPDSNetworkLink(int id, String title, String summary, String language,
 			UrlInfoCollection<UrlInfoWithDate> infos) {
-		super(id, siteName, title, summary, language, infos);
+		super(id, title, summary, language, infos);
 	}
 
 	final void setRelationAliases(Map<RelationAlias,String> relationAliases) {
@@ -82,7 +82,7 @@ public abstract class OPDSNetworkLink extends AbstractNetworkLink {
 		NotChecked
 	*/
 
-	ZLNetworkRequest createNetworkData(String url, MimeType mime, final OPDSCatalogItem.State state) {
+	ZLNetworkRequest createNetworkData(String url, final OPDSCatalogItem.State state) {
 		if (url == null) {
 			return null;
 		}
@@ -90,7 +90,7 @@ public abstract class OPDSNetworkLink extends AbstractNetworkLink {
 		final NetworkCatalogItem catalogItem = state.Loader.getTree().Item;
 		library.startLoading(catalogItem);
 		url = rewriteUrl(url, false);
-		return new ZLNetworkRequest(url, mime, null, false) {
+		return new ZLNetworkRequest.Get(url) {
 			@Override
 			public void handleStream(InputStream inputStream, int length) throws IOException, ZLNetworkException {
 				if (state.Loader.confirmInterruption()) {
@@ -123,18 +123,18 @@ public abstract class OPDSNetworkLink extends AbstractNetworkLink {
 
 	public ZLNetworkRequest simpleSearchRequest(String pattern, NetworkOperationData data) {
 		final UrlInfo info = getUrlInfo(UrlInfo.Type.Search);
-		if (info == null || info.Url == null) {
+		if (info == null || info.Url == null || !MimeType.APP_ATOM_XML.weakEquals(info.Mime)) {
 			return null;
 		}
 		try {
 			pattern = URLEncoder.encode(pattern, "utf-8");
 		} catch (UnsupportedEncodingException e) {
 		}
-		return createNetworkData(info.Url.replace("%s", pattern), info.Mime, (OPDSCatalogItem.State)data);
+		return createNetworkData(info.Url.replace("%s", pattern), (OPDSCatalogItem.State)data);
 	}
 
 	public ZLNetworkRequest resume(NetworkOperationData data) {
-		return createNetworkData(data.ResumeURI, MimeType.APP_ATOM_XML, (OPDSCatalogItem.State)data);
+		return createNetworkData(data.ResumeURI, (OPDSCatalogItem.State)data);
 	}
 
 	public NetworkCatalogItem libraryItem() {
@@ -150,7 +150,12 @@ public abstract class OPDSNetworkLink extends AbstractNetworkLink {
 			OPDSCatalogItem.Accessibility.ALWAYS,
 			OPDSCatalogItem.FLAGS_DEFAULT | OPDSCatalogItem.FLAG_ADD_SEARCH_ITEM,
 			myExtraData
-		);
+		) {
+			@Override
+			public String getSummary() {
+				return OPDSNetworkLink.this.getSummary();
+			}
+		};
 	}
 
 	public NetworkAuthenticationManager authenticationManager() {

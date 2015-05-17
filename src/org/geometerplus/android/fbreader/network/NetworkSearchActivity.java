@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,11 @@ import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.NetworkTree;
 import org.geometerplus.fbreader.network.tree.SearchCatalogTree;
 
+import org.geometerplus.android.fbreader.network.auth.ActivityNetworkContext;
+
 public class NetworkSearchActivity extends Activity {
+	private final ActivityNetworkContext myNetworkContext = new ActivityNetworkContext(this);
+
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
@@ -50,7 +54,7 @@ public class NetworkSearchActivity extends Activity {
 					final String pattern = intent.getStringExtra(SearchManager.QUERY);
 					final MimeType mime = searchTree.getMimeType();
 					if (MimeType.APP_ATOM_XML.weakEquals(mime)) {
-						searchTree.startItemsLoader(pattern);
+						searchTree.startItemsLoader(myNetworkContext, pattern);
 					} else if (MimeType.TEXT_HTML.weakEquals(mime)) {
 						Util.openInBrowser(this, searchTree.getUrl(pattern));
 					}

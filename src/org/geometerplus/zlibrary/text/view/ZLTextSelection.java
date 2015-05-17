@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,9 +42,12 @@ class ZLTextSelection extends ZLTextHighlighting {
 
 	private Scroller myScroller;
 
-
 	ZLTextSelection(ZLTextView view) {
 		myView = view;
+	}
+
+	ZLTextRegion.Soul getSoul() {
+		return myLeftMostRegionSoul != null && myLeftMostRegionSoul.equals(myRightMostRegionSoul) ? myLeftMostRegionSoul : null;
 	}
 
 	@Override
@@ -82,7 +85,7 @@ class ZLTextSelection extends ZLTextHighlighting {
 		clear();
 
 		final ZLTextRegion region = myView.findRegion(
-			x, y, ZLTextView.MAX_SELECTION_DISTANCE, ZLTextRegion.AnyRegionFilter
+			x, y, myView.maxSelectionDistance(), ZLTextRegion.AnyRegionFilter
 		);
 		if (region == null) {
 			return false;
@@ -137,7 +140,7 @@ class ZLTextSelection extends ZLTextHighlighting {
 			myScroller.setXY(x, y);
 		}
 
-		ZLTextRegion region = myView.findRegion(x, y, ZLTextView.MAX_SELECTION_DISTANCE, ZLTextRegion.AnyRegionFilter);
+		ZLTextRegion region = myView.findRegion(x, y, myView.maxSelectionDistance(), ZLTextRegion.AnyRegionFilter);
 		if (region == null && myScroller != null) {
 			region = myView.findRegion(x, y, ZLTextRegion.AnyRegionFilter);
 		}
@@ -179,13 +182,6 @@ class ZLTextSelection extends ZLTextHighlighting {
 		}
 	}
 
-	boolean isAreaSelected(ZLTextElementArea area) {
-		return
-			!isEmpty()
-			&& myLeftMostRegionSoul.compareTo(area) <= 0
-			&& myRightMostRegionSoul.compareTo(area) >= 0;
-	}
-
 	@Override
 	public ZLTextPosition getStartPosition() {
 		if (isEmpty()) {
@@ -203,8 +199,7 @@ class ZLTextSelection extends ZLTextHighlighting {
 		if (isEmpty()) {
 			return null;
 		}
-		final ZLTextParagraphCursor cursor =
-			ZLTextParagraphCursor.cursor(myView.getModel(), myRightMostRegionSoul.ParagraphIndex);
+		final ZLTextParagraphCursor cursor = myView.cursor(myRightMostRegionSoul.ParagraphIndex);
 		final ZLTextElement element = cursor.getElement(myRightMostRegionSoul.EndElementIndex);
 		return new ZLTextFixedPosition(
 			myRightMostRegionSoul.ParagraphIndex,
@@ -274,6 +269,11 @@ class ZLTextSelection extends ZLTextHighlighting {
 	@Override
 	public ZLColor getBackgroundColor() {
 		return myView.getSelectionBackgroundColor();
+	}
+
+	@Override
+	public ZLColor getForegroundColor() {
+		return myView.getSelectionForegroundColor();
 	}
 
 	private class Scroller implements Runnable {

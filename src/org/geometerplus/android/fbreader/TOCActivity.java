@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,11 +52,6 @@ public class TOCActivity extends ListActivity {
 		final FBReaderApp fbreader = (FBReaderApp)ZLApplication.Instance();
 		final TOCTree root = fbreader.Model.TOCTree;
 		myAdapter = new TOCAdapter(root);
-		final ZLTextWordCursor cursor = fbreader.BookTextView.getStartCursor();
-		int index = cursor.getParagraphIndex();
-		if (cursor.isEndOfParagraph()) {
-			++index;
-		}
 		TOCTree treeToSelect = fbreader.getCurrentTOCElement();
 		myAdapter.selectItem(treeToSelect);
 		mySelectedItem = treeToSelect;

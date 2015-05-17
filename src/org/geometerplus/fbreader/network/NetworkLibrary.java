@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,24 @@
 
 package org.geometerplus.fbreader.network;
 
-import java.util.*;
+import java.io.File;
 import java.lang.ref.WeakReference;
+import java.util.*;
 
-import org.geometerplus.zlibrary.core.library.ZLibrary;
-import org.geometerplus.zlibrary.core.util.ZLNetworkUtil;
-import org.geometerplus.zlibrary.core.util.MimeType;
 import org.geometerplus.zlibrary.core.image.ZLImage;
+import org.geometerplus.zlibrary.core.library.ZLibrary;
+import org.geometerplus.zlibrary.core.network.*;
 import org.geometerplus.zlibrary.core.options.*;
-import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
+import org.geometerplus.zlibrary.core.util.MimeType;
+import org.geometerplus.zlibrary.core.util.ZLNetworkUtil;
 
+import org.geometerplus.fbreader.Paths;
+import org.geometerplus.fbreader.fbreader.options.SyncOptions;
 import org.geometerplus.fbreader.tree.FBTree;
-import org.geometerplus.fbreader.network.tree.*;
+import org.geometerplus.fbreader.network.opds.OPDSSyncNetworkLink;
 import org.geometerplus.fbreader.network.opds.OPDSLinkReader;
+import org.geometerplus.fbreader.network.tree.*;
 import org.geometerplus.fbreader.network.urlInfo.UrlInfo;
 
 public class NetworkLibrary {
@@ -88,7 +92,7 @@ public class NetworkLibrary {
 	private final Map<String,WeakReference<ZLImage>> myImageMap =
 		Collections.synchronizedMap(new HashMap<String,WeakReference<ZLImage>>());
 
-	public List<String> linkIds() {
+	public List<String> allIds() {
 		final ArrayList<String> ids = new ArrayList<String>();
 		synchronized (myLinks) {
 			for (INetworkLink link : myLinks) {
@@ -119,7 +123,11 @@ public class NetworkLibrary {
 		if (link == null) {
 			return;
 		}
-		final String id = link.getUrl(UrlInfo.Type.Catalog);
+		setLinkActive(link.getUrl(UrlInfo.Type.Catalog), active);
+		myChildrenAreInvalid = true;
+	}
+
+	public void setLinkActive(String id, boolean active) {
 		if (id == null) {
 			return;
 		}
@@ -141,13 +149,13 @@ public class NetworkLibrary {
 		invalidateChildren();
 	}
 
-	public void setActiveIds(Collection<String> ids) {
-		activeIdsOption().setValue(new ArrayList<String>(ids));
+	public void setActiveIds(List<String> ids) {
+		activeIdsOption().setValue(ids);
 		invalidateChildren();
 	}
 
 	List<INetworkLink> activeLinks() {
-		final Map<String,INetworkLink> linksById = new TreeMap<String,INetworkLink>(); 
+		final Map<String,INetworkLink> linksById = new TreeMap<String,INetworkLink>();
 		synchronized (myLinks) {
 			for (INetworkLink link : myLinks) {
 				final String id = link.getUrl(UrlInfo.Type.Catalog);
@@ -158,6 +166,11 @@ public class NetworkLibrary {
 		}
 
 		final List<INetworkLink> result = new LinkedList<INetworkLink>();
+		INetworkLink syncLink = linksById.get(SyncOptions.DOMAIN);
+		if (syncLink == null) {
+			syncLink = new OPDSSyncNetworkLink();
+		}
+		result.add(syncLink);
 		for (String id : activeIds()) {
 			final INetworkLink link = linksById.get(id);
 			if (link != null) {
@@ -207,10 +220,10 @@ public class NetworkLibrary {
 		return null;
 	}
 
-	public INetworkLink getLinkBySiteName(String siteName) {
+	public INetworkLink getLinkByStringId(String stringId) {
 		synchronized (myLinks) {
 			for (INetworkLink link : myLinks) {
-				if (siteName.equals(link.getSiteName())) {
+				if (stringId.equals(link.getStringId())) {
 					return link;
 				}
 			}
@@ -232,30 +245,53 @@ public class NetworkLibrary {
 	private NetworkLibrary() {
 	}
 
+	public void clearExpiredCache(int hours) {
+		final Queue<File> toVisit = new LinkedList<File>();
+		final Set<File> processedDirs = new HashSet<File>();
+		final File root = new File(Paths.networkCacheDirectory());
+		toVisit.add(root);
+		processedDirs.add(root);
+
+		while (!toVisit.isEmpty()) {
+			final File[] children = toVisit.remove().listFiles();
+			if (children == null) {
+				continue;
+			}
+			for (File child : children) {
+				if (child.isDirectory()) {
+					if (!processedDirs.contains(child)) {
+						toVisit.add(child);
+						processedDirs.add(child);
+					}
+				} else {
+					final long age = System.currentTimeMillis() - child.lastModified();
+					if (age / 1000 / 60 / 60 >= hours) {
+						child.delete();
+					}
+				}
+			}
+		}
+	}
+
 	public boolean isInitialized() {
 		return myIsInitialized;
 	}
 
-	public synchronized void initialize() {
+	public synchronized void initialize(ZLNetworkContext nc) throws ZLNetworkException {
 		if (myIsInitialized) {
 			return;
 		}
 
 		try {
-			myLinks.addAll(OPDSLinkReader.loadOPDSLinks(OPDSLinkReader.CacheMode.LOAD));
+			myLinks.addAll(OPDSLinkReader.loadOPDSLinks(nc, OPDSLinkReader.CacheMode.LOAD));
 		} catch (ZLNetworkException e) {
 			removeAllLoadedLinks();
 			fireModelChangedEvent(ChangeListener.Code.InitializationFailed, e.getMessage());
-			return;
+			throw e;
 		}
 
 		final NetworkDatabase db = NetworkDatabase.Instance();
 		if (db != null) {
-			System.err.println("++ LIST LINKS");
-			for (INetworkLink l : db.listLinks()) {
-				System.err.println("LNK: " + l);
-			}
-			System.err.println("-- LIST LINKS");
 			myLinks.addAll(db.listLinks());
 		}
 
@@ -315,10 +351,11 @@ public class NetworkLibrary {
 	}
 
 	private void runBackgroundUpdateInternal(boolean force) throws ZLNetworkException {
+		final ZLNetworkContext quietContext = new QuietNetworkContext();
 		synchronized (myUpdateLock) {
 			final OPDSLinkReader.CacheMode mode =
 				force ? OPDSLinkReader.CacheMode.CLEAR : OPDSLinkReader.CacheMode.UPDATE;
-			final List<INetworkLink> loadedLinks = OPDSLinkReader.loadOPDSLinks(mode);
+			final List<INetworkLink> loadedLinks = OPDSLinkReader.loadOPDSLinks(quietContext, mode);
 			if (!loadedLinks.isEmpty()) {
 				removeAllLoadedLinks();
 				myLinks.addAll(loadedLinks);
@@ -332,7 +369,7 @@ public class NetworkLibrary {
 					final ICustomNetworkLink customLink = (ICustomNetworkLink)link;
 					if (force || customLink.isObsolete(12 * 60 * 60 * 1000)) { // 12 hours
 						try {
-							customLink.reloadInfo(true, true);
+							customLink.reloadInfo(quietContext, true, true);
 							NetworkDatabase.Instance().saveLink(customLink);
 						} catch (Throwable t) {
 							// ignore
@@ -349,7 +386,8 @@ public class NetworkLibrary {
 		final String host = ZLNetworkUtil.hostFromUrl(url).toLowerCase();
 		synchronized (myLinks) {
 			for (INetworkLink link : myLinks) {
-				if (host.contains(link.getSiteName())) {
+				if (link instanceof IPredefinedNetworkLink &&
+					((IPredefinedNetworkLink)link).servesHost(host)) {
 					url = link.rewriteUrl(url, externalUrl);
 				}
 			}
@@ -555,7 +593,16 @@ public class NetworkLibrary {
 	public void addCustomLink(ICustomNetworkLink link) {
 		final int id = link.getId();
 		if (id == ICustomNetworkLink.INVALID_ID) {
-			myLinks.add(link);
+			synchronized (myLinks) {
+				final INetworkLink existing = getLinkByUrl(link.getUrl(UrlInfo.Type.Catalog));
+				if (existing == null) {
+					myLinks.add(link);
+				} else {
+					setLinkActive(existing, true);
+					fireModelChangedEvent(ChangeListener.Code.SomeCode);
+					return;
+				}
+			}
 		} else {
 			synchronized (myLinks) {
 				for (int i = myLinks.size() - 1; i >= 0; --i) {
@@ -569,7 +616,7 @@ public class NetworkLibrary {
 		}
 		NetworkDatabase.Instance().saveLink(link);
 		setLinkActive(link, true);
-		invalidateChildren();
+		fireModelChangedEvent(ChangeListener.Code.SomeCode);
 	}
 
 	public void removeCustomLink(ICustomNetworkLink link) {
@@ -641,7 +688,7 @@ public class NetworkLibrary {
 					return image;
 				}
 			}
-			final ZLImage image = new NetworkImage(url, mimeType);
+			final ZLImage image = new NetworkImage(url);
 			myImageMap.put(url, new WeakReference<ZLImage>(image));
 			return image;
 		}

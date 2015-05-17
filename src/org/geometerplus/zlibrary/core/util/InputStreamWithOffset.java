@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,9 +41,19 @@ public class InputStreamWithOffset extends InputStream {
 		if (shift > 0) {
 			myOffset += (int)shift;
 		}
-		while ((shift < n) && (read() != -1)) {
+		while (shift < n && read() != -1) {
 			++shift;
 		}
+		return shift;
+	}
+
+	// does not call virtual methods
+	protected final long baseSkip(long n) throws IOException {
+		long shift = myDecoratedStream.skip(n);
+		while (shift < n && myDecoratedStream.read() != -1) {
+			++shift;
+		}
+		myOffset += shift;
 		return shift;
 	}
 

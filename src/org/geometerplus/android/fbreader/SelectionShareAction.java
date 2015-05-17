@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,8 +32,8 @@ public class SelectionShareAction extends FBAndroidAction {
 
 	@Override
 	protected void run(Object ... params) {
-		final String text = Reader.getTextView().getSelectedText();
-		final String title = Reader.Model.Book.getTitle();
+		final String text = Reader.getTextView().getSelectedSnippet().getText();
+		final String title = Reader.getCurrentBook().getTitle();
 		Reader.getTextView().clearSelection();
 
 		final Intent intent = new Intent(android.content.Intent.ACTION_SEND);

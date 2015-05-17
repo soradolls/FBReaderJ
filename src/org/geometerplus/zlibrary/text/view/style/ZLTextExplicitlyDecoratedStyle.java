@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,25 +63,53 @@ public class ZLTextExplicitlyDecoratedStyle extends ZLTextDecoratedStyle impleme
 		return allEntries;
 	}
 
+	private ZLTextStyle myTreeParent;
+	private ZLTextStyle computeTreeParent() {
+		if (myEntry.Depth == 0) {
+			return Parent.Parent;
+		}
+		int count = 0;
+		ZLTextStyle p = Parent;
+		for (; p != p.Parent; p = p.Parent) {
+			if (p instanceof ZLTextExplicitlyDecoratedStyle) {
+				if (((ZLTextExplicitlyDecoratedStyle)p).myEntry.Depth != myEntry.Depth) {
+					return p;
+				}
+			} else {
+				if (++count > 1) {
+					return p;
+				}
+			}
+		}
+		return p;
+	}
+	private ZLTextStyle getTreeParent() {
+		if (myTreeParent == null) {
+			myTreeParent = computeTreeParent();
+		}
+		return myTreeParent;
+	}
+
 	@Override
 	protected int getFontSizeInternal(ZLTextMetrics metrics) {
 		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSFontSizeOption.getValue()) {
 			return Parent.getFontSize(metrics);
 		}
 
+		final int baseFontSize = getTreeParent().getFontSize(metrics);
 		if (myEntry.isFeatureSupported(FONT_STYLE_MODIFIER)) {
 			if (myEntry.getFontModifier(FONT_MODIFIER_INHERIT) == ZLBoolean3.B3_TRUE) {
-				return Parent.Parent.getFontSize(metrics);
+				return baseFontSize;
 			}
 			if (myEntry.getFontModifier(FONT_MODIFIER_LARGER) == ZLBoolean3.B3_TRUE) {
-				return Parent.Parent.getFontSize(metrics) * 120 / 100;
+				return baseFontSize * 120 / 100;
 			}
 			if (myEntry.getFontModifier(FONT_MODIFIER_SMALLER) == ZLBoolean3.B3_TRUE) {
-				return Parent.Parent.getFontSize(metrics) * 100 / 120;
+				return baseFontSize * 100 / 120;
 			}
 		}
 		if (myEntry.isFeatureSupported(LENGTH_FONT_SIZE)) {
-			return myEntry.getLength(LENGTH_FONT_SIZE, metrics);
+			return myEntry.getLength(LENGTH_FONT_SIZE, metrics, baseFontSize);
 		}
 		return Parent.getFontSize(metrics);
 	}
@@ -131,34 +159,144 @@ public class ZLTextExplicitlyDecoratedStyle extends ZLTextDecoratedStyle impleme
 		}
 	}
 
-	public int getLeftIndent() {
-		// TODO: implement
-		return Parent.getLeftIndent();
+	@Override
+	public int getLeftMarginInternal(ZLTextMetrics metrics, int fontSize) {
+		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSMarginsOption.getValue()) {
+			return Parent.getLeftMargin(metrics);
+		}
+
+		if (!myEntry.isFeatureSupported(LENGTH_MARGIN_LEFT)) {
+			return Parent.getLeftMargin(metrics);
+		}
+		return getTreeParent().getLeftMargin(metrics) + myEntry.getLength(LENGTH_MARGIN_LEFT, metrics, fontSize);
 	}
-	public int getRightIndent() {
-		// TODO: implement
-		return Parent.getRightIndent();
+	@Override
+	public int getRightMarginInternal(ZLTextMetrics metrics, int fontSize) {
+		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSMarginsOption.getValue()) {
+			return Parent.getRightMargin(metrics);
+		}
+
+		if (!myEntry.isFeatureSupported(LENGTH_MARGIN_RIGHT)) {
+			return Parent.getRightMargin(metrics);
+		}
+		return getTreeParent().getRightMargin(metrics) + myEntry.getLength(LENGTH_MARGIN_RIGHT, metrics, fontSize);
 	}
-	public int getFirstLineIndentDelta() {
-		// TODO: implement
-		return Parent.getFirstLineIndentDelta();
+	@Override
+	public int getLeftPaddingInternal(ZLTextMetrics metrics, int fontSize) {
+		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSMarginsOption.getValue()) {
+			return Parent.getLeftPadding(metrics);
+		}
+
+		if (!myEntry.isFeatureSupported(LENGTH_PADDING_LEFT)) {
+			return Parent.getLeftPadding(metrics);
+		}
+		return getTreeParent().getLeftPadding(metrics) + myEntry.getLength(LENGTH_PADDING_LEFT, metrics, fontSize);
 	}
-	public int getLineSpacePercent() {
+	@Override
+	public int getRightPaddingInternal(ZLTextMetrics metrics, int fontSize) {
+		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSMarginsOption.getValue()) {
+			return Parent.getRightPadding(metrics);
+		}
+
+		if (!myEntry.isFeatureSupported(LENGTH_PADDING_RIGHT)) {
+			return Parent.getRightPadding(metrics);
+		}
+		return getTreeParent().getRightPadding(metrics) + myEntry.getLength(LENGTH_PADDING_RIGHT, metrics, fontSize);
+	}
+	@Override
+	protected int getFirstLineIndentInternal(ZLTextMetrics metrics, int fontSize) {
+		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSMarginsOption.getValue()) {
+			return Parent.getFirstLineIndent(metrics);
+		}
+
+		if (!myEntry.isFeatureSupported(LENGTH_FIRST_LINE_INDENT)) {
+			return Parent.getFirstLineIndent(metrics);
+		}
+		return myEntry.getLength(LENGTH_FIRST_LINE_INDENT, metrics, fontSize);
+	}
+	@Override
+	protected int getLineSpacePercentInternal() {
 		// TODO: implement
 		return Parent.getLineSpacePercent();
 	}
 	@Override
-	protected int getVerticalShiftInternal() {
+	protected int getVerticalAlignInternal(ZLTextMetrics metrics, int fontSize) {
 		// TODO: implement
-		return Parent.getVerticalShift();
+		if (myEntry.isFeatureSupported(LENGTH_VERTICAL_ALIGN)) {
+			return myEntry.getLength(LENGTH_VERTICAL_ALIGN, metrics, fontSize);
+		} else if (myEntry.isFeatureSupported(NON_LENGTH_VERTICAL_ALIGN)) {
+			switch (myEntry.getVerticalAlignCode()) {
+				default:
+					return Parent.getVerticalAlign(metrics);
+				case 0: // sub
+					return ZLTextStyleEntry.compute(
+						new ZLTextStyleEntry.Length((short)-50, ZLTextStyleEntry.SizeUnit.EM_100),
+						metrics, fontSize, LENGTH_VERTICAL_ALIGN
+					);
+				case 1: // super
+					return ZLTextStyleEntry.compute(
+						new ZLTextStyleEntry.Length((short)50, ZLTextStyleEntry.SizeUnit.EM_100),
+						metrics, fontSize, LENGTH_VERTICAL_ALIGN
+					);
+				/*
+				case 2: // top
+					return 0;
+				case 3: // text-top
+					return 0;
+				case 4: // middle
+					return 0;
+				case 5: // bottom
+					return 0;
+				case 6: // text-bottom
+					return 0;
+				case 7: // initial
+					return 0;
+				case 8: // inherit
+					return 0;
+				*/
+			}
+		} else {
+			return Parent.getVerticalAlign(metrics);
+		}
 	}
-	public int getSpaceBefore() {
-		// TODO: implement
-		return Parent.getSpaceBefore();
+	@Override
+	protected boolean isVerticallyAlignedInternal() {
+		if (myEntry.isFeatureSupported(LENGTH_VERTICAL_ALIGN)) {
+			return myEntry.hasNonZeroLength(LENGTH_VERTICAL_ALIGN);
+		} else if (myEntry.isFeatureSupported(NON_LENGTH_VERTICAL_ALIGN)) {
+			switch (myEntry.getVerticalAlignCode()) {
+				default:
+					return false;
+				case 0: // sub
+				case 1: // super
+					return true;
+			}
+		} else {
+			return false;
+		}
 	}
-	public int getSpaceAfter() {
-		// TODO: implement
-		return Parent.getSpaceAfter();
+
+	@Override
+	protected int getSpaceBeforeInternal(ZLTextMetrics metrics, int fontSize) {
+		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSMarginsOption.getValue()) {
+			return Parent.getSpaceBefore(metrics);
+		}
+
+		if (!myEntry.isFeatureSupported(LENGTH_SPACE_BEFORE)) {
+			return Parent.getSpaceBefore(metrics);
+		}
+		return myEntry.getLength(LENGTH_SPACE_BEFORE, metrics, fontSize);
+	}
+	@Override
+	protected int getSpaceAfterInternal(ZLTextMetrics metrics, int fontSize) {
+		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSMarginsOption.getValue()) {
+			return Parent.getSpaceAfter(metrics);
+		}
+
+		if (!myEntry.isFeatureSupported(LENGTH_SPACE_AFTER)) {
+			return Parent.getSpaceAfter(metrics);
+		}
+		return myEntry.getLength(LENGTH_SPACE_AFTER, metrics, fontSize);
 	}
 	public byte getAlignment() {
 		if (myEntry instanceof ZLTextCSSStyleEntry && !BaseStyle.UseCSSTextAlignmentOption.getValue()) {

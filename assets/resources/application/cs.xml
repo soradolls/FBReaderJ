@@ -23,8 +23,26 @@
 		<node name="favorites" value="Oblíbené">
 			<node name="summary" value="Mé oblíbené knihy"/>
 		</node>
+		<node name="bookshelfView" value="Zobrazení Poličky knih">
+			<node name="summary" value="Moderní (styl Material designu) zobrazení knihovny"/>
+		</node>
 		<node name="found" value="Nalezené">
 			<node name="summary" value="Hledat výsledky pro: %s"/>
+		</node>
+		<node name="sync" value="Synchronizace">
+			<node name="summary" value="Knihy podle stavu synchronizace"/>
+			<node name="sync-success" value="Synchronizováno">
+				<node name="summary" value="Knihy byly nahrány na server"/>
+			</node>
+			<node name="sync-failure" value="Synchronizace selhala">
+				<node name="summary" value="Knihy nebyly nahrány na server kvůli některým problémům"/>
+			</node>
+			<node name="sync-deleted" value="Odstraněno ze serveru">
+				<node name="summary" value="Knihy již nejsou dostupné ze serveru"/>
+			</node>
+			<node name="sync-tosync" value="Ještě nesynchronizováno">
+				<node name="summary" value="Knihy k nahrání na server"/>
+			</node>
 		</node>
 		<node name="fileTree" value="Strom souborů">
 			<node name="summary" value="Procházet systém souborů"/>
@@ -38,10 +56,8 @@
 		<node name="fileTreeLibrary" value="Knihovna FBReaderu">
 			<node name="summary" value="Adresář s knihami pro FBReader"/>
 		</node>
-		<node name="menu">
-			<node name="localSearch" value="Místní hledání"/>
-			<node name="rescan" value="Prohledat znovu"/>
-		</node>
+		<node name="localSearch" value="Místní hledání"/>
+		<node name="rescan" value="Prohledat znovu"/>
 		<node name="openBook" value="Otevřít knihu"/>
 		<node name="showBookInfo" value="Informace o knize"/>
 		<node name="shareBook" value="Sdílet knihu"/>
@@ -51,8 +67,14 @@
 		<node name="removeFromRecents" value="Odebrat ze seznamu posledních"/>
 		<node name="markAsRead" value="Označit jako přečtené"/>
 		<node name="markAsUnread" value="Označit jako nepřečtené"/>
+		<node name="deleteAll" value="Odstranit vše"/>
+		<node name="uploadAgain" value="Znovu nahrát"/>
+		<node name="tryAgain" value="Zkusit znovu"/>
 	</node>
 	<node name="networkLibrary" value="Síťová knihovna FBReaderu">
+		<node name="sync" value="Síťová knihovna FBReaderu®">
+			<node name="summary" value="Můj osobní katalog"/>
+		</node>
 		<node name="byAuthor" value="Podle autora">
 			<node name="summary" value="Knihy seřazeny podle autora"/>
 		</node>
@@ -95,8 +117,10 @@
 		<node name="openInBrowser" value="Otevřít v prohlížeči"/>
 		<node name="stopLoading" value="Zastavit načítání"/>
 		<node name="stopSearching" value="Zastavit vyhledávání"/>
-		<node name="signIn" value="Přihlásit"/>
-		<node name="signOut" value="Odhlásit (%s)"/>
+		<node name="signIn" value="Přihlásit se"/>
+		<node name="signOut" value="Odhlásit se (%s)"/>
+		<node name="signUp" value="Zaregistrovat se"/>
+		<node name="quickBuy" value="Rychlý nákup"/>
 		<node name="topup" value="Doplnit účet (aktuálně: %s)"/>
 		<node name="topupTitle" value="Doplnit účet"/>
 		<node name="topupViaBrowser" value="Otevřít stránku v prohlížeči"/>
@@ -206,11 +230,11 @@
 		</node>
 	</node>
 	<node name="bookDownloader">
-		<node name="tickerSuccess" value="Kniha byla stažena"/>
-		<node name="tickerError" value="Chyba stahování knihy"/>
-		<node name="contentSuccess" value="Stahování dokončeno"/>
-		<node name="contentError" value="Stahování selhalo"/>
-		<node name="downloadingStarted" value="Stahování knihy bylo zahájeno"/>
+		<node name="downloadCompleteTicker" value="Kniha byla stažena"/>
+		<node name="downloadFailedTicker" value="Chyba stahování knihy"/>
+		<node name="downloadComplete" value="Stahování dokončeno"/>
+		<node name="downloadFailed" value="Stahování selhalo"/>
+		<node name="downloadStarted" value="Stahování knihy bylo zahájeno"/>
 		<node name="alreadyDownloading" value="Kniha se již stahuje"/>
 		<node name="cannotCreateDirectory" value="Nelze vytvořit adresář %s"/>
 		<node name="cannotCreateFile" value="Nelze vytvořit soubor %s"/>
@@ -223,14 +247,22 @@
 	<node name="bookmarksView">
 		<node name="thisBook" value="Tato kniha"/>
 		<node name="allBooks" value="Všechny knihy"/>
-		<node name="found" value="Nalezené"/>
 		<node name="new" value="Nová záložka"/>
-		<node name="open" value="Otevřít"/>
-		<node name="edit" value="Upravit záložku"/>
-		<node name="delete" value="Odstranit záložku"/>
-		<node name="menu">
-			<node name="search" value="Hledat"/>
-		</node>
+		<node name="openBook" value="Otevřít"/>
+		<node name="editBookmark" value="Upravit záložku"/>
+		<node name="deleteBookmark" value="Odstranit záložku"/>
+		<node name="search" value="Hledat"/>
+	</node>
+	<node name="editBookmark">
+		<node name="text" value="Text"/>
+		<node name="style" value="Styl"/>
+		<node name="delete" value="Odstranit"/>
+		<node name="deleteBookmark" value="Odstranit záložku"/>
+		<node name="saveText" value="Uložit text"/>
+		<node name="editStyle" value="Upravit styl…"/>
+	</node>
+	<node name="footnoteToast">
+		<node name="more" value="Více"/>
 	</node>
 	<node name="cancelMenu">
 		<node name="library" value="Otevřít knihovnu"/>
@@ -242,10 +274,6 @@
 		<node name="close" value="Zavřít FBReader"/>
 	</node>
 	<node name="style" value="Styl %s"/>
-	<node name="highlightingStyleMenu">
-		<node name="editStyle" value="Upravit styl…"/>
-		<node name="deleteBookmark" value="Odstranit záložku"/>
-	</node>
 	<node name="editStyle">
 		<node name="name" value="Název stylu"/>
 		<node name="invisible" value="Skrytý">
@@ -259,13 +287,13 @@
 		<node name="openInDictionary" value="Otevřít ve slovníku"/>
 		<node name="quoteFrom" value="Citovat z %s"/>
 		<node name="textInBuffer" value="Zkopírováno do schránky:&#10;%s"/>
-		<node name="bookmarkCreated" value="Vytvořena záložka:&#10;%s"/>
 		<node name="clearSelection" value="Vymazat"/>
 	</node>
 	<node name="sharing">
-		<node name="sharedFrom" value="Sdíleno z &lt;a href=&quot;http://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
+		<node name="sharedFrom" value="Sdíleno z &lt;a href=&quot;https://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
 	</node>
 	<node name="menu">
+		<node name="openStartScreen" value="Úvodní obrazovka"/>
 		<node name="preferences" value="Nastavení"/>
 		<node name="bookInfo" value="Informace o knize"/>
 		<node name="library" value="Knihovna"/>
@@ -313,6 +341,32 @@
 		<node name="series" value="Série"/>
 	</node>
 	<node name="Preferences">
+		<node name="sync" value="Synchronizace">
+			<node name="summary" value="Nastavení síťové knihovny"/>
+			<node name="site" value="Přečtěte si více o synchronizaci">
+				<node name="url" value="https://books.fbreader.org/help.html"/>
+			</node>
+			<node name="enable" value="Povolit synchronizaci">
+				<node name="summaryOn" value="Synchronizovat mou knihovnu se serverem síťové knihovny FBReaderu"/>
+				<node name="summaryOnWithAccount" value="Synchronizovat mou knihovnu jako %s"/>
+				<node name="summaryOff" value="Nesynchronizovat mou knihovnu se serverem síťové knihovny FBReaderu"/>
+			</node>
+			<node name="values">
+				<node name="always" value="Vždy"/>
+				<node name="viaWifi" value="Když je zařízení připojeno přes Wi-Fi"/>
+				<node name="never" value="Nikdy"/>
+			</node>
+			<node name="uploadAllBooks" value="Nahrát všechny knihy na server"/>
+			<node name="downloadAllBooks" value="Stáhnout všechny knihy ze serveru"/>
+			<node name="downloadCurrentBook" value="Stáhnout aktuální knihu ze serveru"/>
+			<node name="positions" value="Synchronizovat pozice čtení"/>
+			<node name="bookmarks" value="Synchronizovat záložky"/>
+			<node name="metainfo" value="Synchronizovat metainformace (název, štítky atd.)"/>
+			<node name="changeCurrentBook" value="Změnit aktuální knihu">
+				<node name="summaryOn" value="Otevřít stejnou knihu ve všech zařízeních"/>
+				<node name="summaryOff" value="Pouze synchronizovat pozice, neměnit automaticky knihu"/>
+			</node>
+		</node>
 		<node name="directories" value="Adresáře">
 			<node name="summary" value="Adresáře pro hledání souborů"/>
 			<node name="bookPath" value="Kde hledat knihy">
@@ -323,9 +377,6 @@
 			</node>
 			<node name="fontPath" value="Kde hledat písma">
 				<node name="chooserTitle" value="Adresář s písmy"/>
-			</node>
-			<node name="wallpaperPath" value="Kde hledat obrázky pozadí">
-				<node name="chooserTitle" value="Adresář s tapetami"/>
 			</node>
 			<node name="tempDir" value="Kam ukládat dočasné soubory">
 				<node name="chooserTitle" value="Složka dočasných souborů"/>
@@ -370,6 +421,20 @@
 				<node name="summaryOn" value="Zobrazit text ve dvou sloupcích, pokud je zařízení drženo vodorovně"/>
 				<node name="summaryOff" value="Vždy zobrazovat text v jednom sloupci"/>
 			</node>
+			<node name="showFootnoteToast" value="Zobrazit propojený text v překryvném okně">
+				<node name="never" value="Nikdy"/>
+				<node name="footnotesOnly" value="Pouze pro poznámky pod čarou"/>
+				<node name="footnotesAndSuperscripts" value="Pro poznámky pod čarou a odkazy horních indexů"/>
+				<node name="allInternalLinks" value="Pro všechny vnitřní odkazy"/>
+			</node>
+			<node name="footnoteToastDuration" value="Jak dlouho zobrazovat překryvné okno odkazu">
+				<node name="duration1" value="1 sekundu"/>
+				<node name="duration3" value="3 sekundy"/>
+				<node name="duration5" value="5 sekund"/>
+				<node name="duration10" value="10 sekund"/>
+				<node name="duration20" value="20 sekund"/>
+				<node name="duration300" value="5 minut"/>
+			</node>
 			<node name="allowScreenBrightnessAdjustment" value="Nastavení jasu displeje">
 				<node name="summaryOn" value="Tahem prstu nahoru nebo dolů podél levého okraje displeje"/>
 				<node name="summaryOff" value="Zakázáno"/>
@@ -411,10 +476,9 @@
 				</node>
 			</node>
 			<node name="font" value="Rodina písem">
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
+				<node name="inherit" value="&lt;nezměněno&gt;"/>
 			</node>
 			<node name="fontSize" value="Velikost písma"/>
-			<node name="fontSizeDifference" value="Rozlišovat velikost"/>
 			<node name="fontStyle" value="Řez písma">
 				<node name="regular" value="Obyčejné"/>
 				<node name="bold" value="Tučné"/>
@@ -422,53 +486,53 @@
 				<node name="boldItalic" value="Tučná kurzíva"/>
 			</node>
 			<node name="bold" value="Tučné">
-				<node name="summaryOn" value="tučné"/>
-				<node name="summaryOff" value="obyčejné"/>
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
+				<node name="bold" value="tučné"/>
+				<node name="normal" value="obyčejné"/>
+				<node name="inherit" value="&lt;nezměněno&gt;"/>
 			</node>
 			<node name="italic" value="Kurzíva">
-				<node name="summaryOn" value="kurzíva"/>
-				<node name="summaryOff" value="obyčejné"/>
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
+				<node name="italic" value="kurzíva"/>
+				<node name="normal" value="obyčejné"/>
+				<node name="inherit" value="&lt;nezměněno&gt;"/>
 			</node>
-			<node name="underlined" value="Podtržené">
-				<node name="summaryOn" value="podtržené"/>
-				<node name="summaryOff" value="obyčejné"/>
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
-			</node>
-			<node name="strikedThrough" value="Přeškrtnuté">
-				<node name="summaryOn" value="přeškrtnuté"/>
-				<node name="summaryOff" value="obyčejné"/>
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
+			<node name="textDecoration" value="Text s ozdobnými efekty">
+				<node name="inherit" value="&lt;nezměněno&gt;"/>
+				<node name="none" value="bez ozdobných efektů"/>
+				<node name="underline" value="podtržené"/>
+				<node name="line-through" value="přeškrtnuté"/>
 			</node>
 			<node name="lineSpacing" value="Řádkování">
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
+				<node name="inherit" value="&lt;nezměněno&gt;"/>
 			</node>
 			<node name="alignment" value="Zarovnání">
 				<node name="left" value="Vlevo"/>
 				<node name="right" value="Vpravo"/>
 				<node name="center" value="Na střed"/>
 				<node name="justify" value="Do bloku"/>
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
+				<node name="inherit" value="&lt;nezměněno&gt;"/>
 			</node>
 			<node name="autoHyphenations" value="Automatické dělení slov">
 				<node name="summaryOn" value="Dělit slova automaticky"/>
 				<node name="summaryOff" value="Nedělit slova automaticky"/>
 			</node>
 			<node name="allowHyphenations" value="Povolit dělení slov">
-				<node name="summaryOn" value="dělit slova"/>
-				<node name="summaryOff" value="nedělit slova"/>
-				<node name="unchanged" value="&lt;nezměněno&gt;"/>
+				<node name="auto" value="dělit slova"/>
+				<node name="none" value="nedělit slova"/>
+				<node name="inherit" value="&lt;nezměněno&gt;"/>
 			</node>
 			<node name="firstLineIndent" value="Odsazení prvního řádku"/>
 			<node name="spaceBefore" value="Mezera před"/>
 			<node name="spaceAfter" value="Mezera za"/>
 			<node name="leftIndent" value="Odsazení vlevo"/>
 			<node name="rightIndent" value="Odsazení vpravo"/>
+			<node name="verticalAlignment" value="Svislé zarovnání"/>
 			<node name="more" value="Další styly">
 				<node name="summary" value="Oddělené nastavení pro názvy, mota atd."/>
 				<node name="Regular Paragraph" value="Běžný odstavec">
 					<node name="summary" value=""/>
+				</node>
+				<node name="xhtml-tag-p" value="Odstavec EPub">
+					<node name="summary" value="Obsah kódu značky XHTML &lt;p&gt;"/>
 				</node>
 				<node name="Title" value="Název">
 					<node name="summary" value=""/>
@@ -582,23 +646,45 @@
 				<node name="summaryOn" value="Použít zarovnání textu definované v CSS"/>
 				<node name="summaryOff" value="Ignorovat zarovnání textu definované v CSS"/>
 			</node>
+			<node name="margins" value="Okraje">
+				<node name="summaryOn" value="Použít okraje definované v CSS"/>
+				<node name="summaryOff" value="Ignorovat okraje definované v CSS"/>
+			</node>
 		</node>
 		<node name="colors" value="Barvy a pozadí">
 			<node name="summary" value="Nastavení barev"/>
 			<node name="background" value="Pozadí">
+				<node name="chooser">
+					<node name="solidColor" value="Plná barva…"/>
+					<node name="predefined" value="Předdefinovaná textura…"/>
+					<node name="selectFile" value="Vyberte soubor…"/>
+				</node>
 				<node name="solidColor" value="Plná barva"/>
 				<node name="leather" value="Kůže"/>
 				<node name="sepia" value="Sépie"/>
 				<node name="wood" value="Dřevo"/>
+				<node name="sand" value="Písek"/>
+				<node name="hardpaper" value="Tvrdý papír"/>
 			</node>
-			<node name="backgroundColor" value="Barva pozadí"/>
+			<node name="fillMode" value="Režim vyplnění">
+				<node name="tile" value="Vedle sebe"/>
+				<node name="tileMirror" value="Zrcadlově vedle sebe"/>
+				<node name="fullscreen" value="Celá obrazovka"/>
+				<node name="stretch" value="Roztáhnout pro vyplnění obrazovky"/>
+				<node name="tileVertically" value="Roztáhnout vodorovně, vedle sebe svisle"/>
+				<node name="tileHorizontally" value="Roztáhnout svisle, vedle sebe vodorovně"/>
+			</node>
 			<node name="selectionBackground" value="Pozadí výběru"/>
 			<node name="selectionForeground" value="Vybraný text"/>
 			<node name="text" value="Běžný text"/>
 			<node name="hyperlink" value="Hypertextový odkaz"/>
 			<node name="hyperlinkVisited" value="Navštívený hypertextový odkaz"/>
-			<node name="highlighting" value="Pozadí výsledků vyhledávání"/>
-			<node name="footer" value="Patička"/>
+			<node name="highlightingForeground" value="Výsledky hledání"/>
+			<node name="highlightingBackground" value="Pozadí výsledků vyhledávání"/>
+			<node name="footerOldStyle" value="Patička (starý styl)"/>
+			<node name="footerBackground" value="Pozadí patičky"/>
+			<node name="footerForeground" value="Text patičky"/>
+			<node name="footerForegroundUnread" value="Řádek patičky"/>
 		</node>
 		<node name="margins" value="Okraje">
 			<node name="summary" value="Okraje textu"/>
@@ -615,9 +701,13 @@
 				<node name="show" value="Svislé šoupátko"/>
 				<node name="showAsProgress" value="Svislý indikátor průběhu"/>
 				<node name="showAsFooter" value="Vodorovná patička"/>
+				<node name="showAsFooterOldStyle" value="Vodorovná patička (starý styl)"/>
 			</node>
 			<node name="footerHeight" value="Výška patičky"/>
-			<node name="footerColor" value="Barva patičky"/>
+			<node name="footerOldStyleColor" value="Barva patičky (starý styl)"/>
+			<node name="footerBackgroundColor" value="Barva pozadí patičky"/>
+			<node name="footerForegroundColor" value="Barva textu patičky"/>
+			<node name="footerForegroundUnreadColor" value="Barva řádku patičky"/>
 			<node name="tocMarks" value="Zobrazit značky obsahu">
 				<node name="summaryOn" value="Zobrazit značky obsahu v patičce"/>
 				<node name="summaryOff" value="Nezobrazovat značky obsahu v patičce"/>
@@ -640,8 +730,8 @@
 			<node name="summary" value="Jak posouvat text"/>
 			<node name="fingerScrolling" value="Posouvání dotykem displeje">
 				<node name="byTap" value="Posouvat stránky klepnutím prstem"/>
-				<node name="byFlick" value="Posouvat stránky rychlým pohybem prstem"/>
-				<node name="byTapAndFlick" value="Posouvat stránky klepnutím nebo rychlým pohybem prstem"/>
+				<node name="byFlick" value="Posouvat stránky rychlým pohybem prstu"/>
+				<node name="byTapAndFlick" value="Posouvat stránky klepnutím nebo rychlým pohybem prstu"/>
 			</node>
 			<node name="enableDoubleTapDetection" value="Rozpoznání poklepání">
 				<node name="summaryOn" value="Poklepání spustí navigaci nebo menu"/>
@@ -659,6 +749,7 @@
 				<node name="none" value="Posouvat bez animace"/>
 				<node name="curl" value="Animace otočení"/>
 				<node name="slide" value="Animace vysunutí"/>
+				<node name="slideOldStyle" value="Animace vysunutí (starý styl)"/>
 				<node name="shift" value="Animace posunutí"/>
 			</node>
 			<node name="animationSpeed" value="Rychlost animace">
@@ -682,12 +773,12 @@
 		</node>
 		<node name="dictionary" value="Slovník">
 			<node name="summary" value="Nastavení slovníku"/>
-			<node name="dictionary" value="Slovník"/>
-			<node name="translator" value="Překladač"/>
+			<node name="dictionary" value="Vyhledat jedno slovo v"/>
+			<node name="translator" value="Přeložit fráze pomocí"/>
 			<node name="targetLanguage" value="Přeložit do">
 				<node name="any" value="všechny jazyky"/>
 			</node>
-			<node name="tappingAction" value="Dlouhé klepnutí">
+			<node name="longTapAction" value="Dlouhé klepnutí">
 				<node name="doNothing" value="Dlouhé klepnutí nedělá nic"/>
 				<node name="selectSingleWord" value="Dlouhé klepnutí vybere slovo"/>
 				<node name="startSelecting" value="Dlouhé klepnutí spustí vybírání"/>
@@ -701,7 +792,7 @@
 		<node name="images" value="Obrázky">
 			<node name="summary" value="Možnosti zobrazení obrázku"/>
 			<node name="backgroundColor" value="Barva pozadí pro zobrazení obrázku"/>
-			<node name="tappingAction" value="Akce dlouhého klepnutí">
+			<node name="longTapAction" value="Akce dlouhého klepnutí">
 				<node name="doNothing" value="Dlouhé klepnutí nedělá nic"/>
 				<node name="selectImage" value="Dlouhé klepnutí vybere obrázek"/>
 				<node name="openImageView" value="Dlouhé klepnutí otevře zobrazení obrázku"/>
@@ -757,13 +848,16 @@
 			<node name="summary" value="Informace o verzi, kontakty"/>
 			<node name="version" value="Verze"/>
 			<node name="site" value="Navštivte naši webovou stránku">
-				<node name="url" value="http://fbreader.org/"/>
+				<node name="url" value="https://fbreader.org/"/>
 			</node>
 			<node name="email" value="Pošlete nám e-mail">
-				<node name="url" value="mailto:contact@geometerplus.com"/>
+				<node name="url" value="mailto:contact@fbreader.org"/>
 			</node>
-			<node name="twitter" value="Sledujte nás na twitteru">
-				<node name="url" value="http://twitter.com/fbreader"/>
+			<node name="googleplus" value="Připojte se ke komunitě FBReader na Google+">
+				<node name="url" value="https://plus.google.com/communities/115894899404862312312"/>
+			</node>
+			<node name="twitter" value="Sledujte nás na Twitteru">
+				<node name="url" value="https://twitter.com/fbreader"/>
 			</node>
 			<node name="facebook" value="FBReader na Facebooku">
 				<node name="url" value="https://facebook.com/fbreader"/>
@@ -786,17 +880,18 @@
 			<node name="skip" value="Přeskočit"/>
 			<node name="buy" value="Zakoupit"/>
 			<node name="buyAndDownload" value="Zakoupit a stáhnout"/>
+			<node name="download" value="Stáhnout"/>
 			<node name="continue" value="Pokračovat"/>
 			<node name="editUrl" value="Upravit adresu"/>
 			<node name="tryAgain" value="Zkusit znovu"/>
 			<node name="openBook" value="Číst"/>
-			<node name="editInfo" value="Upravit"/>
+			<node name="edit" value="Upravit"/>
 			<node name="reloadInfo" value="Znovu načíst"/>
 			<node name="shareBook" value="Sdílet"/>
 			<node name="topup" value="Doplnit účet"/>
 			<node name="pay" value="Zaplatit"/>
 			<node name="refresh" value="Aktualizovat"/>
-			<node name="authorise" value="Authorisovat"/>
+			<node name="authorise" value="Autorizovat"/>
 			<node name="resetPosition" value="Obnovit pozici"/>
 			<node name="sendReport" value="Odeslat zprávu"/>
 			<node name="addToFavorites" value="Přidat do oblíbených"/>
@@ -809,6 +904,9 @@
 			<node name="updateTitle" value="Aktualizovat doplněk"/>
 			<node name="dontAskAgain" value="Neptat se znovu"/>
 		</node>
+		<node name="backgroundAuthentication">
+			<node name="message" value="Je požadováno ověření"/>
+		</node>
 		<node name="installDictionary">
 			<node name="title" value="Instalovat slovník"/>
 			<node name="message" value="Chcete nainstalovat %s?"/>
@@ -816,11 +914,36 @@
 		<node name="deleteBookBox">
 			<node name="message" value="Soubor s knihou bude nevratně odebrán. Opravdu chcete pokračovat?"/>
 		</node>
+		<node name="deleteMultipleBookBox">
+			<node name="title" value="Odstranit knihy"/>
+			<node name="message" value="%s souborů knih bude nevratně odebráno. Opravdu to chcete udělat"/>
+		</node>
 		<node name="redownloadFileBox">
 			<node name="message" value="Soubor již existuje. Stáhnout ho znovu?"/>
 		</node>
+		<node name="litresUserRegistration">
+			<node name="title" value="Registrace uživatele"/>
+			<node name="login" value="Uživatelské jméno"/>
+			<node name="password" value="Heslo"/>
+			<node name="confirmPassword" value="Potvrzení&#10;hesla"/>
+			<node name="email" value="E-mail"/>
+		</node>
+		<node name="litresAutoSignIn">
+			<node name="title" value="Přihlašování"/>
+			<node name="email" value="E-mail"/>
+			<node name="actions">
+				<node name="title" value="Nelze se přihlásit pomocí e-mailu&#10;%s"/>
+				<node name="recover" value="Obnovit informace o účtu"/>
+				<node name="signIn" value="Přihlásit se ručně"/>
+				<node name="anotherEmail" value="Vybrat jiný e-mail"/>
+			</node>
+			<node name="signedIn" value="Jste přihlášeni pomocí e-mailové adresy %s."/>
+			<node name="registrationSuccessful" value="Vytvořili jsme pro vás účet LitRes. Podrobné informace odeslány na %s."/>
+			<node name="passwordSent" value="Informace o vašem účtu byly odeslány na %s. Zkontrolujte svou poštovní schránku."/>
+		</node>
 		<node name="waitMessage">
-			<node name="downloadingFile" value="Stahování knihy %s"/>
+			<node name="tryConnect" value="Pokus o připojení. Čekejte…"/>
+			<node name="downloadingBook" value="Stahování knihy %s"/>
 			<node name="search" value="Vyhledávání. Čekejte…"/>
 			<node name="loadInfo" value="Načítání informací. Čekejte…"/>
 			<node name="loadingBook" value="Otevírání knihy. Čekejte…"/>
@@ -835,21 +958,32 @@
 			<node name="loadingNetworkBookInfo" value="Načítání informací o knize. Čekejte…"/>
 			<node name="updatingCatalogsList" value="Aktualizace seznamu katalogů. Čekejte…"/>
 			<node name="updatingAccountInformation" value="Aktualizace informací o účtu. Čekejte…"/>
-			<node name="initDRMEngine" value="Initialising DRM engine. Please, wait…" toBeTranslated="true"/>
-			<node name="acquireLicense" value="Acquiring license. Please, wait…" toBeTranslated="true"/>
+			<node name="initDRMEngine" value="Inicializace modulu DRM. Čekejte…"/>
+			<node name="acquireLicense" value="Načítání licence. Čekejte…"/>
+			<node name="registerUser" value="Registrace nového účtu. Čekejte..."/>
+			<node name="autoSignIn" value="Přihlašování. Čekejte…"/>
+			<node name="recoverPassword" value="Obnovování hesla. Čekejte…"/>
 		</node>
 		<node name="networkError">
 			<node name="internalError" value="Vnitřní chyba serveru"/>
-			<node name="purchaseNotEnoughMoney" value="Nemáte dost poněz"/>
+			<node name="purchaseNotEnoughMoney" value="Nemáte dost peněz"/>
 			<node name="purchaseMissingBook" value="Chybějící kniha"/>
 			<node name="purchaseAlreadyPurchased" value="Již zakoupena"/>
 			<node name="bookNotPurchased" value="Kniha nebyla zakoupena"/>
 			<node name="downloadLimitExceeded" value="Překročen limit stahování"/>
-			<node name="noUserEmail" value="Žádný uživatel nebyl zaregistrován&#10;se zadanou e-mailovou adresou"/>
+			<node name="noUserForEmail" value="Žádný uživatel nebyl zaregistrován&#10;se zadanou e-mailovou adresou"/>
 			<node name="unsupportedOperation" value="Nepodporovaná operace"/>
 			<node name="notAnOPDS" value="Toto není OPDS katalog"/>
 			<node name="noRequiredInformation" value="Požadovaná informace není uvedena v katalogu"/>
 			<node name="cacheDirectoryError" value="Nelze vytvořit adresář mezipaměti"/>
+			<node name="usernameAlreadyInUse" value="Uživatelské jméno se již používá"/>
+			<node name="usernameNotSpecified" value="Zadejte uživatelské jméno"/>
+			<node name="passwordNotSpecified" value="Zadejte neprázdné heslo"/>
+			<node name="passwordsDoNotMatch" value="Heslo a potvrzení hesla se musí shodovat."/>
+			<node name="emailNotSpecified" value="Zadejte e-mailovou adresu"/>
+			<node name="emailAlreadyInUse" value="E-mailová adresa se již používá"/>
+			<node name="invalidEMail" value="Neplatná e-mailová adresa"/>
+			<node name="tooManyRegistrations" value="Příliš mnoho registrací z vaší IP;&#10;zkuste to znovu za pár minut"/>
 		</node>
 		<node name="AuthenticationDialog">
 			<node name="title" value="Ověřování"/>
@@ -887,11 +1021,27 @@
 			<node name="message2" value="Výborně! Dalším klepnutím na prostřední třetinu obrazovky se skryje ovládání a tato nápověda. Pokud chcete ponechat během čtení ovládání na obrazovce, vyberte volbu „Zobrazit panel akcí“ v části „Vzhled“ dialogového okna Nastavení."/>
 		</node>
 		<node name="folderList">
-			<node name="addFolder" value="Add folder" toBeTranslated="true"/>
-			<node name="removeDialog" value="Remove folder" toBeTranslated="true">
-				<node name="message" value="Remove “%s” from the list?" toBeTranslated="true"/>
+			<node name="addFolder" value="Přidat složku"/>
+			<node name="removeDialog" value="Odebrat složku">
+				<node name="message" value="Odebrat “%s” ze seznamu?"/>
 			</node>
-			<node name="duplicate" value="“%s” is already in the list" toBeTranslated="true"/>
+			<node name="duplicate" value="“%s” již je na seznamu"/>
+		</node>
+		<node name="editList">
+			<node name="edit" value="Upravit"/>
+			<node name="remove" value="Odebrat"/>
+		</node>
+		<node name="editTags">
+			<node name="addTag" value="Přidat štítek"/>
+			<node name="removeDialog" value="Odebrat štítek">
+				<node name="message" value="Odebrat štítek “%s” ze seznamu?"/>
+			</node>
+		</node>
+		<node name="editAuthors">
+			<node name="addAuthor" value="Přidat autora"/>
+			<node name="removeDialog" value="Odebrat autora">
+				<node name="message" value="Odebrat autora “%s” ze seznamu?"/>
+			</node>
 		</node>
 		<node name="fileChooser">
 			<node name="root" value="Kořenová složka"/>
@@ -907,6 +1057,9 @@
 				<node name="date" value="Data"/>
 			</node>
 			<node name="permissionDenied" value="Přístup byl odepřen"/>
+		</node>
+		<node name="missingPlugin">
+			<node name="title" value="Doplněk pro soubory %s není nainstalován. Nainstalovat ho nyní?"/>
 		</node>
 	</node>
 	<node name="errorMessage">
@@ -934,15 +1087,13 @@
 		<node name="emptyNetworkSearchResults" value="Nebyly nalezeny žádné knihy"/>
 		<node name="videoServiceNotWorking" value="Bohužel, videoslužba není dostupná"/>
 		<node name="videoPlayerNotFound" value="Bohužel, na tomto zařízení není nainstalovaný žádný přehrávač videa"/>
+		<node name="bookIsMissingTitle" value="Chybějící kniha"/>
+		<node name="bookIsMissing" value="Bohužel, kniha '%s' nebyla v zařízení nalezena"/>
+		<node name="downloadFailed" value="Stahování selhalo"/>
 	</node>
 	<node name="external">
 		<node name="browser" value="Prohlížeč"/>
 		<node name="defaultBrowser" value="Výchozí prohlížeč"/>
-	</node>
-	<node name="mobipocketPlugin">
-		<node name="unknown" value="Neznámá chyba"/>
-		<node name="unsupportedCompressionMethod" value="Nepodporovaná metoda komprese"/>
-		<node name="encryptedFile" value="Soubor chráněný DRM"/>
 	</node>
 	<node name="crash">
 		<node name="fixBooksDirectory">
@@ -960,23 +1111,26 @@
 		</node>
 	</node>
 	<node name="links">
-		<node name="faqPage" value="http://fbreader.org/faq-page"/>
+		<node name="faqPage" value="https://fbreader.org/faq-page"/>
 	</node>
 	<node name="plugins" value="Instalovat doplňky">
 		<node name="noMorePlugins" value="Bohužel, právě nemáme žádné nové doplňky"/>
 		<node name="litres" value="LitRes">
 			<node name="summary" value="Ruské knihkupectví"/>
 		</node>
-		<node name="tts-plus" value="TTS+">
+		<node name="tts_plus" value="TTS+">
 			<node name="summary" value="Čte nahlas"/>
 		</node>
-		<node name="local-opds-scanner" value="Local OPDS Scanner">
+		<node name="calibre_server_integration" value="Připojení Calibre">
+			<node name="summary" value="Připojit server Calibre ve vaší místní síti"/>
+		</node>
+		<node name="local_opds_scanner" value="Local OPDS Scanner">
 			<node name="summary" value="Hledá knihy v místní síti"/>
 		</node>
 		<node name="bookshelf" value="Bookshelf">
 			<node name="summary" value="Zobrazí knihovnu v režimu náhledů"/>
 		</node>
-		<node name="opds-server" value="OPDS Server">
+		<node name="opds_server" value="OPDS Server">
 			<node name="summary" value="Dodá knihy z vašeho zařízení"/>
 		</node>
 		<node name="widgets" value="Widgety">
@@ -985,6 +1139,12 @@
 		<node name="pdf" value="PDF">
 			<node name="summary" value="Čte knihy ve formátu PDF"/>
 		</node>
+		<node name="djvu" value="DjVu">
+			<node name="summary" value="Čte knihy ve formátu DjVu"/>
+		</node>
+		<node name="cbr" value="Komiksy">
+			<node name="summary" value="Čte knihy komiksů (CBR, CBZ)"/>
+		</node>
 	</node>
 	<node name="drm">
 		<node name="encryptedSection" value="Šifrovaná část"/>
@@ -992,5 +1152,16 @@
 	<node name="yota">
 		<node name="frontScreenMessage" value="Pro čtení knihy obraťte zařízení. Pro navrácení textu na tento displej stiskněte tlačítko dole."/>
 		<node name="frontScreenButton" value="Přepnout na tento displej"/>
+	</node>
+	<node name="hint">
+		<node name="positiveLength" value="Např.: 20px, 10pt, 0.8em, 1ex, 120%%"/>
+		<node name="length" value="Např.: -2px, 10pt, -0.8em, 1.1ex, -40%%"/>
+		<node name="percent" value="Např.: 125%%"/>
+	</node>
+	<node name="dictanErrors">
+		<node name="unknown" value="neznámá chyba"/>
+		<node name="noArticle" value="nenalezen žádný článek pro “%s”"/>
+		<node name="cannotOpenDictionary" value="nelze otevřít slovník"/>
+		<node name="noDictionarySelected" value="není vybrán slovník; opravte to v nastavení Dictan"/>
 	</node>
 </resources>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 package org.geometerplus.fbreader.book;
 
 import java.util.*;
+
+import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 
 public abstract class AbstractBookCollection implements IBookCollection {
 	private final List<Listener> myListeners = Collections.synchronizedList(new LinkedList<Listener>());
@@ -52,5 +54,9 @@ public abstract class AbstractBookCollection implements IBookCollection {
 				l.onBuildEvent(status);
 			}
 		}
+	}
+
+	public final Book getBookByFile(String path) {
+		return getBookByFile(ZLFile.createFileByPath(path));
 	}
 }

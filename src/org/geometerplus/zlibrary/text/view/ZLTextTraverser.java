@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,8 +34,7 @@ public abstract class ZLTextTraverser {
 	public void traverse(ZLTextPosition from, ZLTextPosition to) {
 		final int fromParagraph = from.getParagraphIndex();
 		final int toParagraph = to.getParagraphIndex();
-		ZLTextParagraphCursor cursor =
-			ZLTextParagraphCursor.cursor(myView.getModel(), fromParagraph);
+		ZLTextParagraphCursor cursor = myView.cursor(fromParagraph);
 		for (int i = fromParagraph; i <= toParagraph; ++i) {
 			final int fromElement = i == fromParagraph ? from.getElementIndex() : 0;
 			final int toElement = i == toParagraph ? to.getElementIndex() : cursor.getParagraphLength() - 1;

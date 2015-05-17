@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package org.geometerplus.fbreader.network.tree;
 
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 import org.geometerplus.fbreader.network.NetworkLibrary;
@@ -29,8 +30,10 @@ public abstract class NetworkItemsLoader implements Runnable {
 
 	private volatile Runnable myPostRunnable;
 	private volatile boolean myFinishedFlag;
+	public final ZLNetworkContext NetworkContext;
 
-	protected NetworkItemsLoader(NetworkCatalogTree tree) {
+	protected NetworkItemsLoader(ZLNetworkContext nc, NetworkCatalogTree tree) {
+		NetworkContext = nc;
 		myTree = tree;
 	}
 

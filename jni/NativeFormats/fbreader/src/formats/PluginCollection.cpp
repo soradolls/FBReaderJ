@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
 #include "fb2/FB2Plugin.h"
 #include "html/HtmlPlugin.h"
 #include "txt/TxtPlugin.h"
-//#include "pdb/PdbPlugin.h"
+#include "pdb/PdbPlugin.h"
 //#include "tcr/TcrPlugin.h"
 #include "oeb/OEBPlugin.h"
 //#include "chm/CHMPlugin.h"
@@ -48,7 +48,7 @@ PluginCollection &PluginCollection::Instance() {
 		ourInstance->myPlugins.push_back(new TxtPlugin());
 //		ourInstance->myPlugins.push_back(new PluckerPlugin());
 //		ourInstance->myPlugins.push_back(new PalmDocPlugin());
-//		ourInstance->myPlugins.push_back(new MobipocketPlugin());
+		ourInstance->myPlugins.push_back(new MobipocketPlugin());
 //		ourInstance->myPlugins.push_back(new EReaderPlugin());
 //		ourInstance->myPlugins.push_back(new ZTXTPlugin());
 //		ourInstance->myPlugins.push_back(new TcrPlugin());

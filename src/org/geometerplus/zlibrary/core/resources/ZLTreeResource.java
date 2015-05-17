@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -175,6 +175,7 @@ final class ZLTreeResource extends ZLResource {
 		reader.readDocument(ourRoot, ZLResourceFile.createResourceFile("resources/zlibrary/" + fileName));
 		reader.readDocument(ourRoot, ZLResourceFile.createResourceFile("resources/application/" + fileName));
 		reader.readDocument(ourRoot, ZLResourceFile.createResourceFile("resources/lang.xml"));
+		reader.readDocument(ourRoot, ZLResourceFile.createResourceFile("resources/application/neutral.xml"));
 	}
 
 	private static void loadData() {

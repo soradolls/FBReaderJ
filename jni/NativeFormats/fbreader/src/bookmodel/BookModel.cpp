@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ BookModel::~BookModel() {
 void BookModel::setHyperlinkMatcher(shared_ptr<HyperlinkMatcher> matcher) {
 	myHyperlinkMatcher = matcher;
 }
-	
+
 BookModel::Label BookModel::label(const std::string &id) const {
 	if (!myHyperlinkMatcher.isNull()) {
 		return myHyperlinkMatcher->match(myInternalHyperlinks, id);

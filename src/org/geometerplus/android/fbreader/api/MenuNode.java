@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ public abstract class MenuNode implements Cloneable, Serializable {
 		public static final long serialVersionUID = 43L;
 
 		public final Integer IconId;
-	
+
 		public Item(String code, Integer iconId) {
 			super(code);
 			IconId = iconId;

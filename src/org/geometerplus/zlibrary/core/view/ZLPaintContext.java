@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,11 +32,16 @@ abstract public class ZLPaintContext {
 	protected ZLPaintContext() {
 	}
 
-	public static enum WallpaperMode {
-		TILE,
-		TILE_MIRROR
+	public enum FillMode {
+		tile,
+		tileMirror,
+		fullscreen,
+		stretch,
+		tileVertically,
+		tileHorizontally
 	}
-	abstract public void clear(ZLFile wallpaperFile, WallpaperMode mode);
+
+	abstract public void clear(ZLFile wallpaperFile, FillMode mode);
 	abstract public void clear(ZLColor color);
 	abstract public ZLColor getBackgroundColor();
 
@@ -79,6 +84,7 @@ abstract public class ZLPaintContext {
 			mySpaceWidth = -1;
 			myStringHeight = -1;
 			myDescent = -1;
+			myCharHeights.clear();
 		}
 	}
 
@@ -123,6 +129,18 @@ abstract public class ZLPaintContext {
 	}
 	abstract protected int getStringHeightInternal();
 
+	private Map<Character,Integer> myCharHeights = new TreeMap<Character,Integer>();
+	public final int getCharHeight(char chr) {
+		final Integer h = myCharHeights.get(chr);
+		if (h != null) {
+			return h;
+		}
+		final int he = getCharHeightInternal(chr);
+		myCharHeights.put(chr, he);
+		return he;
+	}
+	protected abstract int getCharHeightInternal(char chr);
+
 	private int myDescent = -1;
 	public final int getDescent() {
 		int descent = myDescent;
@@ -158,6 +176,11 @@ abstract public class ZLPaintContext {
 			}
 			final Size s = (Size)other;
 			return Width == s.Width && Height == s.Height;
+		}
+
+		@Override
+		public String toString() {
+			return "ZLPaintContext.Size[" + Width + "x" + Height + "]";
 		}
 	}
 	public static enum ScalingType {

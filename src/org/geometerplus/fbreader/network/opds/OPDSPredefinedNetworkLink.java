@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,11 +23,13 @@ import org.geometerplus.fbreader.network.IPredefinedNetworkLink;
 import org.geometerplus.fbreader.network.urlInfo.*;
 
 public class OPDSPredefinedNetworkLink extends OPDSNetworkLink implements IPredefinedNetworkLink {
+	private static final String ID_PREFIX = "urn:fbreader-org-catalog:";
+
 	private final String myPredefinedId;
 
-	public OPDSPredefinedNetworkLink(int id, String predifinedId, String siteName, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
-		super(id, siteName, title, summary, language, infos);
-		myPredefinedId = predifinedId;
+	public OPDSPredefinedNetworkLink(int id, String predefinedId, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
+		super(id, title, summary, language, infos);
+		myPredefinedId = predefinedId;
 	}
 
 	public Type getType() {
@@ -36,5 +38,22 @@ public class OPDSPredefinedNetworkLink extends OPDSNetworkLink implements IPrede
 
 	public String getPredefinedId() {
 		return myPredefinedId;
+	}
+
+	@Override
+	public String getShortName() {
+		if (myPredefinedId.startsWith(ID_PREFIX)) {
+			return myPredefinedId.substring(ID_PREFIX.length());
+		}
+		return myPredefinedId;
+	}
+
+	@Override
+	public String getStringId() {
+		return getShortName();
+	}
+
+	public boolean servesHost(String hostname) {
+		return hostname != null && hostname.indexOf(getShortName()) != -1;
 	}
 }

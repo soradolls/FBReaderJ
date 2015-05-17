@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,9 +35,13 @@ import org.geometerplus.zlibrary.core.util.ZLColor;
 import org.geometerplus.zlibrary.text.view.ZLTextPosition;
 
 class XMLSerializer extends AbstractSerializer {
+	private StringBuilder builder() {
+		return new StringBuilder("<?xml version='1.1' encoding='UTF-8'?>");
+	}
+
 	@Override
 	public String serialize(BookQuery query) {
-		final StringBuilder buffer = new StringBuilder();
+		final StringBuilder buffer = builder();
 		appendTag(buffer, "query", false,
 			"limit", String.valueOf(query.Limit),
 			"page", String.valueOf(query.Page)
@@ -52,6 +56,10 @@ class XMLSerializer extends AbstractSerializer {
 			appendTag(buffer, "filter", true,
 				"type", "empty"
 			);
+		} else if (filter instanceof Filter.Not) {
+			appendTag(buffer, "not", false);
+			serialize(buffer, ((Filter.Not)filter).Base);
+			closeTag(buffer, "not");
 		} else if (filter instanceof Filter.And) {
 			appendTag(buffer, "and", false);
 			serialize(buffer, ((Filter.And)filter).First);
@@ -108,6 +116,10 @@ class XMLSerializer extends AbstractSerializer {
 			appendTag(buffer, "filter", true,
 				"type", "has-bookmark"
 			);
+		} else if (filter instanceof Filter.HasPhysicalFile) {
+			appendTag(buffer, "filter", true,
+				"type", "has-physical-file"
+			);
 		} else {
 			throw new RuntimeException("Unsupported filter type: " + filter.getClass());
 		}
@@ -128,7 +140,7 @@ class XMLSerializer extends AbstractSerializer {
 
 	@Override
 	public String serialize(BookmarkQuery query) {
-		final StringBuilder buffer = new StringBuilder();
+		final StringBuilder buffer = builder();
 		appendTag(buffer, "query", false,
 			"visible", String.valueOf(query.Visible),
 			"limit", String.valueOf(query.Limit),
@@ -156,7 +168,7 @@ class XMLSerializer extends AbstractSerializer {
 
 	@Override
 	public String serialize(Book book) {
-		final StringBuilder buffer = new StringBuilder();
+		final StringBuilder buffer = builder();
 		serialize(buffer, book);
 		return buffer.toString();
 	}
@@ -254,24 +266,30 @@ class XMLSerializer extends AbstractSerializer {
 
 	@Override
 	public String serialize(Bookmark bookmark) {
-		final StringBuilder buffer = new StringBuilder();
+		final StringBuilder buffer = builder();
 		appendTag(
 			buffer, "bookmark", false,
 			"id", String.valueOf(bookmark.getId()),
+			"uid", bookmark.Uid,
+			"versionUid", bookmark.getVersionUid(),
 			"visible", String.valueOf(bookmark.IsVisible)
 		);
 		appendTag(
 			buffer, "book", true,
-			"id", String.valueOf(bookmark.getBookId()),
-			"title", bookmark.getBookTitle()
+			"id", String.valueOf(bookmark.BookId),
+			"title", bookmark.BookTitle
 		);
 		appendTagWithContent(buffer, "text", bookmark.getText());
+		appendTagWithContent(buffer, "original-text", bookmark.getOriginalText());
 		appendTag(
 			buffer, "history", true,
-			"date-creation", formatDate(bookmark.getDate(Bookmark.DateType.Creation)),
-			"date-modification", formatDate(bookmark.getDate(Bookmark.DateType.Modification)),
-			"date-access", formatDate(bookmark.getDate(Bookmark.DateType.Access)),
-			"access-count", String.valueOf(bookmark.getAccessCount())
+			"ts-creation", timestampByDate(bookmark.getTimestamp(Bookmark.DateType.Creation)),
+			"ts-modification", timestampByDate(bookmark.getTimestamp(Bookmark.DateType.Modification)),
+			"ts-access", timestampByDate(bookmark.getTimestamp(Bookmark.DateType.Access)),
+			// obsolete, old format plugins compatibility
+			"date-creation", formatDate(bookmark.getTimestamp(Bookmark.DateType.Creation)),
+			"date-modification", formatDate(bookmark.getTimestamp(Bookmark.DateType.Modification)),
+			"date-access", formatDate(bookmark.getTimestamp(Bookmark.DateType.Access))
 		);
 		appendTag(
 			buffer, "start", true,
@@ -317,12 +335,15 @@ class XMLSerializer extends AbstractSerializer {
 
 	@Override
 	public String serialize(HighlightingStyle style) {
-		final StringBuilder buffer = new StringBuilder();
+		final StringBuilder buffer = builder();
 		final ZLColor bgColor = style.getBackgroundColor();
+		final ZLColor fgColor = style.getForegroundColor();
 		appendTag(buffer, "style", true,
 			"id", String.valueOf(style.Id),
+			"timestamp", String.valueOf(style.LastUpdateTimestamp),
 			"name", style.getName(),
-			"bg-color", bgColor != null ? String.valueOf(bgColor.intValue()) : "-1"
+			"bg-color", bgColor != null ? String.valueOf(bgColor.intValue()) : "-1",
+			"fg-color", fgColor != null ? String.valueOf(fgColor.intValue()) : "-1"
 		);
 		return buffer.toString();
 	}
@@ -340,20 +361,30 @@ class XMLSerializer extends AbstractSerializer {
 		}
 	}
 
-	private static DateFormat ourDateFormatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.FULL, Locale.ENGLISH);
-	private static String formatDate(Date date) {
-		return date != null ? ourDateFormatter.format(date) : null;
+	private static String timestampByDate(Long date) {
+		return date != null ? String.valueOf(date) : null;
 	}
-	private static Date parseDate(String str) throws SAXException {
+	private static Date dateByTimestamp(String str) throws SAXException {
 		try {
-			return str != null ? ourDateFormatter.parse(str) : null;
+			return str != null ? new Date(Long.valueOf(str)) : null;
 		} catch (Exception e) {
 			throw new SAXException("XML parsing error", e);
 		}
 	}
-	private static Date parseDateSafe(String str) throws SAXException {
+	private static DateFormat ourDateFormatter = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.FULL, Locale.ENGLISH);
+	private static String formatDate(Long timestamp) {
+		return timestamp != null ? ourDateFormatter.format(new Date(timestamp)) : null;
+	}
+	private static long parseDate(String str) throws SAXException {
 		try {
-			return str != null ? ourDateFormatter.parse(str) : null;
+			return str != null ? ourDateFormatter.parse(str).getTime() : null;
+		} catch (Exception e) {
+			throw new SAXException("XML parsing error", e);
+		}
+	}
+	private static Long parseDateSafe(String str) throws SAXException {
+		try {
+			return str != null ? ourDateFormatter.parse(str).getTime() : null;
 		} catch (Exception e) {
 			return null;
 		}
@@ -386,6 +417,13 @@ class XMLSerializer extends AbstractSerializer {
 			return Long.parseLong(str);
 		} catch (Exception e) {
 			return defaultValue;
+		}
+	}
+	private static Long parseLongObjectSafe(String str) {
+		try {
+			return Long.parseLong(str);
+		} catch (Exception e) {
+			return null;
 		}
 	}
 
@@ -431,23 +469,42 @@ class XMLSerializer extends AbstractSerializer {
 		}
 	}
 
-	private static String escapeForXml(String data) {
-		if (data.indexOf('&') != -1) {
-			data = data.replaceAll("&", "&amp;");
+	private static CharSequence escapeForXml(String data) {
+		final StringBuilder buffer = new StringBuilder();
+
+		final int len = data.length();
+		for (int i = 0; i < len; ++i) {
+			final char ch = data.charAt(i);
+			switch (ch) {
+				case '\u0009':
+				case '\n':
+					buffer.append(ch);
+					break;
+				default:
+					if ((ch >= '\u0020' && ch <= '\uD7FF') ||
+						(ch >= '\u0E00' && ch <= '\uFFFD')) {
+						buffer.append(ch);
+					}
+					break;
+				case '&':
+					buffer.append("&amp;");
+					break;
+				case '<':
+					buffer.append("&lt;");
+					break;
+				case '>':
+					buffer.append("&gt;");
+					break;
+				case '"':
+					buffer.append("&quot;");
+					break;
+				case '\'':
+					buffer.append("&apos;");
+					break;
+			}
 		}
-		if (data.indexOf('<') != -1) {
-			data = data.replaceAll("<", "&lt;");
-		}
-		if (data.indexOf('>') != -1) {
-			data = data.replaceAll(">", "&gt;");
-		}
-		if (data.indexOf('\'') != -1) {
-			data = data.replaceAll("'", "&apos;");
-		}
-		if (data.indexOf('"') != -1) {
-			data = data.replaceAll("\"", "&quot;");
-		}
-		return data;
+
+		return buffer;
 	}
 
 	private static void clear(StringBuilder buffer) {
@@ -686,6 +743,7 @@ class XMLSerializer extends AbstractSerializer {
 	private static final class BookQueryDeserializer extends DefaultHandler {
 		private static enum State {
 			READ_QUERY,
+			READ_FILTER_NOT,
 			READ_FILTER_AND,
 			READ_FILTER_OR,
 			READ_FILTER_SIMPLE
@@ -711,6 +769,12 @@ class XMLSerializer extends AbstractSerializer {
 		public void endDocument() {
 			if (myFilter != null && myLimit > 0 && myPage >= 0) {
 				myQuery = new BookQuery(myFilter, myLimit, myPage);
+			}
+		}
+
+		private void setFilterToStack() {
+			if (!myFilterStack.isEmpty() && myFilterStack.getLast() == null) {
+				myFilterStack.set(myFilterStack.size() - 1, myFilter);
 			}
 		}
 
@@ -754,15 +818,17 @@ class XMLSerializer extends AbstractSerializer {
 						myFilter = new Filter.ByTitlePrefix(attributes.getValue("prefix"));
 					} else if ("has-bookmark".equals(type)) {
 						myFilter = new Filter.HasBookmark();
+					} else if ("has-physical-file".equals(type)) {
+						myFilter = new Filter.HasPhysicalFile();
 					} else {
 						// we create empty filter for all other types
 						// to keep a door to add new filters in a future
 						myFilter = new Filter.Empty();
 					}
-					if (!myFilterStack.isEmpty() && myFilterStack.getLast() == null) {
-						myFilterStack.set(myFilterStack.size() - 1, myFilter);
-					}
 					myStateStack.add(State.READ_FILTER_SIMPLE);
+				} else if ("not".equals(localName)) {
+					myFilterStack.add(null);
+					myStateStack.add(State.READ_FILTER_NOT);
 				} else if ("and".equals(localName)) {
 					myFilterStack.add(null);
 					myStateStack.add(State.READ_FILTER_AND);
@@ -784,6 +850,9 @@ class XMLSerializer extends AbstractSerializer {
 			switch (myStateStack.removeLast()) {
 				case READ_QUERY:
 					break;
+				case READ_FILTER_NOT:
+					myFilter = new Filter.Not(myFilterStack.removeLast());
+					break;
 				case READ_FILTER_AND:
 					myFilter = new Filter.And(myFilterStack.removeLast(), myFilter);
 					break;
@@ -793,6 +862,7 @@ class XMLSerializer extends AbstractSerializer {
 				case READ_FILTER_SIMPLE:
 					break;
 			}
+			setFilterToStack();
 		}
 	}
 
@@ -847,20 +917,23 @@ class XMLSerializer extends AbstractSerializer {
 		private static enum State {
 			READ_NOTHING,
 			READ_BOOKMARK,
-			READ_TEXT
+			READ_TEXT,
+			READ_ORIGINAL_TEXT
 		}
 
 		private State myState = State.READ_NOTHING;
 		private Bookmark myBookmark;
 
 		private long myId = -1;
+		private String myUid;
+		private String myVersionUid;
 		private long myBookId;
 		private String myBookTitle;
 		private final StringBuilder myText = new StringBuilder();
-		private Date myCreationDate;
-		private Date myModificationDate;
-		private Date myAccessDate;
-		private int myAccessCount;
+		private StringBuilder myOriginalText;
+		private Long myCreationTimestamp;
+		private Long myModificationTimestamp;
+		private Long myAccessTimestamp;
 		private String myModelId;
 		private int myStartParagraphIndex;
 		private int myStartElementIndex;
@@ -880,13 +953,15 @@ class XMLSerializer extends AbstractSerializer {
 			myBookmark = null;
 
 			myId = -1;
+			myUid = null;
+			myVersionUid = null;
 			myBookId = -1;
 			myBookTitle = null;
 			clear(myText);
-			myCreationDate = null;
-			myModificationDate = null;
-			myAccessDate = null;
-			myAccessCount = 0;
+			myOriginalText = null;
+			myCreationTimestamp = null;
+			myModificationTimestamp = null;
+			myAccessTimestamp = null;
 			myModelId = null;
 			myStartParagraphIndex = 0;
 			myStartElementIndex = 0;
@@ -906,8 +981,10 @@ class XMLSerializer extends AbstractSerializer {
 				return;
 			}
 			myBookmark = new Bookmark(
-				myId, myBookId, myBookTitle, myText.toString(),
-				myCreationDate, myModificationDate, myAccessDate, myAccessCount,
+				myId, myUid, myVersionUid,
+				myBookId, myBookTitle, myText.toString(),
+				myOriginalText != null ? myOriginalText.toString() : null,
+				myCreationTimestamp, myModificationTimestamp, myAccessTimestamp,
 				myModelId,
 				myStartParagraphIndex, myStartElementIndex, myStartCharIndex,
 				myEndParagraphIndex, myEndElementIndex, myEndCharIndex,
@@ -924,6 +1001,8 @@ class XMLSerializer extends AbstractSerializer {
 						throw new SAXException("Unexpected tag " + localName);
 					}
 					myId = parseLong(attributes.getValue("id"));
+					myUid = attributes.getValue("uid");
+					myVersionUid = attributes.getValue("versionUid");
 					myIsVisible = parseBoolean(attributes.getValue("visible"));
 					myState = State.READ_BOOKMARK;
 					break;
@@ -933,11 +1012,20 @@ class XMLSerializer extends AbstractSerializer {
 						myBookTitle = attributes.getValue("title");
 					} else if ("text".equals(localName)) {
 						myState = State.READ_TEXT;
+					} else if ("original-text".equals(localName)) {
+						myState = State.READ_ORIGINAL_TEXT;
+						myOriginalText = new StringBuilder();
 					} else if ("history".equals(localName)) {
-						myCreationDate = parseDate(attributes.getValue("date-creation"));
-						myModificationDate = parseDateSafe(attributes.getValue("date-modification"));
-						myAccessDate = parseDateSafe(attributes.getValue("date-access"));
-						myAccessCount = parseIntSafe(attributes.getValue("access-count"), 0);
+						if (attributes.getValue("ts-creation") != null) {
+							myCreationTimestamp = parseLong(attributes.getValue("ts-creation"));
+							myModificationTimestamp = parseLongObjectSafe(attributes.getValue("ts-modification"));
+							myAccessTimestamp = parseLongObjectSafe(attributes.getValue("ts-access"));
+						} else {
+							// obsolete, old format plugins compatibility
+							myCreationTimestamp = parseDate(attributes.getValue("date-creation"));
+							myModificationTimestamp = parseDateSafe(attributes.getValue("date-modification"));
+							myAccessTimestamp = parseDateSafe(attributes.getValue("date-access"));
+						}
 					} else if ("start".equals(localName)) {
 						myModelId = attributes.getValue("model");
 						myStartParagraphIndex = parseInt(attributes.getValue("paragraph"));
@@ -961,6 +1049,7 @@ class XMLSerializer extends AbstractSerializer {
 					}
 					break;
 				case READ_TEXT:
+				case READ_ORIGINAL_TEXT:
 					throw new SAXException("Unexpected tag " + localName);
 			}
 		}
@@ -976,14 +1065,20 @@ class XMLSerializer extends AbstractSerializer {
 					}
 					break;
 				case READ_TEXT:
+				case READ_ORIGINAL_TEXT:
 					myState = State.READ_BOOKMARK;
 			}
 		}
 
 		@Override
 		public void characters(char[] ch, int start, int length) {
-			if (myState == State.READ_TEXT) {
-				myText.append(ch, start, length);
+			switch (myState) {
+				case READ_TEXT:
+					myText.append(ch, start, length);
+					break;
+				case READ_ORIGINAL_TEXT:
+					myOriginalText.append(ch, start, length);
+					break;
 			}
 		}
 	}
@@ -1005,10 +1100,13 @@ class XMLSerializer extends AbstractSerializer {
 			if ("style".equals(localName)) {
 				final int id = parseIntSafe(attributes.getValue("id"), -1);
 				if (id != -1) {
-					final int rgb = parseIntSafe(attributes.getValue("bg-color"), -1);
-					final ZLColor color = rgb != -1 ? new ZLColor(rgb) : null;
+					final long timestamp = parseLongSafe(attributes.getValue("timestamp"), 0L);
+					final int bg = parseIntSafe(attributes.getValue("bg-color"), -1);
+					final int fg = parseIntSafe(attributes.getValue("fg-color"), -1);
 					myStyle = new HighlightingStyle(
-						id, attributes.getValue("name"), color
+						id, timestamp, attributes.getValue("name"),
+						bg != -1 ? new ZLColor(bg) : null,
+						fg != -1 ? new ZLColor(fg) : null
 					);
 				}
 			}

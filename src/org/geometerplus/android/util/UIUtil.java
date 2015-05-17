@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,6 +65,8 @@ public abstract class UIUtil {
 							ourMonitor.notify();
 						}
 					} catch (Exception e) {
+						e.printStackTrace();
+						ourProgress = null;
 					}
 				}
 			};
@@ -75,15 +77,25 @@ public abstract class UIUtil {
 		}
 	}
 
+	public static void wait(String key, String param, Runnable action, Context context) {
+		waitInternal(getWaitMessage(key).replace("%s", param), action, context);
+	}
+
 	public static void wait(String key, Runnable action, Context context) {
+		waitInternal(getWaitMessage(key), action, context);
+	}
+
+	private static String getWaitMessage(String key) {
+		return ZLResource.resource("dialog").getResource("waitMessage").getResource(key).getValue();
+	}
+
+	private static void waitInternal(String message, Runnable action, Context context) {
 		if (!init()) {
 			action.run();
 			return;
 		}
 
 		synchronized (ourMonitor) {
-			final String message =
-				ZLResource.resource("dialog").getResource("waitMessage").getResource(key).getValue();
 			ourTaskQueue.offer(new Pair(action, message));
 			if (ourProgress == null) {
 				ourProgress = ProgressDialog.show(context, null, message, true, false);
@@ -94,7 +106,7 @@ public abstract class UIUtil {
 		final ProgressDialog currentProgress = ourProgress;
 		new Thread(new Runnable() {
 			public void run() {
-				while ((ourProgress == currentProgress) && !ourTaskQueue.isEmpty()) {
+				while (ourProgress == currentProgress && !ourTaskQueue.isEmpty()) {
 					Pair p = ourTaskQueue.poll();
 					p.Action.run();
 					synchronized (ourMonitor) {
@@ -113,7 +125,7 @@ public abstract class UIUtil {
 		return new ZLApplication.SynchronousExecutor() {
 			private final ZLResource myResource =
 				ZLResource.resource("dialog").getResource("waitMessage");
-			private final String myMessage = myResource.getResource(key).getValue();	
+			private final String myMessage = myResource.getResource(key).getValue();
 			private volatile ProgressDialog myProgress;
 
 			public void execute(final Runnable action, final Runnable uiPostAction) {

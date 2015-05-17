@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@ public abstract class FBReaderIntents {
 		String API_CALLBACK             = "android.fbreader.action.API_CALLBACK";
 		String VIEW                     = "android.fbreader.action.VIEW";
 		String CANCEL_MENU              = "android.fbreader.action.CANCEL_MENU";
+		String CONFIG_SERVICE           = "android.fbreader.action.CONFIG_SERVICE";
 		String LIBRARY_SERVICE          = "android.fbreader.action.LIBRARY_SERVICE";
 		String BOOK_INFO                = "android.fbreader.action.BOOK_INFO";
 		String LIBRARY                  = "android.fbreader.action.LIBRARY";
@@ -43,6 +44,11 @@ public abstract class FBReaderIntents {
 		String ERROR                    = "android.fbreader.action.ERROR";
 		String CRASH                    = "android.fbreader.action.CRASH";
 		String PLUGIN                   = "android.fbreader.action.PLUGIN";
+		String CLOSE                    = "android.fbreader.action.CLOSE";
+		String PLUGIN_CRASH             = "android.fbreader.action.PLUGIN_CRASH";
+		String EDIT_STYLES              = "android.fbreader.action.EDIT_STYLES";
+		String EDIT_BOOKMARK            = "android.fbreader.action.EDIT_BOOKMARK";
+		String SWITCH_YOTA_SCREEN       = "android.fbreader.action.SWITCH_YOTA_SCREEN";
 	}
 
 	public interface Key {
@@ -52,10 +58,12 @@ public abstract class FBReaderIntents {
 		String TYPE                     = "fbreader.type";
 	}
 
-	public static Intent defaultIntent(String action) {
-		return new Intent(action)
-			.addCategory(Intent.CATEGORY_DEFAULT)
-			.setPackage(DEFAULT_PACKAGE);
+	public static Intent defaultInternalIntent(String action) {
+		return internalIntent(action).addCategory(Intent.CATEGORY_DEFAULT);
+	}
+
+	public static Intent internalIntent(String action) {
+		return new Intent(action).setPackage(DEFAULT_PACKAGE);
 	}
 
 	public static void putBookExtra(Intent intent, String key, Book book) {

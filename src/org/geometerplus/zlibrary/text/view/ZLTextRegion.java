@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,6 +118,12 @@ public final class ZLTextRegion {
 		}
 	};
 
+	public static Filter ExtensionFilter = new Filter() {
+		public boolean accepts(ZLTextRegion region) {
+			return region.getSoul() instanceof ExtensionRegionSoul;
+		}
+	};
+
 	public static Filter ImageOrHyperlinkFilter = new Filter() {
 		public boolean accepts(ZLTextRegion region) {
 			final Soul soul = region.getSoul();
@@ -178,6 +184,22 @@ public final class ZLTextRegion {
 		return areas[areas.length - 1];
 	}
 
+	public int getLeft() {
+		int left = Integer.MAX_VALUE;
+		for (ZLTextElementArea area : textAreas()) {
+			left = Math.min(area.XStart, left);
+		}
+		return left;
+	}
+
+	public int getRight() {
+		int right = Integer.MIN_VALUE;
+		for (ZLTextElementArea area : textAreas()) {
+			right = Math.max(area.XEnd, right);
+		}
+		return right;
+	}
+
 	public int getTop() {
 		return getFirstArea().YStart;
 	}
@@ -235,5 +257,14 @@ public final class ZLTextRegion {
 
 	boolean isExactlyOver(ZLTextRegion other) {
 		return other == null || other.isExactlyUnder(this);
+	}
+
+	public boolean isVerticallyAligned() {
+		for (ZLTextElementArea area : textAreas()) {
+			if (!area.Style.isVerticallyAligned()) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

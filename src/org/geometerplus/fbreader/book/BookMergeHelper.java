@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ class BookMergeHelper {
 		}
 		final Book vanilla;
 		try {
-			vanilla = new Book(base.File);
+			vanilla = new Book(base.File, base.getPlugin());
 		} catch (BookReadingException e) {
 			return false;
 		}
@@ -139,7 +139,7 @@ class BookMergeHelper {
 				result = true;
 			}
 		}
-		
+
 		return result;
 	}
 }

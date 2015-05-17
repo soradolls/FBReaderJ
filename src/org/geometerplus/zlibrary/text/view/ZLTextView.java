@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +23,8 @@ import java.util.*;
 
 import org.geometerplus.zlibrary.core.application.ZLApplication;
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
+import org.geometerplus.zlibrary.core.image.ZLImageData;
+import org.geometerplus.zlibrary.core.library.ZLibrary;
 import org.geometerplus.zlibrary.core.util.RationalNumber;
 import org.geometerplus.zlibrary.core.util.ZLColor;
 import org.geometerplus.zlibrary.core.view.ZLPaintContext;
@@ -32,8 +34,6 @@ import org.geometerplus.zlibrary.text.hyphenation.*;
 import org.geometerplus.zlibrary.text.view.style.ZLTextStyleCollection;
 
 public abstract class ZLTextView extends ZLTextViewBase {
-	public static final int MAX_SELECTION_DISTANCE = 10;
-
 	public interface ScrollingMode {
 		int NO_OVERLAPPING = 0;
 		int KEEP_LINES = 1;
@@ -57,19 +57,21 @@ public abstract class ZLTextView extends ZLTextViewBase {
 
 	private final HashMap<ZLTextLineInfo,ZLTextLineInfo> myLineInfoCache = new HashMap<ZLTextLineInfo,ZLTextLineInfo>();
 
-	private ZLTextRegion.Soul mySelectedRegionSoul;
-	private boolean myHighlightSelectedRegion = true;
+	private ZLTextRegion.Soul myOutlinedRegionSoul;
+	private boolean myShowOutline = true;
 
 	private final ZLTextSelection mySelection = new ZLTextSelection(this);
 	private final Set<ZLTextHighlighting> myHighlightings =
 		Collections.synchronizedSet(new TreeSet<ZLTextHighlighting>());
+
+	private CursorManager myCursorManager;
 
 	public ZLTextView(ZLApplication application) {
 		super(application);
 	}
 
 	public synchronized void setModel(ZLTextModel model) {
-		ZLTextParagraphCursorCache.clear();
+		myCursorManager = model != null ? new CursorManager(model, getExtensionManager()) : null;
 
 		mySelection.clear();
 		myHighlightings.clear();
@@ -81,7 +83,7 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		if (myModel != null) {
 			final int paragraphsNumber = myModel.getParagraphsNumber();
 			if (paragraphsNumber > 0) {
-				myCurrentPage.moveStartCursor(ZLTextParagraphCursor.cursor(myModel, 0));
+				myCurrentPage.moveStartCursor(myCursorManager.get(0));
 			}
 		}
 		Application.getViewWidget().reset();
@@ -176,7 +178,7 @@ public abstract class ZLTextView extends ZLTextViewBase {
 	}
 
 	public synchronized int search(final String text, boolean ignoreCase, boolean wholeText, boolean backward, boolean thisSectionOnly) {
-		if (text.length() == 0) {
+		if (myModel == null || text.length() == 0) {
 			return 0;
 		}
 		int startIndex = 0;
@@ -325,8 +327,12 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		}
 	}
 
-	protected void moveSelectionCursorTo(ZLTextSelectionCursor cursor, int x, int y) {
-		y -= ZLTextSelectionCursor.getHeight() / 2 + ZLTextSelectionCursor.getAccent() / 2;
+	protected void moveSelectionCursorTo(ZLTextSelectionCursor cursor, int x, int y, boolean inMovement) {
+		if (inMovement) {
+			y -= ZLTextSelectionCursor.getHeight() / 2 + ZLTextSelectionCursor.getAccent() / 2;
+		} else {
+			y -= getTextStyleCollection().getBaseStyle().getFontSize() / 2;
+		}
 		mySelection.setCursorInMovement(cursor, x, y);
 		mySelection.expandTo(myCurrentPage, x, y);
 		Application.getViewWidget().reset();
@@ -450,7 +456,7 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		setContext(context);
 		final ZLFile wallpaper = getWallpaperFile();
 		if (wallpaper != null) {
-			context.clear(wallpaper, getWallpaperMode());
+			context.clear(wallpaper, getFillMode());
 		} else {
 			context.clear(getBackgroundColor());
 		}
@@ -495,7 +501,9 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		int x = getLeftMargin();
 		int y = getTopMargin();
 		int index = 0;
+		ZLTextLineInfo previousInfo = null;
 		for (ZLTextLineInfo info : lineInfos) {
+			info.adjust(previousInfo);
 			prepareTextLine(page, info, x, y);
 			y += info.Height + info.Descent + info.VSpaceAfter;
 			labels[++index] = page.TextElementMap.size();
@@ -503,13 +511,30 @@ public abstract class ZLTextView extends ZLTextViewBase {
 				y = getTopMargin();
 				x += page.getTextWidth() + getSpaceBetweenColumns();
 			}
+			previousInfo = info;
+		}
+
+		final List<ZLTextHighlighting> hilites = findHilites(page);
+		if (!hilites.isEmpty()) {
+			x = getLeftMargin();
+			y = getTopMargin();
+			index = 0;
+			for (ZLTextLineInfo info : lineInfos) {
+				drawHighlightings(page, hilites, info, labels[index], labels[index + 1], x, y);
+				y += info.Height + info.Descent + info.VSpaceAfter;
+				++index;
+				if (index == page.Column0Height) {
+					y = getTopMargin();
+					x += page.getTextWidth() + getSpaceBetweenColumns();
+				}
+			}
 		}
 
 		x = getLeftMargin();
 		y = getTopMargin();
 		index = 0;
 		for (ZLTextLineInfo info : lineInfos) {
-			drawHighlightings(page, info, labels[index], labels[index + 1], x, y);
+			drawTextLine(page, hilites, info, labels[index], labels[index + 1]);
 			y += info.Height + info.Descent + info.VSpaceAfter;
 			++index;
 			if (index == page.Column0Height) {
@@ -518,22 +543,9 @@ public abstract class ZLTextView extends ZLTextViewBase {
 			}
 		}
 
-		x = getLeftMargin();
-		y = getTopMargin();
-		index = 0;
-		for (ZLTextLineInfo info : lineInfos) {
-			drawTextLine(page, info, labels[index], labels[index + 1]);
-			y += info.Height + info.Descent + info.VSpaceAfter;
-			++index;
-			if (index == page.Column0Height) {
-				y = getTopMargin();
-				x += page.getTextWidth() + getSpaceBetweenColumns();
-			}
-		}
-
-		final ZLTextRegion selectedElementRegion = getSelectedRegion(page);
-		if (selectedElementRegion != null && myHighlightSelectedRegion) {
-			selectedElementRegion.draw(context);
+		final ZLTextRegion outlinedElementRegion = getOutlinedRegion(page);
+		if (outlinedElementRegion != null && myShowOutline) {
+			outlinedElementRegion.draw(context);
 		}
 
 		drawSelectionCursor(context, getSelectionCursorPoint(page, ZLTextSelectionCursor.Left));
@@ -645,8 +657,10 @@ public abstract class ZLTextView extends ZLTextViewBase {
 				charsPerParagraph * 1.2f);
 
 		final int strHeight = getWordHeight() + getContext().getDescent();
-		final int effectiveHeight = (int) (textHeight - (getTextStyle().getSpaceBefore()
-				+ getTextStyle().getSpaceAfter()) / charsPerParagraph);
+		final int effectiveHeight = (int)
+			(textHeight -
+				(getTextStyle().getSpaceBefore(metrics())
+				+ getTextStyle().getSpaceAfter(metrics()) / 2) / charsPerParagraph);
 		final int linesPerPage = effectiveHeight / strHeight;
 
 		return charsPerLine * linesPerPage;
@@ -818,11 +832,7 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		preparePaintInfo();
 	}
 
-	private void drawHighlightings(ZLTextPage page, ZLTextLineInfo info, int from, int to, int x, int y) {
-		if (from == to) {
-			return;
-		}
-
+	private List<ZLTextHighlighting> findHilites(ZLTextPage page) {
 		final LinkedList<ZLTextHighlighting> hilites = new LinkedList<ZLTextHighlighting>();
 		if (mySelection.intersects(page)) {
 			hilites.add(mySelection);
@@ -834,7 +844,11 @@ public abstract class ZLTextView extends ZLTextViewBase {
 				}
 			}
 		}
-		if (hilites.isEmpty()) {
+		return hilites;
+	}
+
+	private void drawHighlightings(ZLTextPage page, List<ZLTextHighlighting> hilites, ZLTextLineInfo info, int from, int to, int x, int y) {
+		if (from == to) {
 			return;
 		}
 
@@ -875,7 +889,7 @@ public abstract class ZLTextView extends ZLTextViewBase {
 	protected abstract ZLPaintContext.ColorAdjustingMode getAdjustingModeForImages();
 
 	private static final char[] SPACE = new char[] { ' ' };
-	private void drawTextLine(ZLTextPage page, ZLTextLineInfo info, int from, int to) {
+	private void drawTextLine(ZLTextPage page, List<ZLTextHighlighting> hilites, ZLTextLineInfo info, int from, int to) {
 		final ZLPaintContext context = getContext();
 		final ZLTextParagraphCursor paragraph = info.ParagraphCursor;
 		int index = from;
@@ -890,12 +904,15 @@ public abstract class ZLTextView extends ZLTextViewBase {
 					setTextStyle(area.Style);
 				}
 				final int areaX = area.XStart;
-				final int areaY = area.YEnd - getElementDescent(element) - getTextStyle().getVerticalShift();
+				final int areaY = area.YEnd - getElementDescent(element) - getTextStyle().getVerticalAlign(metrics());
 				if (element instanceof ZLTextWord) {
+					final ZLTextPosition pos =
+						new ZLTextFixedPosition(info.ParagraphCursor.Index, wordIndex, 0);
+					final ZLTextHighlighting hl = getWordHilite(pos, hilites);
+					final ZLColor hlColor = hl != null ? hl.getForegroundColor() : null;
 					drawWord(
 						areaX, areaY, (ZLTextWord)element, charIndex, -1, false,
-						mySelection.isAreaSelected(area)
-							? getSelectionForegroundColor() : getTextColor(getTextStyle().Hyperlink)
+						hlColor != null ? hlColor : getTextColor(getTextStyle().Hyperlink)
 					);
 				} else if (element instanceof ZLTextImageElement) {
 					final ZLTextImageElement imageElement = (ZLTextImageElement)element;
@@ -919,13 +936,15 @@ public abstract class ZLTextView extends ZLTextViewBase {
 					context.drawLine(xStart, yEnd, xEnd, yEnd);
 					context.drawLine(xEnd, yEnd, xEnd, yStart);
 					context.drawLine(xEnd, yStart, xStart, yStart);
-					final int l = xStart + (xEnd - xStart) * 7 / 16; 
-					final int r = xStart + (xEnd - xStart) * 10 / 16; 
+					final int l = xStart + (xEnd - xStart) * 7 / 16;
+					final int r = xStart + (xEnd - xStart) * 10 / 16;
 					final int t = yStart + (yEnd - yStart) * 2 / 6;
 					final int b = yStart + (yEnd - yStart) * 4 / 6;
 					final int c = yStart + (yEnd - yStart) / 2;
 					context.setFillColor(new ZLColor(196, 196, 196));
 					context.fillPolygon(new int[] { l, l, r }, new int[] { t, b, c });
+				} else if (element instanceof ExtensionElement) {
+					((ExtensionElement)element).draw(context, area);
 				} else if (element == ZLTextElement.HSpace) {
 					final int cw = context.getSpaceWidth();
 					/*
@@ -950,13 +969,26 @@ public abstract class ZLTextView extends ZLTextViewBase {
 				? info.StartCharIndex : 0;
 			final int len = info.EndCharIndex - start;
 			final ZLTextWord word = (ZLTextWord)paragraph.getElement(info.EndElementIndex);
+			final ZLTextPosition pos =
+				new ZLTextFixedPosition(info.ParagraphCursor.Index, info.EndElementIndex, 0);
+			final ZLTextHighlighting hl = getWordHilite(pos, hilites);
+			final ZLColor hlColor = hl != null ? hl.getForegroundColor() : null;
 			drawWord(
-				area.XStart, area.YEnd - context.getDescent() - getTextStyle().getVerticalShift(),
+				area.XStart, area.YEnd - context.getDescent() - getTextStyle().getVerticalAlign(metrics()),
 				word, start, len, area.AddHyphenationSign,
-				mySelection.isAreaSelected(area)
-					? getSelectionForegroundColor() : getTextColor(getTextStyle().Hyperlink)
+				hlColor != null ? hlColor : getTextColor(getTextStyle().Hyperlink)
 			);
 		}
+	}
+
+	private ZLTextHighlighting getWordHilite(ZLTextPosition pos, List<ZLTextHighlighting> hilites) {
+		for (ZLTextHighlighting h : hilites) {
+			if (h.getStartPosition().compareToIgnoreChar(pos) <= 0
+				&& pos.compareToIgnoreChar(h.getEndPosition()) <= 0) {
+				return h;
+			}
+		}
+		return null;
 	}
 
 	private void buildInfos(ZLTextPage page, ZLTextWordCursor start, ZLTextWordCursor result) {
@@ -965,15 +997,17 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		page.LineInfos.clear();
 		page.Column0Height = 0;
 		boolean nextParagraph;
+		ZLTextLineInfo info = null;
 		do {
+			final ZLTextLineInfo previousInfo = info;
 			resetTextStyle();
 			final ZLTextParagraphCursor paragraphCursor = result.getParagraphCursor();
 			final int wordIndex = result.getElementIndex();
 			applyStyleChanges(paragraphCursor, 0, wordIndex);
-			ZLTextLineInfo info = new ZLTextLineInfo(paragraphCursor, wordIndex, result.getCharIndex(), getTextStyle());
+			info = new ZLTextLineInfo(paragraphCursor, wordIndex, result.getCharIndex(), getTextStyle());
 			final int endIndex = info.ParagraphCursorLength;
 			while (info.EndElementIndex != endIndex) {
-				info = processTextLine(page, paragraphCursor, info.EndElementIndex, info.EndCharIndex, endIndex);
+				info = processTextLine(page, paragraphCursor, info.EndElementIndex, info.EndCharIndex, endIndex, previousInfo);
 				textAreaHeight -= info.Height + info.Descent;
 				if (textAreaHeight < 0 && page.LineInfos.size() > page.Column0Height) {
 					if (page.Column0Height == 0 && page.twoColumnView()) {
@@ -1015,17 +1049,48 @@ public abstract class ZLTextView extends ZLTextViewBase {
 			&& getTextStyle().allowHyphenations();
 	}
 
+	private volatile ZLTextWord myCachedWord;
+	private volatile ZLTextHyphenationInfo myCachedInfo;
+	private final synchronized ZLTextHyphenationInfo getHyphenationInfo(ZLTextWord word) {
+		if (myCachedWord != word) {
+			myCachedWord = word;
+			myCachedInfo = ZLTextHyphenator.Instance().getInfo(word);
+		}
+		return myCachedInfo;
+	}
+
 	private ZLTextLineInfo processTextLine(
 		ZLTextPage page,
 		ZLTextParagraphCursor paragraphCursor,
 		final int startIndex,
 		final int startCharIndex,
-		final int endIndex
+		final int endIndex,
+		ZLTextLineInfo previousInfo
+	) {
+		final ZLTextLineInfo info = processTextLineInternal(
+			page, paragraphCursor, startIndex, startCharIndex, endIndex, previousInfo
+		);
+		if (info.EndElementIndex == startIndex && info.EndCharIndex == startCharIndex) {
+			info.EndElementIndex = paragraphCursor.getParagraphLength();
+			info.EndCharIndex = 0;
+			// TODO: add error element
+		}
+		return info;
+	}
+
+	private ZLTextLineInfo processTextLineInternal(
+		ZLTextPage page,
+		ZLTextParagraphCursor paragraphCursor,
+		final int startIndex,
+		final int startCharIndex,
+		final int endIndex,
+		ZLTextLineInfo previousInfo
 	) {
 		final ZLPaintContext context = getContext();
 		final ZLTextLineInfo info = new ZLTextLineInfo(paragraphCursor, startIndex, startCharIndex, getTextStyle());
 		final ZLTextLineInfo cachedInfo = myLineInfoCache.get(info);
 		if (cachedInfo != null) {
+			cachedInfo.adjust(previousInfo);
 			applyStyleChanges(paragraphCursor, startIndex, cachedInfo.EndElementIndex);
 			return cachedInfo;
 		}
@@ -1052,9 +1117,13 @@ public abstract class ZLTextView extends ZLTextViewBase {
 
 		ZLTextStyle storedStyle = getTextStyle();
 
-		info.LeftIndent = getTextStyle().getLeftIndent();
+		final int maxWidth = page.getTextWidth() - storedStyle.getRightIndent(metrics());
+		info.LeftIndent = storedStyle.getLeftIndent(metrics());
 		if (isFirstLine) {
-			info.LeftIndent += getTextStyle().getFirstLineIndentDelta();
+			info.LeftIndent += storedStyle.getFirstLineIndent(metrics());
+		}
+		if (info.LeftIndent > maxWidth - 20) {
+			info.LeftIndent = maxWidth * 3 / 4;
 		}
 
 		info.Width = info.LeftIndent;
@@ -1068,7 +1137,6 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		int newWidth = info.Width;
 		int newHeight = info.Height;
 		int newDescent = info.Descent;
-		int maxWidth = page.getTextWidth();
 		boolean wordOccurred = false;
 		boolean isVisible = false;
 		int lastSpaceWidth = 0;
@@ -1094,6 +1162,9 @@ public abstract class ZLTextView extends ZLTextViewBase {
 				wordOccurred = true;
 				isVisible = true;
 			} else if (element instanceof ZLTextVideoElement) {
+				wordOccurred = true;
+				isVisible = true;
+			} else if (element instanceof ExtensionElement) {
 				wordOccurred = true;
 				isVisible = true;
 			} else if (isStyleChangeElement(element)) {
@@ -1140,36 +1211,53 @@ public abstract class ZLTextView extends ZLTextViewBase {
 				int spaceLeft = maxWidth - newWidth;
 				if ((word.Length > 3 && spaceLeft > 2 * context.getSpaceWidth())
 					|| info.EndElementIndex == startIndex) {
-					ZLTextHyphenationInfo hyphenationInfo = ZLTextHyphenator.Instance().getInfo(word);
-					int hyphenationPosition = word.Length - 1;
+					ZLTextHyphenationInfo hyphenationInfo = getHyphenationInfo(word);
+					int hyphenationPosition = currentCharIndex;
 					int subwordWidth = 0;
-					for (; hyphenationPosition > currentCharIndex; hyphenationPosition--) {
-						if (hyphenationInfo.isHyphenationPossible(hyphenationPosition)) {
-							subwordWidth = getWordWidth(
+					for (int right = word.Length - 1, left = currentCharIndex; right > left; ) {
+						final int mid = (right + left + 1) / 2;
+						int m1 = mid;
+						while (m1 > left && !hyphenationInfo.isHyphenationPossible(m1)) {
+							--m1;
+						}
+						if (m1 > left) {
+							final int w = getWordWidth(
 								word,
 								currentCharIndex,
-								hyphenationPosition - currentCharIndex,
-								word.Data[word.Offset + hyphenationPosition - 1] != '-'
+								m1 - currentCharIndex,
+								word.Data[word.Offset + m1 - 1] != '-'
 							);
-							if (subwordWidth <= spaceLeft) {
-								break;
+							if (w < spaceLeft) {
+								left = mid;
+								hyphenationPosition = m1;
+								subwordWidth = w;
+							} else {
+								right = mid - 1;
 							}
+						} else {
+							left = mid;
 						}
 					}
 					if (hyphenationPosition == currentCharIndex && info.EndElementIndex == startIndex) {
-						hyphenationPosition = word.Length == currentCharIndex + 1 ? word.Length : word.Length - 1;
-						subwordWidth = getWordWidth(word, currentCharIndex, word.Length - currentCharIndex, false);
-						for (; hyphenationPosition > currentCharIndex + 1; hyphenationPosition--) {
-							subwordWidth = getWordWidth(
+						subwordWidth = getWordWidth(word, currentCharIndex, 1, false);
+						int right = word.Length == currentCharIndex + 1 ? word.Length : word.Length - 1;
+						int left = currentCharIndex + 1;
+						while (right > left) {
+							final int mid = (right + left + 1) / 2;
+							final int w = getWordWidth(
 								word,
 								currentCharIndex,
-								hyphenationPosition - currentCharIndex,
-								word.Data[word.Offset + hyphenationPosition - 1] != '-'
+								mid - currentCharIndex,
+								word.Data[word.Offset + mid - 1] != '-'
 							);
-							if (subwordWidth <= spaceLeft) {
-								break;
+							if (w <= spaceLeft) {
+								left = mid;
+								subwordWidth = w;
+							} else {
+								right = mid - 1;
 							}
 						}
+						hyphenationPosition = right;
 					}
 					if (hyphenationPosition > currentCharIndex) {
 						info.IsVisible = true;
@@ -1198,10 +1286,17 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		setTextStyle(storedStyle);
 
 		if (isFirstLine) {
-			info.Height += info.StartStyle.getSpaceBefore();
+			info.VSpaceBefore = info.StartStyle.getSpaceBefore(metrics());
+			if (previousInfo != null) {
+				info.PreviousInfoUsed = true;
+				info.Height += Math.max(0, info.VSpaceBefore - previousInfo.VSpaceAfter);
+			} else {
+				info.PreviousInfoUsed = false;
+				info.Height += info.VSpaceBefore;
+			}
 		}
 		if (info.isEndOfParagraph()) {
-			info.VSpaceAfter = getTextStyle().getSpaceAfter();
+			info.VSpaceAfter = getTextStyle().getSpaceAfter(metrics());
 		}
 
 		if (info.EndElementIndex != endIndex || endIndex == info.ParagraphCursorLength) {
@@ -1228,14 +1323,14 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		final int maxWidth = page.getTextWidth();
 		switch (getTextStyle().getAlignment()) {
 			case ZLTextAlignmentType.ALIGN_RIGHT:
-				x += maxWidth - getTextStyle().getRightIndent() - info.Width;
+				x += maxWidth - getTextStyle().getRightIndent(metrics()) - info.Width;
 				break;
 			case ZLTextAlignmentType.ALIGN_CENTER:
-				x += (maxWidth - getTextStyle().getRightIndent() - info.Width) / 2;
+				x += (maxWidth - getTextStyle().getRightIndent(metrics()) - info.Width) / 2;
 				break;
 			case ZLTextAlignmentType.ALIGN_JUSTIFY:
 				if (!endOfParagraph && (paragraphCursor.getElement(info.EndElementIndex) != ZLTextElement.AfterParagraph)) {
-					fullCorrection = maxWidth - getTextStyle().getRightIndent() - info.Width;
+					fullCorrection = maxWidth - getTextStyle().getRightIndent(metrics()) - info.Width;
 				}
 				break;
 			case ZLTextAlignmentType.ALIGN_LEFT:
@@ -1272,7 +1367,7 @@ public abstract class ZLTextView extends ZLTextViewBase {
 					wordOccurred = false;
 					--spaceCounter;
 				}
-			} else if (element instanceof ZLTextWord || element instanceof ZLTextImageElement || element instanceof ZLTextVideoElement) {
+			} else if (element instanceof ZLTextWord || element instanceof ZLTextImageElement || element instanceof ZLTextVideoElement || element instanceof ExtensionElement) {
 				final int height = getElementHeight(element);
 				final int descent = getElementDescent(element);
 				final int length = element instanceof ZLTextWord ? ((ZLTextWord)element).Length : 0;
@@ -1496,7 +1591,9 @@ public abstract class ZLTextView extends ZLTextViewBase {
 	protected synchronized void rebuildPaintInfo() {
 		myPreviousPage.reset();
 		myNextPage.reset();
-		ZLTextParagraphCursorCache.clear();
+		if (myCursorManager != null) {
+			myCursorManager.evictAll();
+		}
 
 		if (myCurrentPage.PaintState != PaintStateEnum.NOTHING_TO_PAINT) {
 			myCurrentPage.LineInfos.clear();
@@ -1518,25 +1615,37 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		return (unit == SizeUnit.PIXEL_UNIT) ? (info.Height + info.Descent + info.VSpaceAfter) : (info.IsVisible ? 1 : 0);
 	}
 
-	private int paragraphSize(ZLTextPage page, ZLTextWordCursor cursor, boolean beforeCurrentPosition, int unit) {
+	private static class ParagraphSize {
+		public int Height;
+		public int TopMargin;
+		public int BottomMargin;
+	}
+
+	private ParagraphSize paragraphSize(ZLTextPage page, ZLTextWordCursor cursor, boolean beforeCurrentPosition, int unit) {
+		final ParagraphSize size = new ParagraphSize();
+
 		final ZLTextParagraphCursor paragraphCursor = cursor.getParagraphCursor();
 		if (paragraphCursor == null) {
-			return 0;
+			return size;
 		}
 		final int endElementIndex =
 			beforeCurrentPosition ? cursor.getElementIndex() : paragraphCursor.getParagraphLength();
 
 		resetTextStyle();
 
-		int size = 0;
-
 		int wordIndex = 0;
 		int charIndex = 0;
+		ZLTextLineInfo info = null;
 		while (wordIndex != endElementIndex) {
-			ZLTextLineInfo info = processTextLine(page, paragraphCursor, wordIndex, charIndex, endElementIndex);
+			final ZLTextLineInfo prev = info;
+			info = processTextLine(page, paragraphCursor, wordIndex, charIndex, endElementIndex, prev);
 			wordIndex = info.EndElementIndex;
 			charIndex = info.EndCharIndex;
-			size += infoSize(info, unit);
+			size.Height += infoSize(info, unit);
+			if (prev == null) {
+				size.TopMargin = info.VSpaceBefore;
+			}
+			size.BottomMargin = info.VSpaceAfter;
 		}
 
 		return size;
@@ -1552,8 +1661,9 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		resetTextStyle();
 		applyStyleChanges(paragraphCursor, 0, cursor.getElementIndex());
 
-		while (!cursor.isEndOfParagraph() && (size > 0)) {
-			ZLTextLineInfo info = processTextLine(page, paragraphCursor, cursor.getElementIndex(), cursor.getCharIndex(), endElementIndex);
+		ZLTextLineInfo info = null;
+		while (!cursor.isEndOfParagraph() && size > 0) {
+			info = processTextLine(page, paragraphCursor, cursor.getElementIndex(), cursor.getCharIndex(), endElementIndex, info);
 			cursor.moveTo(info.EndElementIndex, info.EndCharIndex);
 			size -= infoSize(info, unit);
 		}
@@ -1567,12 +1677,14 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		return end;
 	}
 
-	private ZLTextWordCursor findStart(ZLTextPage page, ZLTextWordCursor end, int unit, int size) {
+	private ZLTextWordCursor findStart(ZLTextPage page, ZLTextWordCursor end, int unit, int height) {
 		final ZLTextWordCursor start = new ZLTextWordCursor(end);
-		size -= paragraphSize(page, start, true, unit);
+		ParagraphSize size = paragraphSize(page, start, true, unit);
+		height -= size.Height;
 		boolean positionChanged = !start.isStartOfParagraph();
 		start.moveToParagraphStart();
-		while (size > 0) {
+		while (height > 0) {
+			final ParagraphSize previousSize = size;
 			if (positionChanged && start.getParagraphCursor().isEndOfSection()) {
 				break;
 			}
@@ -1582,9 +1694,13 @@ public abstract class ZLTextView extends ZLTextViewBase {
 			if (!start.getParagraphCursor().isEndOfSection()) {
 				positionChanged = true;
 			}
-			size -= paragraphSize(page, start, false, unit);
+			size = paragraphSize(page, start, false, unit);
+			height -= size.Height;
+			if (previousSize != null) {
+				height += Math.min(size.BottomMargin, previousSize.TopMargin);
+			}
 		}
-		skip(page, start, unit, -size);
+		skip(page, start, unit, -height);
 
 		if (unit == SizeUnit.PIXEL_UNIT) {
 			boolean sameStart = start.samePositionAs(end);
@@ -1605,18 +1721,34 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		return myCurrentPage.TextElementMap.binarySearch(x, y);
 	}
 
-	public void hideSelectedRegionBorder() {
-		myHighlightSelectedRegion = false;
+	public final void outlineRegion(ZLTextRegion region) {
+		outlineRegion(region != null ? region.getSoul() : null);
+	}
+
+	public final void outlineRegion(ZLTextRegion.Soul soul) {
+		myShowOutline = true;
+		myOutlinedRegionSoul = soul;
+	}
+
+	public void hideOutline() {
+		myShowOutline = false;
 		Application.getViewWidget().reset();
 	}
 
-	private ZLTextRegion getSelectedRegion(ZLTextPage page) {
-		return page.TextElementMap.getRegion(mySelectedRegionSoul);
+	private ZLTextRegion getOutlinedRegion(ZLTextPage page) {
+		return page.TextElementMap.getRegion(myOutlinedRegionSoul);
 	}
 
-	public ZLTextRegion getSelectedRegion() {
-		return getSelectedRegion(myCurrentPage);
+	public ZLTextRegion getOutlinedRegion() {
+		return getOutlinedRegion(myCurrentPage);
 	}
+
+/*
+	public void resetRegionPointer() {
+		myOutlinedRegionSoul = null;
+		myShowOutline = true;
+	}
+*/
 
 	protected ZLTextHighlighting findHighlighting(int x, int y, int maxDistance) {
 		final ZLTextRegion region = findRegion(x, y, maxDistance, ZLTextRegion.AnyRegionFilter);
@@ -1641,16 +1773,8 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		return myCurrentPage.TextElementMap.findRegion(x, y, maxDistance, filter);
 	}
 
-	public void selectRegion(ZLTextRegion region) {
-		final ZLTextRegion.Soul soul = region != null ? region.getSoul() : null;
-		if (soul == null || !soul.equals(mySelectedRegionSoul)) {
-			myHighlightSelectedRegion = true;
-		}
-		mySelectedRegionSoul = soul;
-	}
-
 	protected boolean initSelection(int x, int y) {
-		y -= ZLTextSelectionCursor.getHeight() / 2 + ZLTextSelectionCursor.getAccent() / 2;
+		y -= getTextStyleCollection().getBaseStyle().getFontSize() / 2;
 		if (!mySelection.start(x, y)) {
 			return false;
 		}
@@ -1664,6 +1788,10 @@ public abstract class ZLTextView extends ZLTextViewBase {
 			Application.getViewWidget().reset();
 			Application.getViewWidget().repaint();
 		}
+	}
+
+	public ZLTextRegion.Soul getSelectionSoul() {
+		return mySelection.getSoul();
 	}
 
 	public int getSelectionStartY() {
@@ -1712,13 +1840,8 @@ public abstract class ZLTextView extends ZLTextViewBase {
 		return mySelection.isEmpty();
 	}
 
-	public void resetRegionPointer() {
-		mySelectedRegionSoul = null;
-		myHighlightSelectedRegion = true;
-	}
-
 	public ZLTextRegion nextRegion(Direction direction, ZLTextRegion.Filter filter) {
-		return myCurrentPage.TextElementMap.nextRegion(getSelectedRegion(), direction, filter);
+		return myCurrentPage.TextElementMap.nextRegion(getOutlinedRegion(), direction, filter);
 	}
 
 	@Override
@@ -1738,4 +1861,10 @@ public abstract class ZLTextView extends ZLTextViewBase {
 			}
 		}
 	}
+
+	ZLTextParagraphCursor cursor(int index) {
+		return myCursorManager.get(index);
+	}
+
+	protected abstract ExtensionElementManager getExtensionManager();
 }

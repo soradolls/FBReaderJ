@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ final class DummyPaintContext extends ZLPaintContext {
 	}
 
 	@Override
-	public void clear(ZLFile wallpaperFile, WallpaperMode mode) {
+	public void clear(ZLFile wallpaperFile, FillMode mode) {
 	}
 
 	@Override
@@ -70,7 +70,10 @@ final class DummyPaintContext extends ZLPaintContext {
 	public int getHeight() {
 		return 1;
 	}
-
+	@Override
+	protected int getCharHeightInternal(char chr) {
+		return 1;
+	}
 	@Override
 	public int getStringWidth(char[] string, int offset, int length) {
 		return 1;

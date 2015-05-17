@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ public class FolderListDialogActivity extends ListActivity {
 	@Override
 	protected void onActivityResult(int index, int resultCode, Intent data) {
 		if (resultCode == RESULT_OK) {
-			final String path = FileChooserUtil.pathFromData(data);
+			final String path = FileChooserUtil.folderPathFromData(data);
 			final int existing = myFolderList.indexOf(path);
 			if (existing == -1) {
 				if (index == 0) {

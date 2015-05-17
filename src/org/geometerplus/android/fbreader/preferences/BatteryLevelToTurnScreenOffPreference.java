@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ import org.geometerplus.zlibrary.core.options.ZLIntegerRangeOption;
 class BatteryLevelToTurnScreenOffPreference extends ZLStringListPreference {
 	private final ZLIntegerRangeOption myOption;
 
-	BatteryLevelToTurnScreenOffPreference(Context context, ZLIntegerRangeOption option, ZLResource rootResource, String resourceKey) {
-		super(context, rootResource, resourceKey);
+	BatteryLevelToTurnScreenOffPreference(Context context, ZLIntegerRangeOption option, ZLResource resource) {
+		super(context, resource);
 		myOption = option;
 		String[] entries = { "0", "25", "50", "100" };
 		setList(entries);

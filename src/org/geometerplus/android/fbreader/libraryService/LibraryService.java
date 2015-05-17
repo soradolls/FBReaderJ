@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,23 +23,41 @@ import java.util.*;
 
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.IBinder;
 import android.os.FileObserver;
 
-import org.geometerplus.zlibrary.core.filesystem.ZLFile;
+import org.geometerplus.zlibrary.core.image.ZLImage;
+import org.geometerplus.zlibrary.core.image.ZLImageProxy;
 import org.geometerplus.zlibrary.core.options.Config;
 
-import org.geometerplus.zlibrary.text.view.ZLTextPosition;
 import org.geometerplus.zlibrary.text.view.ZLTextFixedPosition;
+import org.geometerplus.zlibrary.text.view.ZLTextPosition;
+
+import org.geometerplus.zlibrary.ui.android.image.ZLAndroidImageData;
+import org.geometerplus.zlibrary.ui.android.image.ZLAndroidImageManager;
 
 import org.geometerplus.fbreader.Paths;
 import org.geometerplus.fbreader.book.*;
 
-import org.geometerplus.android.fbreader.api.TextPosition;
+import org.geometerplus.android.fbreader.httpd.DataService;
+import org.geometerplus.android.fbreader.httpd.DataUtil;
+import org.geometerplus.android.fbreader.util.AndroidImageSynchronizer;
+import org.geometerplus.android.util.BitmapCache;
 
 public class LibraryService extends Service {
+	private static SQLiteBooksDatabase ourDatabase;
+	private static final Object ourDatabaseLock = new Object();
+
+	final DataService.Connection DataConnection = new DataService.Connection();
+
 	static final String BOOK_EVENT_ACTION = "fbreader.library_service.book_event";
 	static final String BUILD_EVENT_ACTION = "fbreader.library_service.build_event";
+	static final String COVER_READY_ACTION = "fbreader.library_service.cover_ready";
+
+	private final BitmapCache myCoversCache = new BitmapCache(0.2f);
+
+	private final AndroidImageSynchronizer myImageSynchronizer = new AndroidImageSynchronizer(this);
 
 	private static final class Observer extends FileObserver {
 		private static final int MASK =
@@ -88,8 +106,8 @@ public class LibraryService extends Service {
 		private final List<FileObserver> myFileObservers = new LinkedList<FileObserver>();
 		private BookCollection myCollection;
 
-		LibraryImplementation() {
-			myDatabase = new SQLiteBooksDatabase(LibraryService.this);
+		LibraryImplementation(BooksDatabase db) {
+			myDatabase = db;
 			myCollection = new BookCollection(myDatabase, Paths.bookPath());
 			reset(true);
 		}
@@ -144,10 +162,6 @@ public class LibraryService extends Service {
 			}
 		}
 
-		public void close() {
-			((SQLiteBooksDatabase)myDatabase).close();
-		}
-
 		public String status() {
 			return myCollection.status().toString();
 		}
@@ -167,15 +181,23 @@ public class LibraryService extends Service {
 		}
 
 		public List<String> recentBooks() {
-			return SerializerUtil.serializeBookList(myCollection.recentBooks());
+			return recentlyOpenedBooks(12);
+		}
+
+		public List<String> recentlyOpenedBooks(int count) {
+			return SerializerUtil.serializeBookList(myCollection.recentlyOpenedBooks(count));
+		}
+
+		public List<String> recentlyAddedBooks(int count) {
+			return SerializerUtil.serializeBookList(myCollection.recentlyAddedBooks(count));
 		}
 
 		public String getRecentBook(int index) {
 			return SerializerUtil.serialize(myCollection.getRecentBook(index));
 		}
 
-		public String getBookByFile(String file) {
-			return SerializerUtil.serialize(myCollection.getBookByFile(ZLFile.createFileByPath(file)));
+		public String getBookByFile(String path) {
+			return SerializerUtil.serialize(myCollection.getBookByFile(path));
 		}
 
 		public String getBookById(long id) {
@@ -184,6 +206,10 @@ public class LibraryService extends Service {
 
 		public String getBookByUid(String type, String id) {
 			return SerializerUtil.serialize(myCollection.getBookByUid(new UID(type, id)));
+		}
+
+		public String getBookByHash(String hash) {
+			return SerializerUtil.serialize(myCollection.getBookByHash(hash));
 		}
 
 		public List<String> authors() {
@@ -224,49 +250,140 @@ public class LibraryService extends Service {
 			return myCollection.saveBook(SerializerUtil.deserializeBook(book));
 		}
 
+		public boolean canRemoveBook(String book, boolean deleteFromDisk) {
+			return myCollection.canRemoveBook(SerializerUtil.deserializeBook(book), deleteFromDisk);
+		}
+
 		public void removeBook(String book, boolean deleteFromDisk) {
 			myCollection.removeBook(SerializerUtil.deserializeBook(book), deleteFromDisk);
 		}
 
-		public void addBookToRecentList(String book) {
-			myCollection.addBookToRecentList(SerializerUtil.deserializeBook(book));
+		public void addToRecentlyOpened(String book) {
+			myCollection.addToRecentlyOpened(SerializerUtil.deserializeBook(book));
+		}
+
+		public void removeFromRecentlyOpened(String book) {
+			myCollection.removeFromRecentlyOpened(SerializerUtil.deserializeBook(book));
 		}
 
 		public List<String> labels() {
 			return myCollection.labels();
 		}
 
-		public TextPosition getStoredPosition(long bookId) {
+		public PositionWithTimestamp getStoredPosition(long bookId) {
 			final ZLTextPosition position = myCollection.getStoredPosition(bookId);
-			if (position == null) {
-				return null;
-			}
-
-			return new TextPosition(
-				position.getParagraphIndex(), position.getElementIndex(), position.getCharIndex()
-			);
+			return position != null ? new PositionWithTimestamp(position) : null;
 		}
 
-		public void storePosition(long bookId, TextPosition position) {
-			if (position == null) {
+		public void storePosition(long bookId, PositionWithTimestamp pos) {
+			if (pos == null) {
 				return;
 			}
-			myCollection.storePosition(bookId, new ZLTextFixedPosition(
-				position.ParagraphIndex, position.ElementIndex, position.CharIndex
+			myCollection.storePosition(bookId, new ZLTextFixedPosition.WithTimestamp(
+				pos.ParagraphIndex, pos.ElementIndex, pos.CharIndex, pos.Timestamp
 			));
 		}
 
+		@Override
 		public boolean isHyperlinkVisited(String book, String linkId) {
 			return myCollection.isHyperlinkVisited(SerializerUtil.deserializeBook(book), linkId);
 		}
 
+		@Override
 		public void markHyperlinkAsVisited(String book, String linkId) {
 			myCollection.markHyperlinkAsVisited(SerializerUtil.deserializeBook(book), linkId);
 		}
-		
+
 		@Override
-		public boolean saveCover(String book, String url) {
-			return myCollection.saveCover(SerializerUtil.deserializeBook(book), url);
+		public String getCoverUrl(String path) {
+			return DataUtil.buildUrl(DataConnection, "cover", path);
+		}
+
+		@Override
+		public String getDescription(String book) {
+			return BookUtil.getAnnotation(SerializerUtil.deserializeBook(book));
+		}
+
+		@Override
+		public Bitmap getCover(final String bookString, final int maxWidth, final int maxHeight, boolean[] delayed) {
+			delayed[0] = false;
+
+			final Book book = SerializerUtil.deserializeBook(bookString);
+			if (book == null || book.getId() == -1) {
+				return null;
+			}
+
+			final BitmapCache.Container container = myCoversCache.get(book.getId());
+			if (container != null) {
+				if (container.Bitmap == null) {
+					return null;
+				}
+				final Bitmap bitmap = getResizedBitmap(container.Bitmap, maxWidth, maxHeight);
+				if (bitmap != null) {
+					return bitmap;
+				} else {
+					myCoversCache.remove(book.getId());
+				}
+			}
+
+			final ZLImage image =
+				myCollection.getCover(book, maxWidth, maxHeight);
+			if (image == null) {
+				myCoversCache.put(book.getId(), null);
+				return null;
+			}
+
+			final ZLAndroidImageManager manager =
+				(ZLAndroidImageManager)ZLAndroidImageManager.Instance();
+			final ZLAndroidImageData data = manager.getImageData(image);
+			if (data != null) {
+				final Bitmap bitmap = data.getBitmap(maxWidth, maxHeight);
+				myCoversCache.put(book.getId(), bitmap);
+				return bitmap;
+			}
+
+			if (image instanceof ZLImageProxy) {
+				myImageSynchronizer.synchronize((ZLImageProxy)image, new Runnable() {
+					@Override
+					public void run() {
+						final ZLAndroidImageData data = manager.getImageData(image);
+						myCoversCache.put(book.getId(), data != null ? data.getBitmap(maxWidth, maxHeight) : null);
+						final Intent intent = new Intent(COVER_READY_ACTION);
+						intent.putExtra("book", bookString);
+						sendBroadcast(intent);
+					}
+				});
+				delayed[0] = true;
+				return null;
+			}
+
+			myCoversCache.put(book.getId(), null);
+			return null;
+		}
+
+		private Bitmap getResizedBitmap(Bitmap bitmap, int maxWidth, int maxHeight) {
+			if (maxWidth <= 0 || maxHeight <= 0) {
+				return null;
+			}
+
+			final int bWidth = bitmap.getWidth();
+			final int bHeight = bitmap.getHeight();
+			if (maxWidth > bWidth && maxHeight > bHeight) {
+				return null;
+			}
+
+			final int w, h;
+			if (bWidth * maxHeight > bHeight * maxWidth) {
+				w = maxWidth;
+				h = Math.max(1, (int)(bHeight * (w + .5f) / bWidth));
+			} else {
+				h = maxHeight;
+				w = Math.max(1, (int)(bWidth * (h + .5f) / bHeight));
+			}
+			if (2 * w <= bWidth && 2 * h <= bHeight) {
+				return bitmap;
+			}
+			return Bitmap.createScaledBitmap(bitmap, w, h, false);
 		}
 
 		public List<String> bookmarks(String query) {
@@ -285,6 +402,14 @@ public class LibraryService extends Service {
 			myCollection.deleteBookmark(SerializerUtil.deserializeBookmark(serialized));
 		}
 
+		public List<String> deletedBookmarkUids() {
+			return myCollection.deletedBookmarkUids();
+		}
+
+		public void purgeBookmarks(List<String> uids) {
+			myCollection.purgeBookmarks(uids);
+		}
+
 		public String getHighlightingStyle(int styleId) {
 			return SerializerUtil.serialize(myCollection.getHighlightingStyle(styleId));
 		}
@@ -297,8 +422,42 @@ public class LibraryService extends Service {
 			myCollection.saveHighlightingStyle(SerializerUtil.deserializeStyle(style));
 		}
 
+		public int getDefaultHighlightingStyleId() {
+			return myCollection.getDefaultHighlightingStyleId();
+		}
+
+		public void setDefaultHighlightingStyleId(int styleId) {
+			myCollection.setDefaultHighlightingStyleId(styleId);
+		}
+
 		public void rescan(String path) {
 			myCollection.rescan(path);
+		}
+
+		public String getHash(String book, boolean force) {
+			return myCollection.getHash(SerializerUtil.deserializeBook(book), force);
+		}
+
+		public void setHash(String book, String hash) {
+			myCollection.setHash(SerializerUtil.deserializeBook(book), hash);
+		}
+
+		public List<String> formats() {
+			final List<IBookCollection.FormatDescriptor> descriptors = myCollection.formats();
+			final List<String> serialized = new ArrayList<String>(descriptors.size());
+			for (IBookCollection.FormatDescriptor d : descriptors) {
+				serialized.add(Util.formatDescriptorToString(d));
+			}
+			return serialized;
+		}
+
+		public boolean setActiveFormats(List<String> formatIds) {
+			if (myCollection.setActiveFormats(formatIds)) {
+				reset(true);
+				return true;
+			} else {
+				return false;
+			}
 		}
 	}
 
@@ -322,17 +481,30 @@ public class LibraryService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		myLibrary = new LibraryImplementation();
+		synchronized (ourDatabaseLock) {
+			if (ourDatabase == null) {
+				ourDatabase = new SQLiteBooksDatabase(LibraryService.this);
+			}
+		}
+		myLibrary = new LibraryImplementation(ourDatabase);
+
+		bindService(
+			new Intent(this, DataService.class),
+			DataConnection,
+			DataService.BIND_AUTO_CREATE
+		);
 	}
 
 	@Override
 	public void onDestroy() {
+		unbindService(DataConnection);
+
 		if (myLibrary != null) {
 			final LibraryImplementation l = myLibrary;
 			myLibrary = null;
 			l.deactivate();
-			l.close();
 		}
+		myImageSynchronizer.clear();
 		super.onDestroy();
 	}
 }

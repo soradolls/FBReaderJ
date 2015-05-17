@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import android.app.Activity;
 import android.net.Uri;
 import android.content.Intent;
 
+import org.geometerplus.zlibrary.core.util.MimeType;
 import org.geometerplus.fbreader.network.urlInfo.BookUrlInfo;
 
 public class BookDownloader extends Activity {
@@ -62,13 +63,13 @@ public class BookDownloader extends Activity {
 			return;
 		}
 
-		if (!intent.hasExtra(BookDownloaderService.SHOW_NOTIFICATIONS_KEY)) {
-			intent.putExtra(BookDownloaderService.SHOW_NOTIFICATIONS_KEY,
-				BookDownloaderService.Notifications.ALREADY_DOWNLOADING);
+		if (!intent.hasExtra(BookDownloaderService.Key.SHOW_NOTIFICATIONS)) {
+			intent.putExtra(BookDownloaderService.Key.SHOW_NOTIFICATIONS,
+				BookDownloaderService.Notifications.ALREADY_IN_PROGRESS);
 		}
 		if ("epub".equals(uri.getScheme())) {
 			uri = uri.buildUpon().scheme("http").build();
-			intent.putExtra(BookDownloaderService.BOOK_FORMAT_KEY, BookUrlInfo.Format.EPUB.Extension);
+			intent.putExtra(BookDownloaderService.Key.BOOK_MIME, MimeType.APP_EPUB_ZIP.toString());
 		}
 
 		startService(

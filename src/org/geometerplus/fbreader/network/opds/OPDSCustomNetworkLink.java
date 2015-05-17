@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,15 +35,8 @@ public class OPDSCustomNetworkLink extends OPDSNetworkLink implements ICustomNet
 	private final Type myType;
 	private boolean myHasChanges;
 
-	private static String removeWWWPrefix(String siteName) {
-		if (siteName != null && siteName.startsWith("www.")) {
-			return siteName.substring(4);
-		}
-		return siteName;
-	}
-
-	public OPDSCustomNetworkLink(int id, Type type, String siteName, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
-		super(id, removeWWWPrefix(siteName), title, summary, language, infos);
+	public OPDSCustomNetworkLink(int id, Type type, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
+		super(id, title, summary, language, infos);
 		myType = type;
 	}
 
@@ -57,11 +50,6 @@ public class OPDSCustomNetworkLink extends OPDSNetworkLink implements ICustomNet
 
 	public void resetChanges() {
 		myHasChanges = false;
-	}
-
-	public final void setSiteName(String name) {
-		myHasChanges = myHasChanges || !MiscUtil.equals(mySiteName, name);
-		mySiteName = name;
 	}
 
 	public final void setSummary(String summary) {
@@ -101,23 +89,23 @@ public class OPDSCustomNetworkLink extends OPDSNetworkLink implements ICustomNet
 		return false;
 	}
 
-	public void reloadInfo(final boolean urlsOnly, boolean quietly) throws ZLNetworkException {
+	public void reloadInfo(ZLNetworkContext nc, final boolean urlsOnly, boolean quietly) throws ZLNetworkException {
 		final LinkedList<String> opensearchDescriptionURLs = new LinkedList<String>();
 		final List<OpenSearchDescription> descriptions = Collections.synchronizedList(new LinkedList<OpenSearchDescription>());
 
 		ZLNetworkException error = null;
 		try {
-			ZLNetworkManager.Instance().perform(new ZLNetworkRequest(getUrl(UrlInfo.Type.Catalog), quietly) {
+			nc.perform(new ZLNetworkRequest.Get(getUrl(UrlInfo.Type.Catalog), quietly) {
 				@Override
 				public void handleStream(InputStream inputStream, int length) throws IOException, ZLNetworkException {
 					final OPDSCatalogInfoHandler info = new OPDSCatalogInfoHandler(getURL(), OPDSCustomNetworkLink.this, opensearchDescriptionURLs);
 					new OPDSXMLReader(info, false).read(inputStream);
 
 					if (!info.FeedStarted) {
-						throw new ZLNetworkException(NetworkException.ERROR_NOT_AN_OPDS);
+						throw ZLNetworkException.forCode(NetworkException.ERROR_NOT_AN_OPDS);
 					}
 					if (info.Title == null) {
-						throw new ZLNetworkException(NetworkException.ERROR_NO_REQUIRED_INFORMATION);
+						throw ZLNetworkException.forCode(NetworkException.ERROR_NO_REQUIRED_INFORMATION);
 					}
 					setUrl(UrlInfo.Type.Image, info.Icon, MimeType.IMAGE_AUTO);
 					if (info.DirectOpenSearchDescription != null) {
@@ -136,7 +124,7 @@ public class OPDSCustomNetworkLink extends OPDSNetworkLink implements ICustomNet
 		if (!opensearchDescriptionURLs.isEmpty()) {
 			LinkedList<ZLNetworkRequest> requests = new LinkedList<ZLNetworkRequest>();
 			for (String url : opensearchDescriptionURLs) {
-				requests.add(new ZLNetworkRequest(url, quietly) {
+				requests.add(new ZLNetworkRequest.Get(url, quietly) {
 					@Override
 					public void handleStream(InputStream inputStream, int length) throws IOException, ZLNetworkException {
 						new OpenSearchXMLReader(getURL(), descriptions).read(inputStream);
@@ -144,7 +132,7 @@ public class OPDSCustomNetworkLink extends OPDSNetworkLink implements ICustomNet
 				});
 			}
 			try {
-				ZLNetworkManager.Instance().perform(requests);
+				nc.perform(requests);
 			} catch (ZLNetworkException e) {
 				// we do ignore errors in opensearch description loading/parsing
 				e.printStackTrace();

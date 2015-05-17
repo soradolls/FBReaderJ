@@ -1,5 +1,5 @@
-/*);
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+/*
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 package org.geometerplus.android.fbreader.tree;
 
-import java.util.ArrayList;
+import java.util.*;
 
 import android.app.ListActivity;
 import android.content.Intent;
@@ -31,6 +31,7 @@ import org.geometerplus.android.util.UIUtil;
 import org.geometerplus.fbreader.tree.FBTree;
 
 import org.geometerplus.android.fbreader.OrientationUtil;
+import org.geometerplus.android.fbreader.util.AndroidImageSynchronizer;
 
 public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 	private static final String OPEN_TREE_ACTION = "android.fbreader.action.OPEN_TREE";
@@ -39,11 +40,14 @@ public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 	public static final String SELECTED_TREE_KEY_KEY = "SelectedTreeKey";
 	public static final String HISTORY_KEY = "HistoryKey";
 
+	public final AndroidImageSynchronizer ImageSynchronizer = new AndroidImageSynchronizer(this);
+
 	private T myCurrentTree;
 	// we store the key separately because
 	// it will be changed in case of myCurrentTree.removeSelf() call
 	private FBTree.Key myCurrentKey;
-	private ArrayList<FBTree.Key> myHistory;
+	private final List<FBTree.Key> myHistory =
+		Collections.synchronizedList(new ArrayList<FBTree.Key>());
 
 	@Override
 	protected void onCreate(Bundle icicle) {
@@ -56,6 +60,13 @@ public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 	protected void onStart() {
 		super.onStart();
 		OrientationUtil.setOrientation(this, getIntent());
+	}
+
+	@Override
+	protected void onDestroy() {
+		ImageSynchronizer.clear();
+
+		super.onDestroy();
 	}
 
 	@Override
@@ -92,10 +103,12 @@ public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
 			FBTree parent = null;
-			while (parent == null && !myHistory.isEmpty()) {
-				parent = getTreeByKey(myHistory.remove(myHistory.size() - 1));
+			synchronized (myHistory) {
+				while (parent == null && !myHistory.isEmpty()) {
+					parent = getTreeByKey(myHistory.remove(myHistory.size() - 1));
+				}
 			}
-			if (parent == null) {
+			if (parent == null && myCurrentTree != null) {
 				parent = myCurrentTree.Parent;
 			}
 			if (parent != null && !isTreeInvisible(parent)) {
@@ -174,9 +187,11 @@ public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 			});
 		}
 
-		myHistory = (ArrayList<FBTree.Key>)intent.getSerializableExtra(HISTORY_KEY);
-		if (myHistory == null) {
-			myHistory = new ArrayList<FBTree.Key>();
+		myHistory.clear();
+		final ArrayList<FBTree.Key> history =
+			(ArrayList<FBTree.Key>)intent.getSerializableExtra(HISTORY_KEY);
+		if (history != null) {
+			myHistory.addAll(history);
 		}
 		onCurrentTreeChanged();
 	}
@@ -195,7 +210,7 @@ public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 						SELECTED_TREE_KEY_KEY,
 						treeToSelect != null ? treeToSelect.getUniqueKey() : null
 					)
-					.putExtra(HISTORY_KEY, myHistory)
+					.putExtra(HISTORY_KEY, new ArrayList<FBTree.Key>(myHistory))
 				);
 				break;
 			case CANNOT_OPEN:

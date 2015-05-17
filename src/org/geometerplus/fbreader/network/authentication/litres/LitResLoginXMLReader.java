@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,9 +20,10 @@
 package org.geometerplus.fbreader.network.authentication.litres;
 
 import org.geometerplus.zlibrary.core.xml.ZLStringMap;
+import org.geometerplus.zlibrary.core.network.ZLNetworkAuthenticationException;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
-class LitResLoginXMLReader extends LitResAuthenticationXMLReader {
+public class LitResLoginXMLReader extends LitResAuthenticationXMLReader {
 	private static final String TAG_AUTHORIZATION_OK = "catalit-authorization-ok";
 	private static final String TAG_AUTHORIZATION_FAILED = "catalit-authorization-failed";
 
@@ -32,15 +33,11 @@ class LitResLoginXMLReader extends LitResAuthenticationXMLReader {
 	public String Sid;
 	public boolean CanRebill;
 
-	public LitResLoginXMLReader(String hostName) {
-		super(hostName);
-	}
-
 	@Override
 	public boolean startElementHandler(String tag, ZLStringMap attributes) {
 		tag = tag.toLowerCase().intern();
 		if (TAG_AUTHORIZATION_FAILED == tag) {
-			setException(new ZLNetworkException(ZLNetworkException.ERROR_AUTHENTICATION_FAILED));
+			setException(new ZLNetworkAuthenticationException());
 		} else if (TAG_AUTHORIZATION_OK == tag) {
 			FirstName = attributes.getValue("first-name");
 			LastName = attributes.getValue("first-name");
@@ -52,7 +49,7 @@ class LitResLoginXMLReader extends LitResAuthenticationXMLReader {
 			}
 			CanRebill = stringCanRebill != null && !"0".equals(stringCanRebill) && !"no".equalsIgnoreCase(stringCanRebill);
 		} else {
-			setException(new ZLNetworkException(ZLNetworkException.ERROR_SOMETHING_WRONG, HostName));
+			setException(ZLNetworkException.forCode(ZLNetworkException.ERROR_SOMETHING_WRONG, LitResUtil.HOST_NAME));
 		}
 		return true;
 	}

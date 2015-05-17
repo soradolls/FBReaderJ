@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,17 +29,17 @@ public class SingleCatalogSearchItem extends SearchItem {
 	public SingleCatalogSearchItem(INetworkLink link) {
 		super(
 			link,
-			NetworkLibrary.resource().getResource("search").getResource("summary").getValue().replace("%s", link.getSiteName())
+			NetworkLibrary.resource().getResource("search").getResource("summary").getValue().replace("%s", link.getShortName())
 		);
 	}
 
 	@Override
-	public void runSearch(NetworkItemsLoader loader, String pattern) throws ZLNetworkException {
+	public void runSearch(ZLNetworkContext nc, NetworkItemsLoader loader, String pattern) throws ZLNetworkException {
 		final NetworkOperationData data = Link.createOperationData(loader);
 		ZLNetworkRequest request = Link.simpleSearchRequest(pattern, data);
 		// TODO: possible infinite loop, use "continue link" instead
-		while (request != null && MimeType.APP_ATOM_XML.weakEquals(request.Mime)) {
-			ZLNetworkManager.Instance().perform(request);
+		while (request != null) {
+			nc.perform(request);
 			if (loader.confirmInterruption()) {
 				return;
 			}

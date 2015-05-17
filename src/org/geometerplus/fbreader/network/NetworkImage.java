@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,44 +19,36 @@
 
 package org.geometerplus.fbreader.network;
 
-import java.io.*;
+import java.io.File;
 
 import android.net.Uri;
 
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
-import org.geometerplus.zlibrary.core.image.ZLFileImage;
-import org.geometerplus.zlibrary.core.image.ZLLoadableImage;
-import org.geometerplus.zlibrary.core.network.ZLNetworkManager;
+import org.geometerplus.zlibrary.core.image.*;
+import org.geometerplus.zlibrary.core.network.QuietNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.util.MimeType;
 
 import org.geometerplus.fbreader.Paths;
 
-public final class NetworkImage extends ZLLoadableImage {
+public final class NetworkImage extends ZLImageSelfSynchronizableProxy {
 	public final String Url;
 
-	public NetworkImage(String url, MimeType mimeType) {
-		super(mimeType);
+	public NetworkImage(String url) {
 		Url = url;
 		new File(Paths.networkCacheDirectory()).mkdirs();
 	}
 
 	private static final String TOESCAPE = "<>:\"|?*\\";
 
-	public static String makeImageFilePath(String url, MimeType mimeType) {
+	public static String makeImageFilePath(String url) {
 		final Uri uri = Uri.parse(url);
 
-		String host = uri.getHost();
-		if (host == null) {
-			host = "host.unknown";
-		}
+		final StringBuilder path = new StringBuilder(Paths.networkCacheDirectory());
+		path.append(File.separator);
 
-		final StringBuilder path = new StringBuilder(host);
-		if (host.startsWith("www.")) {
-			path.delete(0, 4);
-		}
-		path.insert(0, File.separator);
-		path.insert(0, Paths.networkCacheDirectory());
+		final String host = uri.getHost();
+		path.append(host != null ? host : "host.unknown");
 
 		int index = path.length();
 
@@ -80,29 +72,6 @@ public final class NetworkImage extends ZLLoadableImage {
 				}
 			}
 			++index;
-		}
-
-		String ext = null;
-		if (MimeType.IMAGE_PNG.equals(mimeType)) {
-			ext = ".png";
-		} else if (MimeType.IMAGE_JPEG.equals(mimeType)) {
-			if (path.length() > 5 && path.substring(path.length() - 5).equals(".jpeg")) {
-				ext = ".jpeg";
-			} else {
-				ext = ".jpg";
-			}
-		}
-
-		if (ext == null) {
-			int j = path.lastIndexOf(".");
-			if (j > nameIndex) {
-				ext = path.substring(j);
-				path.delete(j, path.length());
-			} else {
-				ext = "";
-			}
-		} else if (path.length() > ext.length() && path.substring(path.length() - ext.length()).equals(ext)) {
-			path.delete(path.length() - ext.length(), path.length());
 		}
 
 		String query = uri.getQuery();
@@ -130,15 +99,24 @@ public final class NetworkImage extends ZLLoadableImage {
 				index = j + 1;
 			}
 		}
-		return path.append(ext).toString();
+		return path.toString();
 	}
 
-	public String getFilePath() {
-		return makeImageFilePath(Url, mimeType());
+	private volatile String myStoredFilePath;
+	private String getFilePath() {
+		if (myStoredFilePath == null) {
+			myStoredFilePath = makeImageFilePath(Url);
+		}
+		return myStoredFilePath;
 	}
 
 	@Override
-	public int sourceType() {
+	protected boolean isOutdated() {
+		return !new File(getFilePath()).exists();
+	}
+
+	@Override
+	public SourceType sourceType() {
 		return SourceType.NETWORK;
 	}
 
@@ -157,12 +135,11 @@ public final class NetworkImage extends ZLLoadableImage {
 		synchronizeInternal(false);
 	}
 
-	@Override
 	public void synchronizeFast() {
 		synchronizeInternal(true);
 	}
 
-	private final void synchronizeInternal(boolean doFast) {
+	private final synchronized void synchronizeInternal(boolean doFast) {
 		if (isSynchronized()) {
 			return;
 		}
@@ -188,7 +165,7 @@ public final class NetworkImage extends ZLLoadableImage {
 			final File imageFile = new File(path);
 			if (imageFile.exists()) {
 				final long diff = System.currentTimeMillis() - imageFile.lastModified();
-				final long valid = 7 * 24 * 60 * 60 * 1000; // one week in milliseconds; FIXME: hardcoded const
+				final long valid = 24 * 60 * 60 * 1000; // one day in milliseconds; FIXME: hardcoded const
 				if (diff >= 0 && diff <= valid) {
 					return;
 				}
@@ -197,19 +174,15 @@ public final class NetworkImage extends ZLLoadableImage {
 			if (doFast) {
 				return;
 			}
-
-			try {
-				ZLNetworkManager.Instance().downloadToFile(Url, imageFile);
-			} catch (ZLNetworkException e) {
-			}
+			new QuietNetworkContext().downloadToFileQuietly(Url, imageFile);
 		} finally {
 			setSynchronized();
 		}
 	}
 
-	private ZLFileImage myFileImage;
+	private volatile ZLFileImage myFileImage;
 	@Override
-	public InputStream inputStream() {
+	public ZLFileImage getRealImage() {
 		if (myFileImage == null) {
 			if (!isSynchronized()) {
 				return null;
@@ -222,8 +195,8 @@ public final class NetworkImage extends ZLLoadableImage {
 			if (file == null) {
 				return null;
 			}
-			myFileImage = new ZLFileImage(mimeType(), file);
+			myFileImage = new ZLFileImage(file);
 		}
-		return myFileImage.inputStream();
+		return myFileImage;
 	}
 }

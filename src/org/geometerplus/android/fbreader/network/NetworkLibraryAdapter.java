@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import org.geometerplus.zlibrary.ui.android.R;
 import org.geometerplus.fbreader.network.*;
 import org.geometerplus.fbreader.network.tree.*;
 
+import org.geometerplus.android.fbreader.tree.TreeActivity;
 import org.geometerplus.android.fbreader.tree.TreeAdapter;
 import org.geometerplus.android.fbreader.covers.CoverManager;
 
@@ -52,7 +53,8 @@ class NetworkLibraryAdapter extends TreeAdapter {
 			if (myCoverManager == null) {
 				view.measure(ViewGroup.LayoutParams.FILL_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 				final int coverHeight = view.getMeasuredHeight();
-				myCoverManager = new CoverManager(getActivity(), coverHeight * 15 / 32, coverHeight);
+				final TreeActivity activity = getActivity();
+				myCoverManager = new CoverManager(activity, activity.ImageSynchronizer, coverHeight * 15 / 32, coverHeight);
 				view.requestLayout();
 			}
 		}
@@ -65,6 +67,7 @@ class NetworkLibraryAdapter extends TreeAdapter {
 		final int status = (tree instanceof NetworkBookTree)
 			? NetworkBookActions.getBookStatus(
 				((NetworkBookTree)tree).Book,
+				((NetworkLibraryActivity)getActivity()).BookCollection,
 				((NetworkLibraryActivity)getActivity()).Connection
 			  )
 			: 0;

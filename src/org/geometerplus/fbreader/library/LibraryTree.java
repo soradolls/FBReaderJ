@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ public abstract class LibraryTree extends FBTree {
 
 	public final IBookCollection Collection;
 
+	static final String ROOT_EXTERNAL_VIEW = "bookshelfView";
 	static final String ROOT_FOUND = "found";
 	static final String ROOT_FAVORITES = "favorites";
 	static final String ROOT_RECENT = "recent";
@@ -40,7 +41,8 @@ public abstract class LibraryTree extends FBTree {
 	static final String ROOT_BY_TITLE = "byTitle";
 	static final String ROOT_BY_SERIES = "bySeries";
 	static final String ROOT_BY_TAG = "byTag";
-	static final String ROOT_FILE_TREE = "fileTree";
+	static final String ROOT_SYNC = "sync";
+	static final String ROOT_FILE = "fileTree";
 
 	protected LibraryTree(IBookCollection collection) {
 		super();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import org.geometerplus.zlibrary.core.drm.FileEncryptionInfo;
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.util.*;
 
-public class ZLFileImage extends ZLSingleImage {
+public class ZLFileImage implements ZLStreamImage {
 	public static final String SCHEME = "imagefile";
 
 	public static final String ENCODING_NONE = "";
@@ -43,7 +43,6 @@ public class ZLFileImage extends ZLSingleImage {
 				lengths[i] = Integer.parseInt(data[3 + count + i]);
 			}
 			return new ZLFileImage(
-				MimeType.IMAGE_AUTO,
 				ZLFile.createFileByPath(data[0]),
 				data[1],
 				offsets,
@@ -62,12 +61,7 @@ public class ZLFileImage extends ZLSingleImage {
 	private final int[] myLengths;
 	private final FileEncryptionInfo myEncryptionInfo;
 
-	public ZLFileImage(String mimeType, ZLFile file, String encoding, int[] offsets, int[] lengths, FileEncryptionInfo encryptionInfo) {
-		this(MimeType.get(mimeType), file, encoding, offsets, lengths, encryptionInfo);
-	}
-
-	public ZLFileImage(MimeType mimeType, ZLFile file, String encoding, int[] offsets, int[] lengths, FileEncryptionInfo encryptionInfo) {
-		super(mimeType);
+	public ZLFileImage(ZLFile file, String encoding, int[] offsets, int[] lengths, FileEncryptionInfo encryptionInfo) {
 		myFile = file;
 		myEncoding = encoding != null ? encoding : ENCODING_NONE;
 		myOffsets = offsets;
@@ -75,16 +69,12 @@ public class ZLFileImage extends ZLSingleImage {
 		myEncryptionInfo = encryptionInfo;
 	}
 
-	public ZLFileImage(String mimeType, ZLFile file, String encoding, int offset, int length) {
-		this(MimeType.get(mimeType), file, encoding, offset, length);
+	public ZLFileImage(ZLFile file, String encoding, int offset, int length) {
+		this(file, encoding, new int[] { offset }, new int[] { length }, null);
 	}
 
-	public ZLFileImage(MimeType mimeType, ZLFile file, String encoding, int offset, int length) {
-		this(mimeType, file, encoding, new int[] { offset }, new int[] { length }, null);
-	}
-
-	public ZLFileImage(MimeType mimeType, ZLFile file) {
-		this(mimeType, file, ENCODING_NONE, 0, (int)file.size());
+	public ZLFileImage(ZLFile file) {
+		this(file, ENCODING_NONE, 0, (int)file.size());
 	}
 
 	public String getURI() {
@@ -98,6 +88,22 @@ public class ZLFileImage extends ZLSingleImage {
 		return result;
 	}
 
+	private InputStream baseInputStream() throws IOException {
+		if (myOffsets.length == 1) {
+			final int offset = myOffsets[0];
+			final int length = myLengths[0];
+			return new SliceInputStream(myFile.getInputStream(), offset, length != 0 ? length : Integer.MAX_VALUE);
+		} else {
+			final InputStream[] streams = new InputStream[myOffsets.length];
+			for (int i = 0; i < myOffsets.length; ++i) {
+				final int offset = myOffsets[i];
+				final int length = myLengths[i];
+				streams[i] = new SliceInputStream(myFile.getInputStream(), offset, length != 0 ? length : Integer.MAX_VALUE);
+			}
+			return new MergedInputStream(streams);
+		}
+	}
+
 	@Override
 	public InputStream inputStream() {
 		try {
@@ -105,26 +111,16 @@ public class ZLFileImage extends ZLSingleImage {
 				return null;
 			}
 
-			final InputStream stream;
-			if (myOffsets.length == 1) {
-				final int offset = myOffsets[0];
-				final int length = myLengths[0];
-				stream = new SliceInputStream(myFile.getInputStream(), offset, length != 0 ? length : Integer.MAX_VALUE);
-			} else {
-				final InputStream[] streams = new InputStream[myOffsets.length];
-				for (int i = 0; i < myOffsets.length; ++i) {
-					final int offset = myOffsets[i];
-					final int length = myLengths[i];
-					streams[i] = new SliceInputStream(myFile.getInputStream(), offset, length != 0 ? length : Integer.MAX_VALUE);
-				}
-				stream = new MergedInputStream(streams);
-			}
+			InputStream stream = baseInputStream();
 			if (ENCODING_NONE.equals(myEncoding)) {
 				return stream;
 			} else if (ENCODING_HEX.equals(myEncoding)) {
 				return new HexInputStream(stream);
 			} else if (ENCODING_BASE64.equals(myEncoding)) {
-				return new Base64InputStream(stream);
+				stream = new Base64InputStream(stream);
+				final int len = (int)stream.skip(stream.available());
+				stream.close();
+				return new SliceInputStream(new Base64InputStream(baseInputStream()), 0, len);
 			} else {
 				System.err.println("unsupported encoding: " + myEncoding);
 				return null;

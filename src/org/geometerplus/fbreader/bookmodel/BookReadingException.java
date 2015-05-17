@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2012-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,10 +27,6 @@ import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 public final class BookReadingException extends Exception {
-	public static void throwForFile(String resourceId, ZLFile file) throws BookReadingException {
-		throw new BookReadingException(resourceId, file);
-	}
-
 	private static String getResourceText(String resourceId, String ... params) {
 		String message = ZLResource.resource("errorMessage").getResource(resourceId).getValue();
 		for (String p : params) {

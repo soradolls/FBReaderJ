@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,8 @@ import android.view.*;
 import android.widget.*;
 
 import org.geometerplus.zlibrary.core.image.ZLImage;
-import org.geometerplus.zlibrary.core.image.ZLLoadableImage;
+import org.geometerplus.zlibrary.core.image.ZLImageProxy;
+import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 import org.geometerplus.zlibrary.core.util.MimeType;
 
@@ -49,8 +50,11 @@ import org.geometerplus.fbreader.network.urlInfo.RelatedUrlInfo;
 import org.geometerplus.fbreader.network.urlInfo.UrlInfo;
 
 import org.geometerplus.android.fbreader.OrientationUtil;
+import org.geometerplus.android.fbreader.libraryService.BookCollectionShadow;
 import org.geometerplus.android.fbreader.network.action.NetworkBookActions;
 import org.geometerplus.android.fbreader.network.action.OpenCatalogAction;
+import org.geometerplus.android.fbreader.network.auth.ActivityNetworkContext;
+import org.geometerplus.android.fbreader.util.AndroidImageSynchronizer;
 import org.geometerplus.android.util.UIUtil;
 
 public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.ChangeListener {
@@ -58,12 +62,18 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 	private NetworkBookItem myBook;
 
 	private final ZLResource myResource = ZLResource.resource("bookInfo");
+	private final BookCollectionShadow myBookCollection = new BookCollectionShadow();
 	private final BookDownloaderServiceConnection myConnection = new BookDownloaderServiceConnection();
+
+	private final AndroidImageSynchronizer myImageSynchronizer = new AndroidImageSynchronizer(this);
+
+	private final ActivityNetworkContext myNetworkContext = new ActivityNetworkContext(this);
 
 	@Override
 	protected void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
 		Thread.setDefaultUncaughtExceptionHandler(new org.geometerplus.zlibrary.ui.android.library.UncaughtExceptionHandler(this));
+		myBookCollection.bindToService(this, null);
 
 		SQLiteCookieDatabase.init(this);
 
@@ -90,8 +100,13 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 	@Override
 	protected void onResume() {
 		super.onResume();
-
+		myNetworkContext.onResume();
 		NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		myNetworkContext.onActivityResult(requestCode, resultCode, data);
 	}
 
 	private volatile boolean myInitializerStarted;
@@ -109,16 +124,24 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 				if (SQLiteNetworkDatabase.Instance() == null) {
 					new SQLiteNetworkDatabase(getApplication());
 				}
-				library.initialize();
+				try {
+					library.initialize(myNetworkContext);
+				} catch (ZLNetworkException e) {
+				}
 			}
 
 			if (myBook == null) {
-				final Uri url = getIntent().getData();
-				if (url != null && "litres-book".equals(url.getScheme())) {
-					myBook = OPDSBookItem.create(
-						library.getLinkBySiteName("litres.ru"),
-						url.toString().replace("litres-book://", "http://")
-					);
+				final Uri uri = Util.rewriteUri(getIntent().getData());
+				if (uri != null && "litres-book".equals(uri.getScheme())) {
+					try {
+						myBook = OPDSBookItem.create(
+							myNetworkContext,
+							library.getLinkByStringId("litres.ru"),
+							uri.toString().replace("litres-book://", "http://")
+						);
+					} catch (ZLNetworkException e) {
+						UIUtil.showMessageText(NetworkBookInfoActivity.this, e.getMessage());
+					}
 					if (myBook != null) {
 						myTree = library.getFakeBookTree(myBook);
 					}
@@ -165,6 +188,9 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 
 	@Override
 	public void onDestroy() {
+		myImageSynchronizer.clear();
+		myBookCollection.unbind();
+
 		super.onDestroy();
 	}
 
@@ -205,7 +231,7 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 						final NetworkCatalogItem catalogItem =
 							myBook.createRelatedCatalogItem(relatedInfo);
 						if (catalogItem != null) {
-							new OpenCatalogAction(NetworkBookInfoActivity.this)
+							new OpenCatalogAction(NetworkBookInfoActivity.this, myNetworkContext)
 								.run(NetworkLibrary.Instance().getFakeCatalogTree(catalogItem));
 						} else if (MimeType.TEXT_HTML.equals(relatedInfo.Mime)) {
 							Util.openInBrowser(NetworkBookInfoActivity.this, relatedInfo.Url);
@@ -309,15 +335,17 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 		final int maxHeight = metrics.heightPixels * 2 / 3;
 		final int maxWidth = maxHeight * 2 / 3;
 		Bitmap coverBitmap = null;
-		final ZLImage cover = NetworkTree.createCover(myBook);
+		final ZLImage cover = NetworkTree.createCover(myBook, false);
 		if (cover != null) {
 			ZLAndroidImageData data = null;
 			final ZLAndroidImageManager mgr = (ZLAndroidImageManager)ZLAndroidImageManager.Instance();
-			if (cover instanceof ZLLoadableImage) {
-				final ZLLoadableImage img = (ZLLoadableImage)cover;
-				img.startSynchronization(new Runnable() {
+			if (cover instanceof ZLImageProxy) {
+				final ZLImageProxy img = (ZLImageProxy)cover;
+				img.startSynchronization(myImageSynchronizer, new Runnable() {
 					public void run() {
-						img.synchronizeFast();
+						if (img instanceof NetworkImage) {
+							((NetworkImage)img).synchronizeFast();
+						}
 						final ZLAndroidImageData data = mgr.getImageData(img);
 						if (data != null) {
 							final Bitmap coverBitmap = data.getBitmap(maxWidth, maxHeight);
@@ -352,7 +380,7 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 				R.id.network_book_button2,
 				R.id.network_book_button3,
 		};
-		final List<NetworkBookActions.NBAction> actions = NetworkBookActions.getContextMenuActions(this, myTree, myConnection);
+		final List<NetworkBookActions.NBAction> actions = NetworkBookActions.getContextMenuActions(this, myTree, myBookCollection, myConnection);
 
 		final boolean skipSecondButton =
 			actions.size() < buttons.length &&
@@ -417,7 +445,7 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 
 	public void onLibraryChanged(NetworkLibrary.ChangeListener.Code code, Object[] params) {
 		if (code == NetworkLibrary.ChangeListener.Code.InitializationFailed) {
-			// TODO: implement
+			UIUtil.showMessageText(this, (String)params[0]);
 			return;
 		}
 

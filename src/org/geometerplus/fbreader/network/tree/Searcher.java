@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 
 package org.geometerplus.fbreader.network.tree;
 
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 import org.geometerplus.fbreader.network.*;
@@ -27,8 +28,8 @@ class Searcher extends NetworkItemsLoader {
 	private final String myPattern;
 	private volatile boolean myItemFound;
 
-	Searcher(SearchCatalogTree tree, String pattern) {
-		super(tree);
+	Searcher(ZLNetworkContext nc, SearchCatalogTree tree, String pattern) {
+		super(nc, tree);
 		myPattern = pattern;
 	}
 
@@ -57,7 +58,7 @@ class Searcher extends NetworkItemsLoader {
 				);
 			}
 		} else {
-			item.runSearch(this, myPattern);
+			item.runSearch(NetworkContext, this, myPattern);
 		}
 	}
 

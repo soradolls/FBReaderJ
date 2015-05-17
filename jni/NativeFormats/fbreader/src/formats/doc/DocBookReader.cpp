@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,7 +87,7 @@ void DocBookReader::handleHardLinebreak() {
 	}
 	myModelReader.beginParagraph();
 	if (!myCurrentStyleEntry.isNull()) {
-		myModelReader.addStyleEntry(*myCurrentStyleEntry);
+		myModelReader.addStyleEntry(*myCurrentStyleEntry, 0);
 	}
 	for (std::size_t i = 0; i < myKindStack.size(); ++i) {
 		myModelReader.addControl(myKindStack.at(i), true);
@@ -153,14 +153,7 @@ void DocBookReader::handleSeparatorField() {
 	if (utf8String.empty()) {
 		return;
 	}
-	std::vector<std::string> result = ZLStringUtil::split(utf8String, SPACE_DELIMETER);
-	//TODO split function can returns empty string, maybe fix it
-	std::vector<std::string> split;
-	for (std::size_t i = 0; i < result.size(); ++i) {
-		if (!result.at(i).empty()) {
-			split.push_back(result.at(i));
-		}
-	}
+	std::vector<std::string> split = ZLStringUtil::split(utf8String, SPACE_DELIMETER, true);
 
 	if (!split.empty() && split.at(0) == SEQUENCE) {
 		myReadFieldState = READ_FIELD_TEXT;
@@ -283,7 +276,7 @@ void DocBookReader::handleParagraphStyle(const OleMainStream::Style &styleInfo) 
 			break;
 	}
 	myCurrentStyleEntry = entry;
-	myModelReader.addStyleEntry(*myCurrentStyleEntry);
+	myModelReader.addStyleEntry(*myCurrentStyleEntry, 0);
 
 	// we should have the same font style, as for the previous paragraph,
 	// if it has the same StyleIdCurrent

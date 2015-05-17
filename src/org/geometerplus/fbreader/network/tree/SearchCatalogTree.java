@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,10 +19,12 @@
 
 package org.geometerplus.fbreader.network.tree;
 
+import org.geometerplus.zlibrary.core.image.ZLImage;
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.util.MimeType;
 
-import org.geometerplus.fbreader.network.NetworkLibrary;
-import org.geometerplus.fbreader.network.SearchItem;
+import org.geometerplus.fbreader.network.*;
+import org.geometerplus.fbreader.network.urlInfo.UrlInfo;
 
 public class SearchCatalogTree extends NetworkCatalogTree {
 	public SearchCatalogTree(RootTree parent, SearchItem item) {
@@ -83,7 +85,17 @@ public class SearchCatalogTree extends NetworkCatalogTree {
 		return ((SearchItem)Item).getUrl(pattern);
 	}
 
-	public void startItemsLoader(String pattern) {
-		new Searcher(this, pattern).start();
+	public void startItemsLoader(ZLNetworkContext nc, String pattern) {
+		new Searcher(nc, this, pattern).start();
+	}
+
+	@Override
+	public ZLImage createCover() {
+		final INetworkLink link = getLink();
+		if (link == null) {
+			return null;
+		}
+		final UrlInfo info = link.getUrlInfo(UrlInfo.Type.SearchIcon);
+		return info != null ? createCover(info.Url, info.Mime) : null;
 	}
 }

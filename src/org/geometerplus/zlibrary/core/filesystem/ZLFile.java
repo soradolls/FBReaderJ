@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,9 +136,12 @@ public abstract class ZLFile implements InputStreamHolder {
 		}
 		int index = path.lastIndexOf(':');
 		if (index > 1) {
-			return ZLArchiveEntryFile.createArchiveEntryFile(
-				createFileByPath(path.substring(0, index)), path.substring(index + 1)
-			);
+			final ZLFile archive = createFileByPath(path.substring(0, index));
+			if (archive != null && archive.myArchiveType != 0) {
+				return ZLArchiveEntryFile.createArchiveEntryFile(
+					archive, path.substring(index + 1)
+				);
+			}
 		}
 		return new ZLPhysicalFile(path);
 	}
@@ -150,6 +153,11 @@ public abstract class ZLFile implements InputStreamHolder {
 	public abstract ZLFile getParent();
 	public abstract ZLPhysicalFile getPhysicalFile();
 	public abstract InputStream getInputStream() throws IOException;
+
+	public long lastModified() {
+		final ZLFile physicalFile = getPhysicalFile();
+		return physicalFile != null ? physicalFile.lastModified() : 0;
+	}
 
 	public final InputStream getInputStream(FileEncryptionInfo encryptionInfo) throws IOException {
 		if (encryptionInfo == null) {

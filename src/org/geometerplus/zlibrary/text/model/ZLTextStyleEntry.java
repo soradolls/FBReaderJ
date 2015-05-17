@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,16 +28,22 @@ import org.geometerplus.zlibrary.core.util.ZLBoolean3;
 
 public abstract class ZLTextStyleEntry {
 	public interface Feature {
-		int LENGTH_LEFT_INDENT                = 0;
-		int LENGTH_RIGHT_INDENT               = 1;
-		int LENGTH_FIRST_LINE_INDENT_DELTA    = 2;
-		int LENGTH_SPACE_BEFORE               = 3;
-		int LENGTH_SPACE_AFTER                = 4;
-		int LENGTH_FONT_SIZE                  = 5;
-		int NUMBER_OF_LENGTHS                 = 6;
+		int LENGTH_PADDING_LEFT               = 0;
+		int LENGTH_PADDING_RIGHT              = 1;
+		int LENGTH_MARGIN_LEFT                = 2;
+		int LENGTH_MARGIN_RIGHT               = 3;
+		int LENGTH_FIRST_LINE_INDENT          = 4;
+		int LENGTH_SPACE_BEFORE               = 5;
+		int LENGTH_SPACE_AFTER                = 6;
+		int LENGTH_FONT_SIZE                  = 7;
+		int LENGTH_VERTICAL_ALIGN             = 8;
+		int NUMBER_OF_LENGTHS                 = 9;
 		int ALIGNMENT_TYPE                    = NUMBER_OF_LENGTHS;
 		int FONT_FAMILY                       = NUMBER_OF_LENGTHS + 1;
 		int FONT_STYLE_MODIFIER               = NUMBER_OF_LENGTHS + 2;
+		int NON_LENGTH_VERTICAL_ALIGN         = NUMBER_OF_LENGTHS + 3;
+		// not transferred at the moment
+		int DISPLAY                           = NUMBER_OF_LENGTHS + 4;
 	}
 
 	public interface FontModifier {
@@ -55,20 +61,28 @@ public abstract class ZLTextStyleEntry {
 		byte PIXEL                            = 0;
 		byte POINT                            = 1;
 		byte EM_100                           = 2;
-		byte EX_100                           = 3;
-		byte PERCENT                          = 4;
+		byte REM_100                          = 3;
+		byte EX_100                           = 4;
+		byte PERCENT                          = 5;
+		// TODO: add IN, CM, MM, PICA ("pc", = 12 POINT)
 	}
 
-	private class Length {
+	public static class Length {
 		public final short Size;
 		public final byte Unit;
 
-		Length(short size, byte unit) {
+		public Length(short size, byte unit) {
 			Size = size;
 			Unit = unit;
 		}
+
+		@Override
+		public String toString() {
+			return Size + "." + Unit;
+		}
 	}
 
+	public final short Depth;
 	private short myFeatureMask;
 
 	private Length[] myLengths = new Length[Feature.NUMBER_OF_LENGTHS];
@@ -76,12 +90,14 @@ public abstract class ZLTextStyleEntry {
 	private List<FontEntry> myFontEntries;
 	private byte mySupportedFontModifiers;
 	private byte myFontModifiers;
+	private byte myVerticalAlignCode;
 
 	static boolean isFeatureSupported(short mask, int featureId) {
 		return (mask & (1 << featureId)) != 0;
 	}
 
-	protected ZLTextStyleEntry() {
+	protected ZLTextStyleEntry(short depth) {
+		Depth = depth;
 	}
 
 	public final boolean isFeatureSupported(int featureId) {
@@ -93,37 +109,48 @@ public abstract class ZLTextStyleEntry {
 		myLengths[featureId] = new Length(size, unit);
 	}
 
-	private int fullSize(ZLTextMetrics metrics, int featureId) {
+	private static int fullSize(ZLTextMetrics metrics, int fontSize, int featureId) {
 		switch (featureId) {
 			default:
-			case Feature.LENGTH_LEFT_INDENT:
-			case Feature.LENGTH_RIGHT_INDENT:
-			case Feature.LENGTH_FIRST_LINE_INDENT_DELTA:
+			case Feature.LENGTH_MARGIN_LEFT:
+			case Feature.LENGTH_MARGIN_RIGHT:
+			case Feature.LENGTH_PADDING_LEFT:
+			case Feature.LENGTH_PADDING_RIGHT:
+			case Feature.LENGTH_FIRST_LINE_INDENT:
 				return metrics.FullWidth;
 			case Feature.LENGTH_SPACE_BEFORE:
 			case Feature.LENGTH_SPACE_AFTER:
 				return metrics.FullHeight;
+			case Feature.LENGTH_VERTICAL_ALIGN:
 			case Feature.LENGTH_FONT_SIZE:
-				return metrics.FontSize;
+				return fontSize;
 		}
 	}
 
-	public final int getLength(int featureId, ZLTextMetrics metrics) {
-		switch (myLengths[featureId].Unit) {
+	public final int getLength(int featureId, ZLTextMetrics metrics, int fontSize) {
+		return compute(myLengths[featureId], metrics, fontSize, featureId);
+	}
+
+	public final boolean hasNonZeroLength(int featureId) {
+		return myLengths[featureId].Size != 0;
+	}
+
+	public static int compute(Length length, ZLTextMetrics metrics, int fontSize, int featureId) {
+		switch (length.Unit) {
 			default:
 			case SizeUnit.PIXEL:
-				return myLengths[featureId].Size * metrics.FontSize / metrics.DefaultFontSize;
-			// we understand "point" as "1/2 point"
+				return length.Size;
 			case SizeUnit.POINT:
-				return myLengths[featureId].Size
-					* metrics.DPI * metrics.FontSize
-					/ 72 / metrics.DefaultFontSize / 2;
+				return length.Size * metrics.DPI / 72;
 			case SizeUnit.EM_100:
-				return (myLengths[featureId].Size * metrics.FontSize + 50) / 100;
+				return (length.Size * fontSize + 50) / 100;
+			case SizeUnit.REM_100:
+				return (length.Size * metrics.FontSize + 50) / 100;
 			case SizeUnit.EX_100:
-				return (myLengths[featureId].Size * metrics.FontXHeight + 50) / 100;
+				// TODO 0.5 font size => height of x
+				return (length.Size * fontSize / 2 + 50) / 100;
 			case SizeUnit.PERCENT:
-				return (myLengths[featureId].Size * fullSize(metrics, featureId) + 50) / 100;
+				return (length.Size * fullSize(metrics, fontSize, featureId) + 50) / 100;
 		}
 	}
 
@@ -166,5 +193,28 @@ public abstract class ZLTextStyleEntry {
 			return ZLBoolean3.B3_UNDEFINED;
 		}
 		return (myFontModifiers & modifier) == 0 ? ZLBoolean3.B3_FALSE : ZLBoolean3.B3_TRUE;
+	}
+
+	public final void setVerticalAlignCode(byte code) {
+		myFeatureMask |= 1 << Feature.NON_LENGTH_VERTICAL_ALIGN;
+		myVerticalAlignCode = code;
+	}
+
+	public final byte getVerticalAlignCode() {
+		return myVerticalAlignCode;
+	}
+
+	@Override
+	public String toString() {
+		final StringBuilder buffer = new StringBuilder("StyleEntry[");
+		buffer.append("features: ").append(myFeatureMask).append(";");
+		if (isFeatureSupported(Feature.LENGTH_SPACE_BEFORE)) {
+			buffer.append("space-before: ").append(myLengths[Feature.LENGTH_SPACE_BEFORE]).append(";");
+		}
+		if (isFeatureSupported(Feature.LENGTH_SPACE_AFTER)) {
+			buffer.append("space-after: ").append(myLengths[Feature.LENGTH_SPACE_AFTER]).append(";");
+		}
+		buffer.append("]");
+		return buffer.toString();
 	}
 }

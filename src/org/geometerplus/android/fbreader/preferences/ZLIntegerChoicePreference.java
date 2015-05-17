@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@ class ZLIntegerChoicePreference extends ZLStringListPreference {
 	private final ZLIntegerOption myOption;
 	private final int[] myValues;
 
-	ZLIntegerChoicePreference(Context context, ZLResource resource, String resourceKey, ZLIntegerOption option, int[] values, String[] valueResourceKeys) {
-		super(context, resource, resourceKey);
+	ZLIntegerChoicePreference(Context context, ZLResource resource, ZLIntegerOption option, int[] values, String[] valueResourceKeys) {
+		super(context, resource);
 		assert(values.length == valueResourceKeys.length);
 
 		myOption = option;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import java.io.File;
 
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.options.*;
-import org.geometerplus.zlibrary.core.network.ZLNetworkManager;
+import org.geometerplus.zlibrary.core.network.QuietNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 import org.geometerplus.fbreader.Paths;
@@ -139,7 +139,8 @@ public class TipsManager {
 					? Action.None : Action.Download;
 			}
 		} else if (!TipsAreInitializedOption.getValue()) {
-			return Action.Initialize;
+			//return Action.Initialize;
+			return Action.None;
 		}
 		return Action.None;
 	}
@@ -157,13 +158,8 @@ public class TipsManager {
 				tipsFile.getParentFile().mkdirs();
 				new Thread(new Runnable() {
 					public void run() {
-						try {
-							ZLNetworkManager.Instance().downloadToFile(getUrl(), tipsFile);
-						} catch (ZLNetworkException e) {
-							e.printStackTrace();
-						} finally {
-							myDownloadInProgress = false;
-						}
+						new QuietNetworkContext().downloadToFileQuietly(getUrl(), tipsFile);
+						myDownloadInProgress = false;
 					}
 				}).start();
 			}

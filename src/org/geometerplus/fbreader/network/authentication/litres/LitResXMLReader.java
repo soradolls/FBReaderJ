@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,6 @@ class LitResXMLReader extends LitResAuthenticationXMLReader {
 	private LinkedList<String> myTags = new LinkedList<String>();
 
 	public LitResXMLReader(OPDSNetworkLink link) {
-		super(link.getSiteName());
 		Link = link;
 	}
 
@@ -115,7 +114,6 @@ class LitResXMLReader extends LitResAuthenticationXMLReader {
 
 					myUrls.addInfo(new BookUrlInfo(
 						UrlInfo.Type.BookConditional,
-						BookUrlInfo.Format.FB2_ZIP,
 						"https://robot.litres.ru/pages/catalit_download_book/?art=" + myBookId,
 						MimeType.APP_FB2_ZIP
 					));

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,19 +21,50 @@ package org.geometerplus.fbreader.book;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Formatter;
-import java.util.Locale;
+import java.util.*;
 
 import org.geometerplus.zlibrary.core.filesystem.*;
 import org.geometerplus.zlibrary.core.image.ZLImage;
 
 import org.geometerplus.fbreader.bookmodel.BookReadingException;
+import org.geometerplus.fbreader.formats.FormatPlugin;
+import org.geometerplus.fbreader.formats.PluginCollection;
 
 public abstract class BookUtil {
+	private static final WeakReference<ZLImage> NULL_IMAGE = new WeakReference<ZLImage>(null);
+	private static final WeakHashMap<ZLFile,WeakReference<ZLImage>> ourCovers =
+		new WeakHashMap<ZLFile,WeakReference<ZLImage>>();
+
 	public static ZLImage getCover(Book book) {
-		return book != null ? book.getCover() : null;
+		if (book == null) {
+			return null;
+		}
+		synchronized (book) {
+			return getCover(book.File);
+		}
+	}
+
+	public static ZLImage getCover(ZLFile file) {
+		WeakReference<ZLImage> cover = ourCovers.get(file);
+		if (cover == NULL_IMAGE) {
+			return null;
+		} else if (cover != null) {
+			final ZLImage image = cover.get();
+			if (image != null) {
+				return image;
+			}
+		}
+		ZLImage image = null;
+		try {
+			image = PluginCollection.Instance().getPlugin(file).readCover(file);
+		} catch (Exception e) {
+			// ignore
+		}
+		ourCovers.put(file, image != null ? new WeakReference<ZLImage>(image) : NULL_IMAGE);
+		return image;
 	}
 
 	public static String getAnnotation(Book book) {
@@ -48,41 +79,27 @@ public abstract class BookUtil {
 		final Locale locale = Locale.getDefault();
 
 		ZLResourceFile file = ZLResourceFile.createResourceFile(
-			"data/help/MiniHelp." + locale.getLanguage() + "_" + locale.getCountry() + ".fb2"
+			"data/intro/intro-" + locale.getLanguage() + "_" + locale.getCountry() + ".epub"
 		);
 		if (file.exists()) {
 			return file;
 		}
 
 		file = ZLResourceFile.createResourceFile(
-			"data/help/MiniHelp." + locale.getLanguage() + ".fb2"
+			"data/intro/intro-" + locale.getLanguage() + ".epub"
 		);
 		if (file.exists()) {
 			return file;
 		}
 
-		return ZLResourceFile.createResourceFile("data/help/MiniHelp.en.fb2");
+		return ZLResourceFile.createResourceFile("data/intro/intro-en.epub");
 	}
 
-	public static boolean canRemoveBookFile(Book book) {
-		ZLFile file = book.File;
-		if (file.getPhysicalFile() == null) {
-			return false;
-		}
-		while (file instanceof ZLArchiveEntryFile) {
-			file = file.getParent();
-			if (file.children().size() != 1) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	public static UID createSHA256Uid(ZLFile file) {
+	public static UID createUid(ZLFile file, String algorithm) {
 		InputStream stream = null;
 
 		try {
-			final MessageDigest hash = MessageDigest.getInstance("SHA-256");
+			final MessageDigest hash = MessageDigest.getInstance(algorithm);
 			stream = file.getInputStream();
 
 			final byte[] buffer = new byte[2048];
@@ -98,7 +115,7 @@ public abstract class BookUtil {
 			for (byte b : hash.digest()) {
 				f.format("%02X", b & 0xFF);
 			}
-			return new UID("SHA-256", f.toString());
+			return new UID(algorithm, f.toString());
 		} catch (IOException e) {
 			return null;
 		} catch (NoSuchAlgorithmException e) {
@@ -112,5 +129,4 @@ public abstract class BookUtil {
 			}
 		}
 	}
-
 }
