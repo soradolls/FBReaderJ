@@ -18,12 +18,12 @@
     do {    \
         std::string _file_name = __FILE__;  \
         std::string _fn = _file_name;   \
-        int pos = _file_name.rfind('/');   \
+        unsigned int pos = _file_name.rfind('/');   \
         if (pos >=0 && pos < _file_name.length())  \
         {   \
             _fn = _file_name.substr(pos+1);   \
         }   \
-        int line = __LINE__;                \
+        unsigned int line = __LINE__;                \
         char tag[1024] = {0};               \
         sprintf(tag, "%s:%d", _fn.c_str(), line);    \
         LOG(priority, tag, __VA_ARGS__); \
