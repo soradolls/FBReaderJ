@@ -23,6 +23,8 @@
 
 #include <ZLibrary.h>
 
+#include "logger.h"
+
 extern "C"
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 	if (AndroidUtil::init(jvm)) {
