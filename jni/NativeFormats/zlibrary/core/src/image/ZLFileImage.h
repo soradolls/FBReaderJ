@@ -41,6 +41,7 @@ public:
 
 public:
 	ZLFileImage(const ZLFile &file, const std::string &encoding, std::size_t offset, std::size_t size = 0, shared_ptr<FileEncryptionInfo> encryptionInfo = 0);
+	ZLFileImage(const ZLFile &file, const std::string &alt, const std::string &encoding, std::size_t offset, std::size_t size = 0, shared_ptr<FileEncryptionInfo> encryptionInfo = 0);
 	ZLFileImage(const ZLFile &file, const std::string &encoding, const Blocks &blocks);
 
 	//Kind kind() const;
@@ -48,12 +49,14 @@ public:
 	const std::string &encoding() const;
 	shared_ptr<FileEncryptionInfo> encryptionInfo() const;
 	const ZLFileImage::Blocks& blocks() const;
+	const std::string &alt() const;
 
 protected:
 	//shared_ptr<ZLInputStream> inputStream() const;
 
 private:
 	const ZLFile myFile;
+	const std::string myAlt;
 	const std::string myEncoding;
 	shared_ptr<FileEncryptionInfo> myEncryptionInfo;
 	Blocks myBlocks;
@@ -65,6 +68,10 @@ inline ZLFileImage::ZLFileImage(const ZLFile &file, const std::string &encoding,
 	myBlocks.push_back(Block(offset, size));
 }
 
+inline ZLFileImage::ZLFileImage(const ZLFile &file, const std::string &alt, const std::string &encoding, std::size_t offset, std::size_t size, shared_ptr<FileEncryptionInfo> encryptionInfo) : ZLSingleImage(file.mimeType()), myFile(file), myAlt(alt), myEncoding(encoding), myEncryptionInfo(encryptionInfo) {
+	myBlocks.push_back(Block(offset, size));
+}
+
 inline ZLFileImage::ZLFileImage(const ZLFile &file, const std::string &encoding, const ZLFileImage::Blocks &blocks) : ZLSingleImage(file.mimeType()), myFile(file), myEncoding(encoding), myBlocks(blocks) { }
 
 //inline ZLSingleImage::Kind ZLFileImage::kind() const { return FILE_IMAGE; }
@@ -72,6 +79,7 @@ inline const ZLFile &ZLFileImage::file() const { return myFile; }
 inline const std::string &ZLFileImage::encoding() const { return myEncoding; }
 inline shared_ptr<FileEncryptionInfo> ZLFileImage::encryptionInfo() const { return myEncryptionInfo; }
 inline const ZLFileImage::Blocks &ZLFileImage::blocks() const { return myBlocks; }
+inline const std::string &ZLFileImage::alt() const { return myAlt; }
 //inline shared_ptr<ZLInputStream> ZLFileImage::inputStream() const { return myFile.inputStream(); }
 
 #endif /* __ZLFILEIMAGE_H__ */

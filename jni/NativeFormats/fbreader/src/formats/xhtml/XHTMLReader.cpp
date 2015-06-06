@@ -413,11 +413,25 @@ XHTMLTagImageAction::XHTMLTagImageAction(const std::string &attributeName) {
 	myPredicate = new ZLXMLReader::SimpleNamePredicate(attributeName);
 }
 
+#include "logger.h"
 void XHTMLTagImageAction::doAtStart(XHTMLReader &reader, const char **xmlattributes) {
 	const char *fileName = reader.attributeValue(xmlattributes, *myPredicate);
 	if (fileName == 0) {
 		return;
 	}
+
+	LOG_V("image(by houyuqi): %s", fileName);
+	const char *alt = reader.attributeValue(xmlattributes, "alt");
+	std::string str_alt("");
+	if (alt)
+	{
+		str_alt = alt;
+		// LOG_V("image alt(by houyuqi): %s", alt);
+	}
+	// else
+	// {
+	// 	LOG_V("image alt is empty(by houyuqi)");
+	// }
 
 	const std::string fullfileName = pathPrefix(reader) + MiscUtil::decodeHtmlURL(fileName);
 	ZLFile imageFile(fullfileName);
@@ -434,8 +448,8 @@ void XHTMLTagImageAction::doAtStart(XHTMLReader &reader, const char **xmlattribu
 		}
 	}
 	const std::string imageName = imageFile.name(false);
-	bookReader(reader).addImageReference(imageName, 0, reader.myMarkNextImageAsCover);
-	bookReader(reader).addImage(imageName, new ZLFileImage(imageFile, EMPTY, 0, 0, reader.myEncryptionMap->info(imageFile.path())));
+	bookReader(reader).addImageReference(imageName+str_alt, 0, reader.myMarkNextImageAsCover);
+	bookReader(reader).addImage(imageName+str_alt, new ZLFileImage(imageFile, str_alt, EMPTY, 0, 0, reader.myEncryptionMap->info(imageFile.path())));
 	reader.myMarkNextImageAsCover = false;
 	if (flagParagraphIsOpen && reader.myCurrentParagraphIsEmpty) {
 		bookReader(reader).addControl(IMAGE, false);
