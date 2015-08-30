@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,10 @@ public class UrlInfoCollection<T extends UrlInfo> implements Serializable {
 
 	private final LinkedList<T> myInfos = new LinkedList<T>();
 
-	public UrlInfoCollection() {
+	public UrlInfoCollection(T ... elements) {
+		for (T info : elements) {
+			addInfo(info);
+		}
 	}
 
 	public UrlInfoCollection(UrlInfoCollection<? extends T> other) {

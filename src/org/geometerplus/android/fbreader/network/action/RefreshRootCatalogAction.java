@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,18 +26,21 @@ import org.geometerplus.fbreader.network.NetworkLibrary;
 
 import org.geometerplus.zlibrary.ui.android.R;
 
+import org.geometerplus.android.fbreader.network.NetworkLibraryActivity;
+
 public class RefreshRootCatalogAction extends RootAction {
-	public RefreshRootCatalogAction(Activity activity) {
+	public RefreshRootCatalogAction(NetworkLibraryActivity activity) {
 		super(activity, ActionCode.REFRESH, "refreshCatalogsList", R.drawable.ic_menu_refresh);
 	}
 
 	@Override
 	public boolean isEnabled(NetworkTree tree) {
-		return !NetworkLibrary.Instance().isUpdateInProgress();
+		return !myLibrary.isUpdateInProgress();
 	}
 
 	@Override
 	public void run(NetworkTree tree) {
-		NetworkLibrary.Instance().runBackgroundUpdate(true);
+		myLibrary.runBackgroundUpdate(true);
+		((NetworkLibraryActivity)myActivity).requestCatalogPlugins();
 	}
 }

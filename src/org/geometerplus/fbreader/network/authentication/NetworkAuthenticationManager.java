@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,14 +33,14 @@ import org.geometerplus.fbreader.network.urlInfo.*;
 public abstract class NetworkAuthenticationManager {
 	private static final HashMap<String,NetworkAuthenticationManager> ourManagers = new HashMap<String,NetworkAuthenticationManager>();
 
-	public static NetworkAuthenticationManager createManager(INetworkLink link, Class<? extends NetworkAuthenticationManager> managerClass) {
-		NetworkAuthenticationManager mgr = ourManagers.get(link.getSiteName());
+	public static NetworkAuthenticationManager createManager(NetworkLibrary library, INetworkLink link, Class<? extends NetworkAuthenticationManager> managerClass) {
+		NetworkAuthenticationManager mgr = ourManagers.get(link.getStringId());
 		if (mgr == null) {
 			if (managerClass == LitResAuthenticationManager.class) {
-				mgr = new LitResAuthenticationManager((OPDSNetworkLink)link);
+				mgr = new LitResAuthenticationManager(library, (OPDSNetworkLink)link);
 			}
 			if (mgr != null) {
-				ourManagers.put(link.getSiteName(), mgr);
+				ourManagers.put(link.getStringId(), mgr);
 			}
 		}
 		return mgr;
@@ -52,7 +52,7 @@ public abstract class NetworkAuthenticationManager {
 
 	protected NetworkAuthenticationManager(INetworkLink link) {
 		Link = link;
-		UserNameOption = new ZLStringOption(link.getSiteName(), "userName", "");
+		UserNameOption = new ZLStringOption(link.getStringId(), "userName", "");
 	}
 
 	public String getUserName() {
@@ -86,7 +86,7 @@ public abstract class NetworkAuthenticationManager {
 	}
 
 	public void initialize() throws ZLNetworkException {
-		throw new ZLNetworkException(NetworkException.ERROR_UNSUPPORTED_OPERATION);
+		throw ZLNetworkException.forCode(NetworkException.ERROR_UNSUPPORTED_OPERATION);
 	}
 
 	// returns true if link must be purchased before downloading
@@ -95,7 +95,7 @@ public abstract class NetworkAuthenticationManager {
 	}
 
 	public void purchaseBook(NetworkBookItem book) throws ZLNetworkException {
-		throw new ZLNetworkException(NetworkException.ERROR_UNSUPPORTED_OPERATION);
+		throw ZLNetworkException.forCode(NetworkException.ERROR_UNSUPPORTED_OPERATION);
 	}
 
 	public List<NetworkBookItem> purchasedBooks() {
@@ -125,6 +125,6 @@ public abstract class NetworkAuthenticationManager {
 	}
 
 	public void recoverPassword(String email) throws ZLNetworkException {
-		throw new ZLNetworkException(NetworkException.ERROR_UNSUPPORTED_OPERATION);
+		throw ZLNetworkException.forCode(NetworkException.ERROR_UNSUPPORTED_OPERATION);
 	}
 }

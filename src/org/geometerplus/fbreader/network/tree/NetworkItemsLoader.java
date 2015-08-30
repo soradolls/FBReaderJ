@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,19 +19,21 @@
 
 package org.geometerplus.fbreader.network.tree;
 
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.NetworkItem;
 
 public abstract class NetworkItemsLoader implements Runnable {
-	private final NetworkCatalogTree myTree;
-
 	private volatile Runnable myPostRunnable;
 	private volatile boolean myFinishedFlag;
+	public final ZLNetworkContext NetworkContext;
+	public final NetworkCatalogTree Tree;
 
-	protected NetworkItemsLoader(NetworkCatalogTree tree) {
-		myTree = tree;
+	protected NetworkItemsLoader(ZLNetworkContext nc, NetworkCatalogTree tree) {
+		NetworkContext = nc;
+		Tree = tree;
 	}
 
 	public final void start() {
@@ -40,19 +42,14 @@ public abstract class NetworkItemsLoader implements Runnable {
 		loaderThread.start();
 	}
 
-	public NetworkCatalogTree getTree() {
-		return myTree;
-	}
-
 	public final void run() {
-		final NetworkLibrary library = NetworkLibrary.Instance();
+		final NetworkLibrary library = Tree.Library;
 
 		synchronized (library) {
-			final NetworkCatalogTree tree = getTree();
-			if (library.isLoadingInProgress(tree)) {
+			if (library.isLoadingInProgress(Tree)) {
 				return;
 			}
-			library.storeLoader(tree, this);
+			library.storeLoader(Tree, this);
 		}
 
 		try {
@@ -72,7 +69,7 @@ public abstract class NetworkItemsLoader implements Runnable {
 				onFinish(e, isLoadingInterrupted());
 			}
 		} finally {
-			library.removeStoredLoader(getTree());
+			library.removeStoredLoader(Tree);
 			library.fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
 			synchronized (this) {
 				if (myPostRunnable != null) {
@@ -124,7 +121,7 @@ public abstract class NetworkItemsLoader implements Runnable {
 	}
 
 	public void onNewItem(final NetworkItem item) {
-		getTree().addItem(item);
+		Tree.addItem(item);
 	}
 
 	public synchronized void setPostRunnable(Runnable action) {

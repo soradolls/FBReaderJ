@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,8 +32,8 @@ class ZLBoolean3Preference extends ZLStringListPreference {
 
 	private final ZLBoolean3Option myOption;
 
-	ZLBoolean3Preference(Context context, ZLResource resource, String resourceKey, ZLBoolean3Option option) {
-		super(context, resource, resourceKey);
+	ZLBoolean3Preference(Context context, ZLResource resource, ZLBoolean3Option option) {
+		super(context, resource);
 
 		myOption = option;
 		setList(new String[] { ON, OFF, UNCHANGED });

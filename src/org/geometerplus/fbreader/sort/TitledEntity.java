@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,14 +26,14 @@ import java.util.Map;
 import android.annotation.TargetApi;
 import android.os.Build;
 
-public abstract class TitledEntity {
+public abstract class TitledEntity<T extends TitledEntity<T>> implements Comparable<T> {
 	private String myTitle;
 	private String mySortKey;
-	
+
 	public TitledEntity(String title) {
 		myTitle = title;
 	}
-	
+
 	public String getTitle() {
 		return myTitle != null ? myTitle : "";
 	}
@@ -50,9 +50,9 @@ public abstract class TitledEntity {
 	protected void resetSortKey() {
 		mySortKey = null;
 	}
-	
+
 	public abstract String getLanguage();
-	
+
 	public String getSortKey() {
 		if (null == mySortKey) {
 			try {
@@ -63,7 +63,12 @@ public abstract class TitledEntity {
 		}
 		return mySortKey;
 	}
-	
+
+	@Override
+	public int compareTo(T other) {
+		return getSortKey().compareTo(other.getSortKey());
+	}
+
 	private final static Map<String, String[]> ARTICLES = new HashMap<String, String[]>();
 	// English articles
 	private final static String[] EN_ARTICLES = new String[] {
@@ -88,7 +93,7 @@ public abstract class TitledEntity {
 	private final static String[] SP_ARTICLES = new String[] {
 		"el ", "la ", "los ", "las ", "un ", "unos ", "una ", "unas "
 	};
-	
+
 	static {
 		ARTICLES.put("en", EN_ARTICLES);
 		ARTICLES.put("fr", FR_ARTICLES);
@@ -148,7 +153,7 @@ public abstract class TitledEntity {
 		if (result.startsWith("a is")) {
 			return result;
 		}
-		
+
 		if (null != ARTICLES.get(language)) {
 			for (String a : ARTICLES.get(language)) {
 				if (result.startsWith(a)) {

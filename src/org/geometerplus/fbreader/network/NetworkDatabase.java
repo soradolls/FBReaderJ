@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,24 +33,27 @@ public abstract class NetworkDatabase {
 		return ourInstance;
 	}
 
-	protected NetworkDatabase() {
+	private final NetworkLibrary myLibrary;
+
+	protected NetworkDatabase(NetworkLibrary library) {
+		myLibrary = library;
 		ourInstance = this;
 	}
 
 	protected abstract void executeAsTransaction(Runnable actions);
 
-	protected INetworkLink createLink(int id, INetworkLink.Type type, String predefinedId, String siteName, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
-		if (siteName == null || title == null || infos.getInfo(UrlInfo.Type.Catalog) == null) {
+	protected INetworkLink createLink(int id, INetworkLink.Type type, String predefinedId, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
+		if (title == null || infos.getInfo(UrlInfo.Type.Catalog) == null) {
 			return null;
 		}
 		switch (type) {
 			default:
 				return new OPDSCustomNetworkLink(
-					id, type, siteName, title, summary, language, infos
+					myLibrary, id, type, title, summary, language, infos
 				);
 			case Predefined:
 				return new OPDSPredefinedNetworkLink(
-					id, predefinedId, siteName, title, summary, language, infos
+					myLibrary, id, predefinedId, title, summary, language, infos
 				);
 		}
 	}

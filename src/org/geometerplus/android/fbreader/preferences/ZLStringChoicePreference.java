@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ import org.geometerplus.zlibrary.core.resources.ZLResource;
 class ZLStringChoicePreference extends ZLStringListPreference {
 	private final ZLStringOption myOption;
 
-	ZLStringChoicePreference(Context context, ZLResource rootResource, String resourceKey, ZLStringOption option, String[] values) {
-		super(context, rootResource, resourceKey);
+	ZLStringChoicePreference(Context context, ZLResource resource, ZLStringOption option, String[] values) {
+		super(context, resource);
 		setList(values);
 		setInitialValue(option.getValue());
 		myOption = option;

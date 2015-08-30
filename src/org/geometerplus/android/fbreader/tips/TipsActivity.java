@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,17 +29,20 @@ import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 import org.geometerplus.zlibrary.ui.android.R;
 
+import org.geometerplus.fbreader.Paths;
 import org.geometerplus.fbreader.tips.*;
 
 public class TipsActivity extends Activity {
 	public static final String INITIALIZE_ACTION = "android.fbreader.action.tips.INITIALIZE";
 	public static final String SHOW_TIP_ACTION = "android.fbreader.action.tips.SHOW_TIP";
 
-	private final TipsManager myManager = TipsManager.Instance();
+	private TipsManager myManager;
 
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
+
+ 		myManager = new TipsManager(Paths.systemInfo(this));
 
 		final boolean doInitialize = INITIALIZE_ACTION.equals(getIntent().getAction());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,14 +26,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.TextView;
-import android.widget.Button;
 
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.money.Money;
-
-import org.geometerplus.zlibrary.ui.android.R;
 
 import org.geometerplus.android.util.UIUtil;
 
@@ -42,7 +38,12 @@ import org.geometerplus.fbreader.network.tree.NetworkBookTree;
 import org.geometerplus.fbreader.network.urlInfo.BookBuyUrlInfo;
 import org.geometerplus.fbreader.network.authentication.NetworkAuthenticationManager;
 
-public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeListener {
+import org.geometerplus.android.fbreader.libraryService.BookCollectionShadow;
+import org.geometerplus.android.fbreader.util.SimpleDialogActivity;
+
+public class BuyBooksActivity extends SimpleDialogActivity implements NetworkLibrary.ChangeListener {
+	private final BookCollectionShadow myBookCollection = new BookCollectionShadow();
+
 	public static void run(Activity activity, NetworkBookTree tree) {
 		run(activity, Collections.singletonList(tree));
 	}
@@ -74,7 +75,8 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 		super.onCreate(bundle);
 		Thread.setDefaultUncaughtExceptionHandler(new org.geometerplus.zlibrary.ui.android.library.UncaughtExceptionHandler(this));
 
-		myLibrary = NetworkLibrary.Instance();
+		myBookCollection.bindToService(this, null);
+		myLibrary = Util.networkLibrary(this);
 
 		final List<NetworkTree.Key> keys =
 			(List<NetworkTree.Key>)getIntent().getSerializableExtra(
@@ -102,11 +104,9 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 			return;
 		}
 
-		setContentView(R.layout.buy_book);
-
 		try {
 			if (!mgr.isAuthorised(true)) {
-				findViewById(R.id.buy_book_buttons).setVisibility(View.GONE);
+				buttonsView().setVisibility(View.GONE);
 				AuthorisationMenuActivity.runMenu(this, myLink, 1);
 			}
 		} catch (ZLNetworkException e) {
@@ -123,12 +123,12 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 
 		setupUI(AuthorisationState.Authorised);
 
-		NetworkLibrary.Instance().addChangeListener(this);
+		myLibrary.addChangeListener(this);
 	}
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		findViewById(R.id.buy_book_buttons).setVisibility(View.VISIBLE);
+		buttonsView().setVisibility(View.VISIBLE);
 		super.onActivityResult(requestCode, resultCode, data);
 	}
 
@@ -147,13 +147,6 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 
 	private void setupUIInternal(AuthorisationState state) {
 		final ZLResource dialogResource = ZLResource.resource("dialog");
-		final ZLResource buttonResource = dialogResource.getResource("button");
-
-		final TextView textArea = (TextView)findViewById(R.id.buy_book_text);
-		final Button okButton =
-			(Button)findViewById(R.id.buy_book_buttons).findViewById(R.id.ok_button);
-		final Button cancelButton =
-			(Button)findViewById(R.id.buy_book_buttons).findViewById(R.id.cancel_button);
 
 		final ZLResource resource = ZLResource.resource("buyBook");
 		if (myBooks.size() > 1) {
@@ -164,88 +157,70 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 
 		switch (state) {
 			case NotAuthorised:
-				textArea.setText(resource.getResource("notAuthorised").getValue());
-				okButton.setText(buttonResource.getResource("authorise").getValue());
-				cancelButton.setText(buttonResource.getResource("cancel").getValue());
-				okButton.setOnClickListener(new View.OnClickListener() {
+				textView().setText(resource.getResource("notAuthorised").getValue());
+				okButton().setOnClickListener(new View.OnClickListener() {
 					public void onClick(View v) {
 						AuthorisationMenuActivity.runMenu(BuyBooksActivity.this, myLink);
 					}
 				});
-				cancelButton.setOnClickListener(new View.OnClickListener() {
-					public void onClick(View v) {
-						finish();
-					}
-				});
+				cancelButton().setOnClickListener(finishListener());
+				setButtonTexts("authorise", "cancel");
 				break;
 			case Authorised:
 				if (myAccount == null) {
-					textArea.setText(resource.getResource("noAccountInformation").getValue());
-					okButton.setText(buttonResource.getResource("refresh").getValue());
-					cancelButton.setText(buttonResource.getResource("cancel").getValue());
-					okButton.setOnClickListener(new View.OnClickListener() {
+					textView().setText(resource.getResource("noAccountInformation").getValue());
+					okButton().setOnClickListener(new View.OnClickListener() {
 						public void onClick(View v) {
 							refreshAccountInformation();
 						}
 					});
-					cancelButton.setOnClickListener(new View.OnClickListener() {
-						public void onClick(View v) {
-							finish();
-						}
-					});
+					cancelButton().setOnClickListener(finishListener());
+					setButtonTexts("refresh", "cancel");
 				} else if (myCost.compareTo(myAccount) > 0) {
 					if (Money.ZERO.equals(myAccount)) {
-						textArea.setText(
+						textView().setText(
 							resource.getResource("zeroFunds").getValue()
 								.replace("%0", myCost.toString())
 						);
 					} else {
-						textArea.setText(
+						textView().setText(
 							resource.getResource("unsufficientFunds").getValue()
 								.replace("%0", myCost.toString())
 								.replace("%1", myAccount.toString())
 						);
 					}
-					okButton.setText(buttonResource.getResource("pay").getValue());
-					cancelButton.setText(buttonResource.getResource("refresh").getValue());
-					okButton.setOnClickListener(new View.OnClickListener() {
+					okButton().setOnClickListener(new View.OnClickListener() {
 						public void onClick(View v) {
 							TopupMenuActivity.runMenu(BuyBooksActivity.this, myLink, myCost.subtract(myAccount));
 						}
 					});
-					cancelButton.setOnClickListener(new View.OnClickListener() {
+					cancelButton().setOnClickListener(new View.OnClickListener() {
 						public void onClick(View v) {
 							refreshAccountInformation();
 						}
 					});
+					setButtonTexts("pay", "refresh");
 				} else {
-					okButton.setOnClickListener(new View.OnClickListener() {
+					okButton().setOnClickListener(new View.OnClickListener() {
 						public void onClick(View v) {
 							UIUtil.wait("purchaseBook", buyRunnable(), BuyBooksActivity.this);
 						}
 					});
-					cancelButton.setOnClickListener(new View.OnClickListener() {
-						public void onClick(View v) {
-							finish();
-						}
-					});
+					cancelButton().setOnClickListener(finishListener());
 					if (myBooks.size() > 1) {
-						textArea.setText(
+						textView().setText(
 							resource.getResource("confirmSeveralBooks").getValue()
 								.replace("%s", String.valueOf(myBooks.size()))
 						);
-						okButton.setText(buttonResource.getResource("buy").getValue());
-						cancelButton.setText(buttonResource.getResource("cancel").getValue());
-					} else if (myBooks.get(0).getStatus() == NetworkBookItem.Status.CanBePurchased) {
-						textArea.setText(
+						setButtonTexts("buy", "cancel");
+					} else if (myBooks.get(0).getStatus(myBookCollection) == NetworkBookItem.Status.CanBePurchased) {
+						textView().setText(
 							resource.getResource("confirm").getValue().replace("%s", myBooks.get(0).Title)
 						);
-						okButton.setText(buttonResource.getResource("buy").getValue());
-						cancelButton.setText(buttonResource.getResource("cancel").getValue());
+						setButtonTexts("buy", "cancel");
 					} else {
-						textArea.setText(resource.getResource("alreadyBought").getValue());
-						cancelButton.setText(buttonResource.getResource("ok").getValue());
-						okButton.setVisibility(View.GONE);
+						textView().setText(resource.getResource("alreadyBought").getValue());
+						setButtonTexts(null, "ok");
 					}
 				}
 				break;
@@ -254,7 +229,8 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 
 	@Override
 	protected void onDestroy() {
-		NetworkLibrary.Instance().removeChangeListener(this);
+		myLibrary.removeChangeListener(this);
+		myBookCollection.unbind();
 		super.onDestroy();
 	}
 
@@ -267,7 +243,7 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 	private Money calculateCost() {
 		Money cost = Money.ZERO;
 		for (NetworkBookItem b : myBooks) {
-			if (b.getStatus() != NetworkBookItem.Status.CanBePurchased) {
+			if (b.getStatus(myBookCollection) != NetworkBookItem.Status.CanBePurchased) {
 				continue;
 			}
 			final BookBuyUrlInfo info = b.buyInfo();
@@ -334,7 +310,7 @@ public class BuyBooksActivity extends Activity implements NetworkLibrary.ChangeL
 				try {
 					final NetworkAuthenticationManager mgr = myLink.authenticationManager();
 					for (final NetworkBookItem b : myBooks) {
-						if (b.getStatus() != NetworkBookItem.Status.CanBePurchased) {
+						if (b.getStatus(myBookCollection) != NetworkBookItem.Status.CanBePurchased) {
 							continue;
 						}
 						mgr.purchaseBook(b);

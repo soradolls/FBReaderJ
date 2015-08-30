@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,31 +19,29 @@
 
 package org.geometerplus.zlibrary.ui.android.image;
 
-import org.geometerplus.zlibrary.core.util.MimeType;
 import org.geometerplus.zlibrary.core.image.*;
 
 public final class ZLAndroidImageManager extends ZLImageManager {
 	@Override
 	public ZLAndroidImageData getImageData(ZLImage image) {
-		if (image instanceof ZLSingleImage) {
-			final ZLSingleImage singleImage = (ZLSingleImage)image;
-			if (MimeType.IMAGE_PALM.equals(singleImage.mimeType())) {
-				return null;
-			}
-			return new InputStreamImageData(singleImage);
+		if (image instanceof ZLImageProxy) {
+			return getImageData(((ZLImageProxy)image).getRealImage());
+		} else if (image instanceof ZLStreamImage) {
+			return new InputStreamImageData((ZLStreamImage)image);
+		} else if (image instanceof ZLBitmapImage) {
+			return BitmapImageData.get((ZLBitmapImage)image);
 		} else {
-			// TODO
+			// unknown image type or null
 			return null;
 		}
 	}
 
 	private ZLAndroidImageLoader myLoader;
 
-	@Override
-	protected void startImageLoading(ZLLoadableImage image, Runnable postLoadingRunnable) {
+	public void startImageLoading(ZLImageProxy.Synchronizer syncronizer, ZLImageProxy image, Runnable postLoadingRunnable) {
 		if (myLoader == null) {
 			myLoader = new ZLAndroidImageLoader();
 		}
-		myLoader.startImageLoading(image, postLoadingRunnable);
+		myLoader.startImageLoading(syncronizer, image, postLoadingRunnable);
 	}
 }

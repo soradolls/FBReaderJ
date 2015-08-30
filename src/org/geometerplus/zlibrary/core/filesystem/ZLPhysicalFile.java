@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,11 @@ public final class ZLPhysicalFile extends ZLFile {
 	@Override
 	public long size() {
 		return myFile.length();
+	}
+
+	@Override
+	public long lastModified() {
+		return myFile.lastModified();
 	}
 
 	private Boolean myIsDirectory;
@@ -102,7 +107,7 @@ public final class ZLPhysicalFile extends ZLFile {
 
 	protected List<ZLFile> directoryEntries() {
 		File[] subFiles = myFile.listFiles();
-		if ((subFiles == null) || (subFiles.length == 0)) {
+		if (subFiles == null || subFiles.length == 0) {
 			return Collections.emptyList();
 		}
 

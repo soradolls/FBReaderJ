@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ import org.geometerplus.zlibrary.core.fonts.FontEntry;
 import org.geometerplus.zlibrary.core.image.ZLImageData;
 import org.geometerplus.zlibrary.core.options.ZLBooleanOption;
 import org.geometerplus.zlibrary.core.util.ZLColor;
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 import org.geometerplus.zlibrary.core.view.ZLPaintContext;
 
 import org.geometerplus.zlibrary.ui.android.image.ZLAndroidImageData;
@@ -45,16 +46,30 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 	private final Paint myFillPaint = new Paint();
 	private final Paint myOutlinePaint = new Paint();
 
-	private final int myWidth;
-	private final int myHeight;
+	public static final class Geometry {
+		final Size ScreenSize;
+		final Size AreaSize;
+		final int LeftMargin;
+		final int TopMargin;
+
+		public Geometry(int screenWidth, int screenHeight, int width, int height, int leftMargin, int topMargin) {
+			ScreenSize = new Size(screenWidth, screenHeight);
+			AreaSize = new Size(width, height);
+			LeftMargin = leftMargin;
+			TopMargin = topMargin;
+		}
+	}
+
+	private final Geometry myGeometry;
 	private final int myScrollbarWidth;
 
 	private ZLColor myBackgroundColor = new ZLColor(0, 0, 0);
 
-	ZLAndroidPaintContext(Canvas canvas, int width, int height, int scrollbarWidth) {
+	public ZLAndroidPaintContext(SystemInfo systemInfo, Canvas canvas, Geometry geometry, int scrollbarWidth) {
+		super(systemInfo);
+
 		myCanvas = canvas;
-		myWidth = width - scrollbarWidth;
-		myHeight = height;
+		myGeometry = geometry;
 		myScrollbarWidth = scrollbarWidth;
 
 		myTextPaint.setLinearText(false);
@@ -69,7 +84,8 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 
 		myLinePaint.setStyle(Paint.Style.STROKE);
 
-		myOutlinePaint.setColor(Color.rgb(255, 127, 0));
+		myFillPaint.setAntiAlias(AntiAliasOption.getValue());
+
 		myOutlinePaint.setAntiAlias(true);
 		myOutlinePaint.setDither(true);
 		myOutlinePaint.setStrokeWidth(4);
@@ -80,16 +96,21 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 
 	private static ZLFile ourWallpaperFile;
 	private static Bitmap ourWallpaper;
+	private static FillMode ourFillMode;
 	@Override
-	public void clear(ZLFile wallpaperFile, WallpaperMode mode) {
-		if (!wallpaperFile.equals(ourWallpaperFile)) {
+	public void clear(ZLFile wallpaperFile, FillMode mode) {
+		if (!wallpaperFile.equals(ourWallpaperFile) || mode != ourFillMode) {
 			ourWallpaperFile = wallpaperFile;
+			ourFillMode = mode;
 			ourWallpaper = null;
 			try {
 				final Bitmap fileBitmap =
 					BitmapFactory.decodeStream(wallpaperFile.getInputStream());
 				switch (mode) {
-					case TILE_MIRROR:
+					default:
+						ourWallpaper = fileBitmap;
+						break;
+					case tileMirror:
 					{
 						final int w = fileBitmap.getWidth();
 						final int h = fileBitmap.getHeight();
@@ -111,9 +132,6 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 						ourWallpaper = wallpaper;
 						break;
 					}
-					case TILE:
-						ourWallpaper = fileBitmap;
-						break;
 				}
 			} catch (Throwable t) {
 				t.printStackTrace();
@@ -123,9 +141,75 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 			myBackgroundColor = ZLAndroidColorUtil.getAverageColor(ourWallpaper);
 			final int w = ourWallpaper.getWidth();
 			final int h = ourWallpaper.getHeight();
-			for (int cw = 0, iw = 1; cw < myWidth; cw += w, ++iw) {
-				for (int ch = 0, ih = 1; ch < myHeight; ch += h, ++ih) {
-					myCanvas.drawBitmap(ourWallpaper, cw, ch, myFillPaint);
+			final Geometry g = myGeometry;
+			switch (mode) {
+				case fullscreen:
+				{
+					final Matrix m = new Matrix();
+					m.preScale(1f * g.ScreenSize.Width / w, 1f * g.ScreenSize.Height / h);
+					m.postTranslate(-g.LeftMargin, -g.TopMargin);
+					myCanvas.drawBitmap(ourWallpaper, m, myFillPaint);
+					break;
+				}
+				case stretch:
+				{
+					final Matrix m = new Matrix();
+					final float sw = 1f * g.ScreenSize.Width / w;
+					final float sh = 1f * g.ScreenSize.Height / h;
+					final float scale;
+					float dx = g.LeftMargin;
+					float dy = g.TopMargin;
+					if (sw < sh) {
+						scale = sh;
+						dx += (scale * w - g.ScreenSize.Width) / 2;
+					} else {
+						scale = sw;
+						dy += (scale * h - g.ScreenSize.Height) / 2;
+					}
+					m.preScale(scale, scale);
+					m.postTranslate(-dx, -dy);
+					myCanvas.drawBitmap(ourWallpaper, m, myFillPaint);
+					break;
+				}
+				case tileVertically:
+				{
+					final Matrix m = new Matrix();
+					final int dx = g.LeftMargin;
+					final int dy = g.TopMargin % h;
+					m.preScale(1f * g.ScreenSize.Width / w, 1);
+					m.postTranslate(-dx, -dy);
+					for (int ch = g.AreaSize.Height + dy; ch > 0; ch -= h) {
+						myCanvas.drawBitmap(ourWallpaper, m, myFillPaint);
+						m.postTranslate(0, h);
+					}
+					break;
+				}
+				case tileHorizontally:
+				{
+					final Matrix m = new Matrix();
+					final int dx = g.LeftMargin % w;
+					final int dy = g.TopMargin;
+					m.preScale(1, 1f * g.ScreenSize.Height / h);
+					m.postTranslate(-dx, -dy);
+					for (int cw = g.AreaSize.Width + dx; cw > 0; cw -= w) {
+						myCanvas.drawBitmap(ourWallpaper, m, myFillPaint);
+						m.postTranslate(w, 0);
+					}
+					break;
+				}
+				case tile:
+				case tileMirror:
+				{
+					final int dx = g.LeftMargin % w;
+					final int dy = g.TopMargin % h;
+					final int fullw = g.AreaSize.Width + dx;
+					final int fullh = g.AreaSize.Height + dy;
+					for (int cw = 0; cw < fullw; cw += w) {
+						for (int ch = 0; ch < fullh; ch += h) {
+							myCanvas.drawBitmap(ourWallpaper, cw - dx, ch - dy, myFillPaint);
+						}
+					}
+					break;
 				}
 			}
 		} else {
@@ -137,7 +221,7 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 	public void clear(ZLColor color) {
 		myBackgroundColor = color;
 		myFillPaint.setColor(ZLAndroidColorUtil.rgb(color));
-		myCanvas.drawRect(0, 0, myWidth + myScrollbarWidth, myHeight, myFillPaint);
+		myCanvas.drawRect(0, 0, myGeometry.AreaSize.Width, myGeometry.AreaSize.Height, myFillPaint);
 	}
 
 	@Override
@@ -145,7 +229,7 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 		return myBackgroundColor;
 	}
 
-	public void fillPolygon(int[] xs, int ys[]) {
+	public void fillPolygon(int[] xs, int[] ys) {
 		final Path path = new Path();
 		final int last = xs.length - 1;
 		path.moveTo(xs[last], ys[last]);
@@ -155,7 +239,7 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 		myCanvas.drawPath(path, myFillPaint);
 	}
 
-	public void drawPolygonalLine(int[] xs, int ys[]) {
+	public void drawPolygonalLine(int[] xs, int[] ys) {
 		final Path path = new Path();
 		final int last = xs.length - 1;
 		path.moveTo(xs[last], ys[last]);
@@ -165,7 +249,7 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 		myCanvas.drawPath(path, myLinePaint);
 	}
 
-	public void drawOutline(int[] xs, int ys[]) {
+	public void drawOutline(int[] xs, int[] ys) {
 		final int last = xs.length - 1;
 		int xStart = (xs[0] + xs[last]) / 2;
 		int yStart = (ys[0] + ys[last]) / 2;
@@ -202,7 +286,7 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 	protected void setFontInternal(List<FontEntry> entries, int size, boolean bold, boolean italic, boolean underline, boolean strikeThrought) {
 		Typeface typeface = null;
 		for (FontEntry e : entries) {
-			typeface = AndroidFontUtil.typeface(e, bold, italic);
+			typeface = AndroidFontUtil.typeface(getSystemInfo(), e, bold, italic);
 			if (typeface != null) {
 				break;
 			}
@@ -215,13 +299,19 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 
 	@Override
 	public void setTextColor(ZLColor color) {
-		myTextPaint.setColor(ZLAndroidColorUtil.rgb(color));
+		if (color != null) {
+			myTextPaint.setColor(ZLAndroidColorUtil.rgb(color));
+		}
 	}
 
 	@Override
 	public void setLineColor(ZLColor color) {
-		myLinePaint.setColor(ZLAndroidColorUtil.rgb(color));
+		if (color != null) {
+			myLinePaint.setColor(ZLAndroidColorUtil.rgb(color));
+			myOutlinePaint.setColor(ZLAndroidColorUtil.rgb(color));
+		}
 	}
+
 	@Override
 	public void setLineWidth(int width) {
 		myLinePaint.setStrokeWidth(width);
@@ -229,14 +319,17 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 
 	@Override
 	public void setFillColor(ZLColor color, int alpha) {
-		myFillPaint.setColor(ZLAndroidColorUtil.rgba(color, alpha));
+		if (color != null) {
+			myFillPaint.setColor(ZLAndroidColorUtil.rgba(color, alpha));
+		}
 	}
 
 	public int getWidth() {
-		return myWidth;
+		return myGeometry.AreaSize.Width - myScrollbarWidth;
 	}
+
 	public int getHeight() {
-		return myHeight;
+		return myGeometry.AreaSize.Height;
 	}
 
 	@Override
@@ -262,18 +355,30 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 			return (int)(myTextPaint.measureText(corrected, 0, len) + 0.5f);
 		}
 	}
+
 	@Override
 	protected int getSpaceWidthInternal() {
 		return (int)(myTextPaint.measureText(" ", 0, 1) + 0.5f);
 	}
+
+	@Override
+	protected int getCharHeightInternal(char chr) {
+		final Rect r = new Rect();
+		final char[] txt = new char[] { chr };
+		myTextPaint.getTextBounds(txt, 0, 1, r);
+		return r.bottom - r.top;
+	}
+
 	@Override
 	protected int getStringHeightInternal() {
 		return (int)(myTextPaint.getTextSize() + 0.5f);
 	}
+
 	@Override
 	protected int getDescentInternal() {
 		return (int)(myTextPaint.descent() + 0.5f);
 	}
+
 	@Override
 	public void drawString(int x, int y, char[] string, int offset, int length) {
 		boolean containsSoftHyphen = false;
@@ -348,5 +453,10 @@ public final class ZLAndroidPaintContext extends ZLPaintContext {
 			y0 = swap;
 		}
 		myCanvas.drawRect(x0, y0, x1 + 1, y1 + 1, myFillPaint);
+	}
+
+	@Override
+	public void fillCircle(int x, int y, int radius) {
+		myCanvas.drawCircle(x, y, radius, myFillPaint);
 	}
 }

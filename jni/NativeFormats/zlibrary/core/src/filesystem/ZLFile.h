@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ public:
 		//TAR = 0x0200,
 		ARCHIVE = 0xff00,
 	};
-	
+
 private:
 	ZLFile();
 
@@ -58,7 +58,8 @@ public:
 	~ZLFile();
 
 	bool exists() const;
-	std::size_t size() const;	
+	std::size_t size() const;
+	std::size_t lastModified() const;
 
 	void forceArchiveType(ArchiveType type) const;
 

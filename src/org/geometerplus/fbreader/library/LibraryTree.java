@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import java.util.*;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 import org.geometerplus.fbreader.book.*;
+import org.geometerplus.fbreader.formats.PluginCollection;
 import org.geometerplus.fbreader.tree.FBTree;
 
 public abstract class LibraryTree extends FBTree {
@@ -31,8 +32,10 @@ public abstract class LibraryTree extends FBTree {
 		return ZLResource.resource("library");
 	}
 
-	public final IBookCollection Collection;
+	public final IBookCollection<Book> Collection;
+	public final PluginCollection PluginCollection;
 
+	static final String ROOT_EXTERNAL_VIEW = "bookshelfView";
 	static final String ROOT_FOUND = "found";
 	static final String ROOT_FAVORITES = "favorites";
 	static final String ROOT_RECENT = "recent";
@@ -40,21 +43,25 @@ public abstract class LibraryTree extends FBTree {
 	static final String ROOT_BY_TITLE = "byTitle";
 	static final String ROOT_BY_SERIES = "bySeries";
 	static final String ROOT_BY_TAG = "byTag";
-	static final String ROOT_FILE_TREE = "fileTree";
+	static final String ROOT_SYNC = "sync";
+	static final String ROOT_FILE = "fileTree";
 
-	protected LibraryTree(IBookCollection collection) {
+	protected LibraryTree(IBookCollection collection, PluginCollection pluginCollection) {
 		super();
 		Collection = collection;
+		PluginCollection = pluginCollection;
 	}
 
 	protected LibraryTree(LibraryTree parent) {
 		super(parent);
 		Collection = parent.Collection;
+		PluginCollection = parent.PluginCollection;
 	}
 
 	protected LibraryTree(LibraryTree parent, int position) {
 		super(parent, position);
 		Collection = parent.Collection;
+		PluginCollection = parent.PluginCollection;
 	}
 
 	public Book getBook() {
@@ -70,7 +77,7 @@ public abstract class LibraryTree extends FBTree {
 	}
 
 	boolean createTagSubtree(Tag tag) {
-		final TagTree temp = new TagTree(Collection, tag);
+		final TagTree temp = new TagTree(Collection, PluginCollection, tag);
 		int position = Collections.binarySearch(subtrees(), temp);
 		if (position >= 0) {
 			return false;
@@ -81,7 +88,7 @@ public abstract class LibraryTree extends FBTree {
 	}
 
 	boolean createBookWithAuthorsSubtree(Book book) {
-		final BookWithAuthorsTree temp = new BookWithAuthorsTree(Collection, book);
+		final BookWithAuthorsTree temp = new BookWithAuthorsTree(Collection, PluginCollection, book);
 		int position = Collections.binarySearch(subtrees(), temp);
 		if (position >= 0) {
 			return false;

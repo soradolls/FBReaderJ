@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ public abstract class ZLImageManager {
 	}
 
 	public abstract ZLImageData getImageData(ZLImage image);
-	protected abstract void startImageLoading(ZLLoadableImage image, Runnable postLoadingRunnable);
 
 	protected final static class PalmImageHeader {
 		public final int Width;

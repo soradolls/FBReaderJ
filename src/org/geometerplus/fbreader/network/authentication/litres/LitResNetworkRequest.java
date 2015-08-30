@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@ import java.io.InputStream;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.network.ZLNetworkRequest;
 
-public class LitResNetworkRequest extends ZLNetworkRequest {
+public class LitResNetworkRequest extends ZLNetworkRequest.PostWithMap {
 	public final LitResAuthenticationXMLReader Reader;
 
 	static String clean(String url) {

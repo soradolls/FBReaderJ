@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,12 +24,12 @@ import java.io.IOException;
 
 import android.graphics.*;
 
-import org.geometerplus.zlibrary.core.image.ZLSingleImage;
+import org.geometerplus.zlibrary.core.image.ZLStreamImage;
 
 final class InputStreamImageData extends ZLAndroidImageData {
-	private final ZLSingleImage myImage;
+	private final ZLStreamImage myImage;
 
-	InputStreamImageData(ZLSingleImage image) {
+	InputStreamImageData(ZLStreamImage image) {
 		myImage = image;
 	}
 

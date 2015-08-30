@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,8 +29,8 @@ class FontStylePreference extends ZLStringListPreference {
 	private final ZLBooleanOption myItalicOption;
 	private final String[] myValues = { "regular", "bold", "italic", "boldItalic" };
 
-	FontStylePreference(Context context, ZLResource resource, String resourceKey, ZLBooleanOption boldOption, ZLBooleanOption italicOption) {
-		super(context, resource, resourceKey);
+	FontStylePreference(Context context, ZLResource resource, ZLBooleanOption boldOption, ZLBooleanOption italicOption) {
+		super(context, resource);
 
 		myBoldOption = boldOption;
 		myItalicOption = italicOption;

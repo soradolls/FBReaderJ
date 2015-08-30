@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ abstract public class ZLResource {
 				for (ZLFile file : children) {
 					final String name = file.getShortName();
 					final String postfix = ".xml";
-					if (name.endsWith(postfix)) {
+					if (name.endsWith(postfix) && !"neutral.xml".equals(name)) {
 						ourLanguageCodes.add(name.substring(0, name.length() - postfix.length()));
 					}
 				}
@@ -62,6 +62,10 @@ abstract public class ZLResource {
 		new ZLStringOption("LookNFeel", "Language", Language.SYSTEM_CODE);
 	public static ZLStringOption getLanguageOption() {
 		return ourLanguageOption;
+	}
+	public static String getLanguage() {
+		final String lang = getLanguageOption().getValue();
+		return Language.SYSTEM_CODE.equals(lang) ? Locale.getDefault().getLanguage() : lang;
 	}
 
 	public static ZLResource resource(String key) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import org.geometerplus.zlibrary.core.util.MimeType;
 import org.geometerplus.zlibrary.core.xml.ZLStringMap;
 
 import org.geometerplus.fbreader.network.INetworkLink;
+import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.atom.ATOMLink;
 import org.geometerplus.fbreader.network.authentication.NetworkAuthenticationManager;
 import org.geometerplus.fbreader.network.authentication.litres.LitResAuthenticationManager;
@@ -34,12 +35,18 @@ import org.geometerplus.fbreader.network.urlInfo.*;
 
 class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 	private static class FeedHandler extends AbstractOPDSFeedHandler {
+		private final NetworkLibrary myLibrary;
+
 		private final List<INetworkLink> myLinks = new LinkedList<INetworkLink>();
 
 		private String myAuthenticationType;
 		private final LinkedList<URLRewritingRule> myUrlRewritingRules = new LinkedList<URLRewritingRule>();
 		private final HashMap<RelationAlias,String> myRelationAliases = new HashMap<RelationAlias,String>();
 		private final LinkedHashMap<String,String> myExtraData = new LinkedHashMap<String,String>();
+
+		FeedHandler(NetworkLibrary library) {
+			myLibrary = library;
+		}
 
 		List<INetworkLink> links() {
 			return myLinks;
@@ -68,15 +75,11 @@ class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 			myExtraData.clear();
 		}
 
-		private static final String ENTRY_ID_PREFIX = "urn:fbreader-org-catalog:";
-
 		public boolean processFeedEntry(OPDSEntry entry) {
 			final String id = entry.Id.Uri;
-			if (id == null || id.length() <= ENTRY_ID_PREFIX.length()
-					|| !id.startsWith(ENTRY_ID_PREFIX)) {
+			if (id == null) {
 				return false;
 			}
-			final String siteName = id.substring(ENTRY_ID_PREFIX.length());
 			final CharSequence title = entry.Title;
 			final CharSequence summary = entry.Content;
 			final String language = entry.DCLanguage;
@@ -124,8 +127,8 @@ class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 				}
 			}
 
-			if (siteName != null && title != null && infos.getInfo(UrlInfo.Type.Catalog) != null) {
-				final INetworkLink l = link(id, siteName, title, summary, language, infos);
+			if (title != null && infos.getInfo(UrlInfo.Type.Catalog) != null) {
+				final INetworkLink l = link(id, title, summary, language, infos);
 				if (l != null) {
 					myLinks.add(l);
 				}
@@ -135,7 +138,6 @@ class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 
 		private INetworkLink link(
 			String id,
-			String siteName,
 			CharSequence title,
 			CharSequence summary,
 			String language,
@@ -148,9 +150,9 @@ class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 
 			if (MimeType.APP_ATOM_XML.weakEquals(catalogInfo.Mime)) {
 				final OPDSNetworkLink opdsLink = new OPDSPredefinedNetworkLink(
+					myLibrary,
 					OPDSNetworkLink.INVALID_ID,
 					id,
-					siteName,
 					titleString,
 					summaryString,
 					language,
@@ -164,7 +166,7 @@ class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 				if (myAuthenticationType == "litres") {
 					opdsLink.setAuthenticationManager(
 						NetworkAuthenticationManager.createManager(
-							opdsLink, LitResAuthenticationManager.class
+							myLibrary, opdsLink, LitResAuthenticationManager.class
 						)
 					);
 				}
@@ -173,7 +175,6 @@ class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 				return new RSSNetworkLink(
 					OPDSNetworkLink.INVALID_ID,
 					id,
-					siteName,
 					titleString,
 					summaryString,
 					language,
@@ -195,8 +196,8 @@ class OPDSLinkXMLReader extends OPDSXMLReader implements OPDSConstants {
 		}
 	}
 
-	public OPDSLinkXMLReader() {
-		super(new FeedHandler(), false);
+	public OPDSLinkXMLReader(NetworkLibrary library) {
+		super(library, new FeedHandler(library), false);
 	}
 
 	public List<INetworkLink> links() {

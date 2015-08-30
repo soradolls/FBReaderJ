@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,19 +25,26 @@ import android.preference.ListPreference;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 abstract class ZLStringListPreference extends ListPreference {
-	protected final ZLResource myResource;
+	protected final ZLResource myValuesResource;
 
-	ZLStringListPreference(Context context, ZLResource rootResource, String resourceKey) {
+	ZLStringListPreference(Context context, ZLResource resource) {
+		this(context, resource, resource);
+	}
+
+	ZLStringListPreference(Context context, ZLResource resource, ZLResource valuesResource) {
 		super(context);
+		setTitle(resource.getValue());
+		myValuesResource = valuesResource;
 
-		myResource = rootResource.getResource(resourceKey);
-		setTitle(myResource.getValue());
+		final ZLResource buttonResource = ZLResource.resource("dialog").getResource("button");
+		setPositiveButtonText(buttonResource.getResource("ok").getValue());
+		setNegativeButtonText(buttonResource.getResource("cancel").getValue());
 	}
 
 	protected final void setList(String[] values) {
 		String[] texts = new String[values.length];
 		for (int i = 0; i < values.length; ++i) {
-			final ZLResource resource = myResource.getResource(values[i]);
+			final ZLResource resource = myValuesResource.getResource(values[i]);
 			texts[i] = resource.hasValue() ? resource.getValue() : values[i];
 		}
 		setLists(values, texts);
@@ -45,8 +52,20 @@ abstract class ZLStringListPreference extends ListPreference {
 
 	protected final void setLists(String[] values, String[] texts) {
 		assert(values.length == texts.length);
-		setEntries(texts);
+
 		setEntryValues(values);
+
+		// It appears that setEntries() DOES NOT perform any formatting on the char sequences
+		// http://developer.android.com/reference/android/preference/ListPreference.html#setEntries(java.lang.CharSequence[])
+		final String[] entries = new String[texts.length];
+		for (int i = 0; i < texts.length; ++i) {
+			try {
+				entries[i] = String.format(texts[i]);
+			} catch (Exception e) {
+				entries[i] = texts[i];
+			}
+		}
+		setEntries(entries);
 	}
 
 	protected final boolean setInitialValue(String value) {
@@ -63,15 +82,12 @@ abstract class ZLStringListPreference extends ListPreference {
 			}
 		}
 		setValueIndex(index);
-		setSummary(getEntry());
 		return found;
 	}
 
 	@Override
-	protected void onDialogClosed(boolean result) {
-		super.onDialogClosed(result);
-		if (result) {
-			setSummary(getEntry());
-		}
+	public CharSequence getSummary() {
+		// standard getSummary() calls extra String.format(), that causes exceptions in some cases
+		return getEntry();
 	}
 }

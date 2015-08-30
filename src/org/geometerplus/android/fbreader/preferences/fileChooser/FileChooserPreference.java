@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,15 +26,15 @@ import android.preference.Preference;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 abstract class FileChooserPreference extends Preference {
-	protected final int myRegCode;
+	protected final int myRequestCode;
 	protected final ZLResource myResource;
 	protected final boolean myChooseWritableDirectoriesOnly;
 	protected final Runnable myOnValueSetAction;
 
-	FileChooserPreference(Context context, ZLResource rootResource, String resourceKey, boolean chooseWritableDirectoriesOnly, int regCode, Runnable onValueSetAction) {
+	FileChooserPreference(Context context, ZLResource rootResource, String resourceKey, boolean chooseWritableDirectoriesOnly, int requestCode, Runnable onValueSetAction) {
 		super(context);
 
-		myRegCode = regCode;
+		myRequestCode = requestCode;
 		myResource = rootResource.getResource(resourceKey);
 		setTitle(myResource.getValue());
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,88 +22,102 @@ package org.geometerplus.android.fbreader.network;
 import java.util.*;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.content.Intent;
+import android.content.*;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.*;
 import android.widget.*;
 
-import org.apache.http.client.CookieStore;
-import org.apache.http.cookie.Cookie;
-import org.apache.http.impl.cookie.BasicClientCookie2;
-
+import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.network.ZLNetworkManager;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
+import org.geometerplus.zlibrary.core.util.MimeType;
 import org.geometerplus.zlibrary.core.util.ZLBoolean3;
 
 import org.geometerplus.zlibrary.ui.android.network.SQLiteCookieDatabase;
 
-import org.geometerplus.fbreader.network.NetworkLibrary;
-import org.geometerplus.fbreader.network.NetworkTree;
+import org.geometerplus.fbreader.network.*;
+import org.geometerplus.fbreader.network.opds.OPDSCustomNetworkLink;
 import org.geometerplus.fbreader.network.tree.*;
+import org.geometerplus.fbreader.network.urlInfo.*;
 import org.geometerplus.fbreader.tree.FBTree;
 
 import org.geometerplus.android.fbreader.api.FBReaderIntents;
+import org.geometerplus.android.fbreader.libraryService.BookCollectionShadow;
 import org.geometerplus.android.fbreader.network.action.*;
+import org.geometerplus.android.fbreader.network.auth.ActivityNetworkContext;
 import org.geometerplus.android.fbreader.tree.TreeActivity;
 
-import org.geometerplus.android.util.UIUtil;
+import org.geometerplus.android.util.UIMessageUtil;
 
 public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> implements ListView.OnScrollListener, NetworkLibrary.ChangeListener {
 	public static final int REQUEST_MANAGE_CATALOGS = 1;
 	public static final String ENABLED_CATALOG_IDS_KEY = "android.fbreader.data.enabled_catalogs";
 	public static final String DISABLED_CATALOG_IDS_KEY = "android.fbreader.data.disabled_catalogs";
 
-	public static final int REQUEST_AUTHORISATION_SCREEN = 2;
-	public static final String COOKIES_KEY = "android.fbreader.data.cookies";
+	public static final int REQUEST_ACCOUNT_PICKER = 2;
+	public static final int REQUEST_AUTHORISATION = 3;
+	public static final int REQUEST_WEB_AUTHORISATION_SCREEN = 4;
 
+	final BookCollectionShadow BookCollection = new BookCollectionShadow();
 	final BookDownloaderServiceConnection Connection = new BookDownloaderServiceConnection();
 
 	final List<Action> myOptionsMenuActions = new ArrayList<Action>();
 	final List<Action> myContextMenuActions = new ArrayList<Action>();
 	final List<Action> myListClickActions = new ArrayList<Action>();
-	private Intent myDeferredIntent;
 	private boolean mySingleCatalog;
+
+	final ActivityNetworkContext myNetworkContext = new ActivityNetworkContext(this);
 
 	@Override
 	protected void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
+		BookCollection.bindToService(this, new Runnable() {
+			public void run() {
+				Util.networkLibrary(NetworkLibraryActivity.this).clearExpiredCache(25);
+			}
+		});
 
 		AuthenticationActivity.initCredentialsCreator(this);
-
 		SQLiteCookieDatabase.init(this);
 
 		setListAdapter(new NetworkLibraryAdapter(this));
 		final Intent intent = getIntent();
-		init(intent);
-		myDeferredIntent = null;
 
 		setDefaultKeyMode(DEFAULT_KEYS_SEARCH_LOCAL);
 
-		if (getCurrentTree() instanceof RootTree) {
-			mySingleCatalog = intent.getBooleanExtra("SingleCatalog", false);
-			if (!NetworkLibrary.Instance().isInitialized()) {
-				Util.initLibrary(this, new Runnable() {
-					public void run() {
-						NetworkLibrary.Instance().runBackgroundUpdate(false);
-						if (intent != null) {
-							openTreeByIntent(intent);
-						}
+		BookCollection.bindToService(this, new Runnable() {
+			public void run() {
+				init(intent);
+				final NetworkLibrary library = Util.networkLibrary(NetworkLibraryActivity.this);
+				library.addChangeListener(NetworkLibraryActivity.this);
+
+				if (getCurrentTree() instanceof RootTree) {
+					mySingleCatalog = intent.getBooleanExtra("SingleCatalog", false);
+					if (!library.isInitialized()) {
+						Util.initLibrary(NetworkLibraryActivity.this, myNetworkContext, new Runnable() {
+							public void run() {
+								library.runBackgroundUpdate(false);
+								requestCatalogPlugins();
+								if (intent != null) {
+									openTreeByIntent(intent);
+								}
+							}
+						});
+					} else {
+						onLibraryChanged(NetworkLibrary.ChangeListener.Code.SomeCode, new Object[0]);
+						openTreeByIntent(intent);
 					}
-				});
-			} else {
-				NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
-				openTreeByIntent(intent);
+				}
 			}
-		}
+		});
 
 		getListView().setOnScrollListener(this);
 	}
 
 	@Override
 	protected NetworkTree getTreeByKey(FBTree.Key key) {
-		final NetworkLibrary library = NetworkLibrary.Instance();
+		final NetworkLibrary library = Util.networkLibrary(this);
 		final NetworkTree tree = library.getTreeByKey(key);
 		return tree != null ? tree : library.getRootTree();
 	}
@@ -113,21 +127,18 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 		super.onStart();
 
 		Connection.bindToService(this, null);
-
-		NetworkLibrary.Instance().addChangeListener(this);
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
+		myNetworkContext.onResume();
 		getListView().setOnCreateContextMenuListener(this);
-		NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
+		Util.networkLibrary(this).fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
 	}
 
 	@Override
 	protected void onStop() {
-		NetworkLibrary.Instance().removeChangeListener(this);
-
 		Connection.unbind(this);
 
 		super.onStop();
@@ -135,20 +146,35 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 
 	@Override
 	public void onDestroy() {
+		Util.networkLibrary(this).removeChangeListener(this);
+		BookCollection.unbind();
 		super.onDestroy();
 	}
 
 	private boolean openTreeByIntent(Intent intent) {
 		if (FBReaderIntents.Action.OPEN_NETWORK_CATALOG.equals(intent.getAction())) {
 			final Uri uri = intent.getData();
-			if (uri != null) {
-				final NetworkTree tree =
-					NetworkLibrary.Instance().getCatalogTreeByUrl(uri.toString());
-				if (tree != null) {
-					checkAndRun(new OpenCatalogAction(this), tree);
-					return true;
-				}
+			if (uri == null) {
+				return false;
 			}
+			final String id = uri.toString();
+			addCustomLink(id, new Runnable() {
+				public void run() {
+					final NetworkLibrary library = Util.networkLibrary(NetworkLibraryActivity.this);
+					library.setLinkActive(id, true);
+					library.synchronize();
+					onLibraryChanged(NetworkLibrary.ChangeListener.Code.SomeCode, new Object[0]);
+
+					final NetworkTree tree = library.getCatalogTreeByUrl(id);
+					if (tree != null) {
+						checkAndRun(
+							new OpenCatalogAction(NetworkLibraryActivity.this, myNetworkContext),
+							tree
+						);
+					}
+				}
+			});
+			return true;
 		}
 		return false;
 	}
@@ -167,6 +193,11 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 				getListView().invalidateViews();
 			}
 		});
+
+		if (myNetworkContext.onActivityResult(requestCode, resultCode, data)) {
+			return;
+		}
+
 		if (resultCode != RESULT_OK || data == null) {
 			return;
 		}
@@ -176,33 +207,9 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 			{
 				final ArrayList<String> myIds =
 					data.getStringArrayListExtra(ENABLED_CATALOG_IDS_KEY);
-				NetworkLibrary.Instance().setActiveIds(myIds);
-				NetworkLibrary.Instance().synchronize();
-				break;
-			}
-			case REQUEST_AUTHORISATION_SCREEN:
-			{
-				final CookieStore store = ZLNetworkManager.Instance().cookieStore();
-				final Map<String,String> cookies =
-					(Map<String,String>)data.getSerializableExtra(COOKIES_KEY);
-				if (cookies == null) {
-					break;
-				}
-				for (Map.Entry<String,String> entry : cookies.entrySet()) {
-					final BasicClientCookie2 c =
-						new BasicClientCookie2(entry.getKey(), entry.getValue());
-					c.setDomain(data.getData().getHost());
-					c.setPath("/");
-					final Calendar expire = Calendar.getInstance();
-					expire.add(Calendar.YEAR, 1);
-					c.setExpiryDate(expire.getTime());
-					c.setSecure(true);
-					c.setDiscard(false);
-					store.addCookie(c);
-				}
-				final NetworkTree tree =
-					getTreeByKey((FBTree.Key)data.getSerializableExtra(TREE_KEY_KEY));
-				new ReloadCatalogAction(this).run(tree);
+				final NetworkLibrary library = Util.networkLibrary(this);
+				library.setActiveIds(myIds);
+				library.synchronize();
 				break;
 			}
 		}
@@ -234,7 +241,7 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
 			final NetworkItemsLoader loader =
-				NetworkLibrary.Instance().getStoredLoader(getCurrentTree());
+				Util.networkLibrary(this).getStoredLoader(getCurrentTree());
 			if (loader != null) {
 				loader.interrupt();
 			}
@@ -247,10 +254,10 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 		myOptionsMenuActions.add(new AddCustomCatalogAction(this));
 		myOptionsMenuActions.add(new RefreshRootCatalogAction(this));
 		myOptionsMenuActions.add(new ManageCatalogsAction(this));
-		myOptionsMenuActions.add(new ReloadCatalogAction(this));
+		myOptionsMenuActions.add(new ReloadCatalogAction(this, myNetworkContext));
 		myOptionsMenuActions.add(new SignInAction(this));
 		myOptionsMenuActions.add(new SignUpAction(this));
-		myOptionsMenuActions.add(new SignOutAction(this));
+		myOptionsMenuActions.add(new SignOutAction(this, myNetworkContext));
 		myOptionsMenuActions.add(new TopupAction(this));
 		myOptionsMenuActions.add(new BuyBasketBooksAction(this));
 		myOptionsMenuActions.add(new ClearBasketAction(this));
@@ -258,11 +265,11 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 	}
 
 	private void fillContextMenuList() {
-		myContextMenuActions.add(new OpenCatalogAction(this));
+		myContextMenuActions.add(new OpenCatalogAction(this, myNetworkContext));
 		myContextMenuActions.add(new OpenInBrowserAction(this));
 		myContextMenuActions.add(new RunSearchAction(this, true));
 		myContextMenuActions.add(new AddCustomCatalogAction(this));
-		myContextMenuActions.add(new SignOutAction(this));
+		myContextMenuActions.add(new SignOutAction(this, myNetworkContext));
 		myContextMenuActions.add(new TopupAction(this));
 		myContextMenuActions.add(new SignInAction(this));
 		myContextMenuActions.add(new EditCustomCatalogAction(this));
@@ -273,18 +280,18 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 	}
 
 	private void fillListClickList() {
-		myListClickActions.add(new OpenCatalogAction(this));
+		myListClickActions.add(new OpenCatalogAction(this, myNetworkContext));
 		myListClickActions.add(new OpenInBrowserAction(this));
 		myListClickActions.add(new RunSearchAction(this, true));
 		myListClickActions.add(new AddCustomCatalogAction(this));
 		myListClickActions.add(new TopupAction(this));
-		myListClickActions.add(new ShowBookInfoAction(this));
+		myListClickActions.add(new ShowBookInfoAction(this, myNetworkContext));
 		myListClickActions.add(new ManageCatalogsAction(this));
 	}
 
 	private List<? extends Action> getContextMenuActions(NetworkTree tree) {
 		return tree instanceof NetworkBookTree
-			? NetworkBookActions.getContextMenuActions(this, (NetworkBookTree)tree, Connection)
+			? NetworkBookActions.getContextMenuActions(this, (NetworkBookTree)tree, BookCollection, Connection)
 			: myContextMenuActions;
 	}
 
@@ -386,7 +393,7 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 	}
 
 	private void updateLoadingProgress() {
-		final NetworkLibrary library = NetworkLibrary.Instance();
+		final NetworkLibrary library = Util.networkLibrary(this);
 		final NetworkTree tree = getCurrentTree();
 		final NetworkTree lTree = getLoadableNetworkTree(tree);
 		final NetworkTree sTree = RunSearchAction.getSearchTree(tree);
@@ -415,14 +422,14 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 						openTree((NetworkTree)params[0]);
 						break;
 					case NotFound:
-						UIUtil.showErrorMessage(NetworkLibraryActivity.this, "emptyNetworkSearchResults");
+						UIMessageUtil.showErrorMessage(NetworkLibraryActivity.this, "emptyNetworkSearchResults");
 						getListView().invalidateViews();
 						break;
 					case EmptyCatalog:
-						UIUtil.showErrorMessage(NetworkLibraryActivity.this, "emptyCatalog");
+						UIMessageUtil.showErrorMessage(NetworkLibraryActivity.this, "emptyCatalog");
 						break;
 					case NetworkError:
-						UIUtil.showMessageText(NetworkLibraryActivity.this, (String)params[0]);
+						UIMessageUtil.showMessageText(NetworkLibraryActivity.this, (String)params[0]);
 						break;
 				}
 			}
@@ -442,14 +449,18 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 
 	@Override
 	protected void onCurrentTreeChanged() {
-		NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
+		BookCollection.bindToService(this, new Runnable() {
+			public void run() {
+				onLibraryChanged(NetworkLibrary.ChangeListener.Code.SomeCode, new Object[0]);
+			}
+		});
 	}
 
 	private void showInitLibraryDialog(String error) {
 		final DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int which) {
 				if (which == DialogInterface.BUTTON_POSITIVE) {
-					Util.initLibrary(NetworkLibraryActivity.this, null);
+					Util.initLibrary(NetworkLibraryActivity.this, myNetworkContext, null);
 				} else {
 					finish();
 				}
@@ -510,5 +521,65 @@ public abstract class NetworkLibraryActivity extends TreeActivity<NetworkTree> i
 	}
 
 	public void onScrollStateChanged(AbsListView view, int state) {
+	}
+
+	private final BroadcastReceiver myCatalogInfoReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final List<String> urls =
+				getResultExtras(true).getStringArrayList("fbreader.catalog.ids");
+			if (urls == null || urls.isEmpty()) {
+				return;
+			}
+			for (String u : urls) {
+				addCustomLink(u, null);
+			}
+		}
+	};
+
+	private void addCustomLink(String url, final Runnable postAction) {
+		final NetworkLibrary library = Util.networkLibrary(this);
+		if (library.getLinkByUrl(url) != null) {
+			if (postAction != null) {
+				runOnUiThread(postAction);
+			}
+			return;
+		}
+
+		final ICustomNetworkLink link = new OPDSCustomNetworkLink(
+			library,
+			INetworkLink.INVALID_ID,
+			INetworkLink.Type.Custom,
+			null, null, null,
+			new UrlInfoCollection<UrlInfoWithDate>(new UrlInfoWithDate(
+				UrlInfo.Type.Catalog, url, MimeType.APP_ATOM_XML
+			))
+		);
+		final Runnable loader = new Runnable() {
+			public void run() {
+				try {
+					link.reloadInfo(myNetworkContext, false, false);
+					library.addCustomLink(link);
+					if (postAction != null) {
+						runOnUiThread(postAction);
+					}
+				} catch (ZLNetworkException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		new Thread(loader).start();
+	}
+
+	public void requestCatalogPlugins() {
+		sendOrderedBroadcast(
+			new Intent(Util.EXTRA_CATALOG_ACTION),
+			null,
+			myCatalogInfoReceiver,
+			null,
+			RESULT_OK,
+			null,
+			null
+		);
 	}
 }

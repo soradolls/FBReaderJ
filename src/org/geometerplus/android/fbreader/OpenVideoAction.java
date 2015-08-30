@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +31,8 @@ import org.geometerplus.zlibrary.text.view.ZLTextVideoRegionSoul;
 
 import org.geometerplus.fbreader.fbreader.FBReaderApp;
 
-import org.geometerplus.android.util.UIUtil;
+import org.geometerplus.android.fbreader.httpd.DataUtil;
+import org.geometerplus.android.util.UIMessageUtil;
 
 class OpenVideoAction extends FBAndroidAction {
 	OpenVideoAction(FBReader baseActivity, FBReaderApp fbreader) {
@@ -44,12 +45,6 @@ class OpenVideoAction extends FBAndroidAction {
 			return;
 		}
 
-		final int port = BaseActivity.DataConnection.getPort();
-		if (port == -1) {
-			UIUtil.showErrorMessage(BaseActivity, "videoServiceNotWorking");
-			return;
-		}
-
 		final ZLTextVideoElement element = ((ZLTextVideoRegionSoul)params[0]).VideoElement;
 		boolean playerNotFound = false;
 		for (MimeType mimeType : MimeType.TYPES_VIDEO) {
@@ -58,14 +53,13 @@ class OpenVideoAction extends FBAndroidAction {
 			if (path == null) {
 				continue;
 			}
-			final StringBuilder url =
-				new StringBuilder("http://127.0.0.1:").append(port)
-				.append("/").append(mime).append("/");
-			for (int i = 0; i < path.length(); ++i) {
-				url.append(String.format("X%X", (short)path.charAt(i)));
-			}
 			final Intent intent = new Intent(Intent.ACTION_VIEW);
-			intent.setDataAndType(Uri.parse(url.toString()), mime);
+			final String url = DataUtil.buildUrl(BaseActivity.DataConnection, mime, path);
+			if (url == null) {
+				UIMessageUtil.showErrorMessage(BaseActivity, "videoServiceNotWorking");
+				return;
+			}
+			intent.setDataAndType(Uri.parse(url), mime);
 			try {
 				BaseActivity.startActivity(intent);
 				return;
@@ -75,7 +69,7 @@ class OpenVideoAction extends FBAndroidAction {
 			}
 		}
 		if (playerNotFound) {
-			UIUtil.showErrorMessage(BaseActivity, "videoPlayerNotFound");
+			UIMessageUtil.showErrorMessage(BaseActivity, "videoPlayerNotFound");
 		}
 	}
 }

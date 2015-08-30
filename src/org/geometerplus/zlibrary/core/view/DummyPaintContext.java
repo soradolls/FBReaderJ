@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,14 +24,24 @@ import java.util.List;
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.fonts.FontEntry;
 import org.geometerplus.zlibrary.core.image.ZLImageData;
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 import org.geometerplus.zlibrary.core.util.ZLColor;
 
 final class DummyPaintContext extends ZLPaintContext {
 	DummyPaintContext() {
+		super(new SystemInfo() {
+			public String tempDirectory() {
+				return "";
+			}
+
+			public String networkCacheDirectory() {
+				return "";
+			}
+		});
 	}
 
 	@Override
-	public void clear(ZLFile wallpaperFile, WallpaperMode mode) {
+	public void clear(ZLFile wallpaperFile, FillMode mode) {
 	}
 
 	@Override
@@ -70,7 +80,10 @@ final class DummyPaintContext extends ZLPaintContext {
 	public int getHeight() {
 		return 1;
 	}
-
+	@Override
+	protected int getCharHeightInternal(char chr) {
+		return 1;
+	}
 	@Override
 	public int getStringWidth(char[] string, int offset, int length) {
 		return 1;
@@ -111,12 +124,16 @@ final class DummyPaintContext extends ZLPaintContext {
 	}
 
 	@Override
-	public void fillPolygon(int[] xs, int ys[]) {
+	public void fillPolygon(int[] xs, int[] ys) {
 	}
 	@Override
-	public void drawPolygonalLine(int[] xs, int ys[]) {
+	public void drawPolygonalLine(int[] xs, int[] ys) {
 	}
 	@Override
-	public void drawOutline(int[] xs, int ys[]) {
+	public void drawOutline(int[] xs, int[] ys) {
+	}
+
+	@Override
+	public void fillCircle(int x, int y, int radius) {
 	}
 }

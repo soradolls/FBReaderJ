@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,19 +21,15 @@ package org.geometerplus.zlibrary.text.model;
 
 public final class ZLTextMetrics {
 	public final int DPI;
-	public final int DefaultFontSize;
-	public final int FontSize;
-	public final int FontXHeight;
 	public final int FullWidth;
 	public final int FullHeight;
+	public final int FontSize;
 
-	public ZLTextMetrics(int dpi, int defaultFontSize, int fontSize, int fontXHeight, int fullWidth, int fullHeight) {
+	public ZLTextMetrics(int dpi, int fullWidth, int fullHeight, int fontSize) {
 		DPI = dpi;
-		DefaultFontSize = defaultFontSize;
-		FontSize = fontSize;
-		FontXHeight = fontXHeight;
 		FullWidth = fullWidth;
 		FullHeight = fullHeight;
+		FontSize = fontSize;
 	}
 
 	@Override
@@ -46,14 +42,13 @@ public final class ZLTextMetrics {
 		}
 		final ZLTextMetrics oo = (ZLTextMetrics)o;
 		return
-			FontSize == oo.FontSize &&
-			FontXHeight == oo.FontXHeight &&
+			DPI == oo.DPI &&
 			FullWidth == oo.FullWidth &&
 			FullHeight == oo.FullHeight;
 	}
 
 	@Override
 	public int hashCode() {
-		return FontSize + 13 * (FontXHeight + 13 * (FullHeight + 13 * FullWidth));
+		return DPI + 13 * (FullHeight + 13 * FullWidth);
 	}
 }

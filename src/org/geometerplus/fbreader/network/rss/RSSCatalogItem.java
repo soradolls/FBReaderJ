@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ public class RSSCatalogItem extends NetworkURLCatalogItem {
 		final RSSNetworkLink rssLink = (RSSNetworkLink)Link;
 		myLoadingState = rssLink.createOperationData(loader);
 
-		doLoadChildren(rssLink.createNetworkData(getCatalogUrl(), MimeType.APP_RSS_XML, myLoadingState));
+		doLoadChildren(rssLink.createNetworkData(getCatalogUrl(), myLoadingState));
 	}
 
 	private void doLoadChildren(ZLNetworkRequest networkRequest) throws ZLNetworkException {

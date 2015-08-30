@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ public class ZLTextBaseStyle extends ZLTextStyle {
 
 	public final ZLBooleanOption UseCSSTextAlignmentOption =
 		new ZLBooleanOption("Style", "css:textAlignment", true);
+	public final ZLBooleanOption UseCSSMarginsOption =
+		new ZLBooleanOption("Style", "css:margins", true);
 	public final ZLBooleanOption UseCSSFontSizeOption =
 		new ZLBooleanOption("Style", "css:fontSize", true);
 	public final ZLBooleanOption UseCSSFontFamilyOption =
@@ -109,17 +111,27 @@ public class ZLTextBaseStyle extends ZLTextStyle {
 	}
 
 	@Override
-	public int getLeftIndent() {
+	public int getLeftMargin(ZLTextMetrics metrics) {
 		return 0;
 	}
 
 	@Override
-	public int getRightIndent() {
+	public int getRightMargin(ZLTextMetrics metrics) {
 		return 0;
 	}
 
 	@Override
-	public int getFirstLineIndentDelta() {
+	public int getLeftPadding(ZLTextMetrics metrics) {
+		return 0;
+	}
+
+	@Override
+	public int getRightPadding(ZLTextMetrics metrics) {
+		return 0;
+	}
+
+	@Override
+	public int getFirstLineIndent(ZLTextMetrics metrics) {
 		return 0;
 	}
 
@@ -129,17 +141,22 @@ public class ZLTextBaseStyle extends ZLTextStyle {
 	}
 
 	@Override
-	public int getVerticalShift() {
+	public int getVerticalAlign(ZLTextMetrics metrics) {
 		return 0;
 	}
 
 	@Override
-	public int getSpaceBefore() {
+	public boolean isVerticallyAligned() {
+		return false;
+	}
+
+	@Override
+	public int getSpaceBefore(ZLTextMetrics metrics) {
 		return 0;
 	}
 
 	@Override
-	public int getSpaceAfter() {
+	public int getSpaceAfter(ZLTextMetrics metrics) {
 		return 0;
 	}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,24 @@
 
 package org.geometerplus.android.fbreader;
 
+import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.DefaultHandler;
 
 import android.app.ListActivity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.widget.*;
 import android.view.*;
 
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
-import org.geometerplus.zlibrary.core.xml.ZLStringMap;
-import org.geometerplus.zlibrary.core.xml.ZLXMLReaderAdapter;
+import org.geometerplus.zlibrary.core.util.XmlUtil;
 import org.geometerplus.zlibrary.ui.android.R;
 
 import org.geometerplus.android.util.PackageUtil;
@@ -60,7 +64,7 @@ public class PluginListActivity extends ListActivity {
 		}
 	}
 
-	private class Reader extends ZLXMLReaderAdapter {
+	private class Reader extends DefaultHandler {
 		final PackageManager myPackageManager = getPackageManager();
 		final List<Plugin> myPlugins;
 
@@ -69,13 +73,15 @@ public class PluginListActivity extends ListActivity {
 		}
 
 		@Override
-		public boolean dontCacheAttributeValues() {
-			return true;
-		}
-
-		@Override
-		public boolean startElementHandler(String tag, ZLStringMap attributes) {
-			if ("plugin".equals(tag)) {
+		public void startElement(String uri, String localName, String qName, Attributes attributes) {
+			if ("plugin".equals(localName)) {
+				try {
+					if (Integer.valueOf(attributes.getValue("min-api")) > Build.VERSION.SDK_INT) {
+						return;
+					}
+				} catch (Throwable t) {
+					// ignore
+				}
 				final String id = attributes.getValue("id");
 				final String packageName = attributes.getValue("package");
 				try {
@@ -84,7 +90,6 @@ public class PluginListActivity extends ListActivity {
 					myPlugins.add(new Plugin(id, packageName));
 				}
 			}
-			return false;
 		}
 	}
 
@@ -92,7 +97,10 @@ public class PluginListActivity extends ListActivity {
 		private final List<Plugin> myPlugins = new LinkedList<Plugin>();
 
 		PluginListAdapter() {
-			new Reader(myPlugins).readQuietly(ZLFile.createFileByPath("default/plugins.xml"));
+			XmlUtil.parseQuietly(
+				ZLFile.createFileByPath("default/plugins.xml"),
+				new Reader(myPlugins)
+			);
 		}
 
 		public final int getCount() {
@@ -111,6 +119,7 @@ public class PluginListActivity extends ListActivity {
 			final View view = convertView != null
 				? convertView
 				: LayoutInflater.from(parent.getContext()).inflate(R.layout.plugin_item, parent, false);
+			final ImageView iconView = (ImageView)view.findViewById(R.id.plugin_item_icon);
 			final TextView titleView = ViewUtil.findTextView(view, R.id.plugin_item_title);
 			final TextView summaryView = ViewUtil.findTextView(view, R.id.plugin_item_summary);
 			final Plugin plugin = getItem(position);
@@ -118,10 +127,19 @@ public class PluginListActivity extends ListActivity {
 				final ZLResource resource = myResource.getResource(plugin.Id);
 				titleView.setText(resource.getValue());
 				summaryView.setText(resource.getResource("summary").getValue());
+				int iconId = R.drawable.fbreader;
+				try {
+					final Field f = R.drawable.class.getField("plugin_" + plugin.Id);
+					iconId = f.getInt(R.drawable.class);
+				} catch (Throwable t) {
+					t.printStackTrace();
+				}
+				iconView.setImageResource(iconId);
 			} else {
 				final ZLResource resource = myResource.getResource("noMorePlugins");
 				titleView.setText(resource.getValue());
 				summaryView.setVisibility(View.GONE);
+				iconView.setVisibility(View.GONE);
 			}
 			return view;
 		}

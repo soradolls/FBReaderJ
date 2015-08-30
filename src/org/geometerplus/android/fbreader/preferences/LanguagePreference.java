@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,9 +28,9 @@ import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 abstract class LanguagePreference extends ZLStringListPreference {
 	LanguagePreference(
-		Context context, ZLResource rootResource, String resourceKey, List<Language> languages
+		Context context, ZLResource resource, List<Language> languages
 	) {
-		super(context, rootResource, resourceKey);
+		super(context, resource);
 
 		final int size = languages.size();
 		String[] codes = new String[size];

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2012-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,7 @@ class FileTypeFB2 extends FileType {
 	public MimeType mimeType(ZLFile file) {
 		final String lName = file.getShortName().toLowerCase();
 		if (lName.endsWith(".fb2")) {
-			return MimeType.TEXT_FB2;
+			return MimeType.APP_FB2_XML;
 		} else if (lName.endsWith(".fb2.zip")) {
 			return MimeType.APP_FB2_ZIP;
 		} else {
@@ -73,10 +73,11 @@ class FileTypeFB2 extends FileType {
 
 	@Override
 	public String defaultExtension(MimeType mime) {
-		if (MimeType.TEXT_FB2.equals(mime) || MimeType.TEXT_XML.equals(mime)) {
+		mime = mime.clean();
+		if (MimeType.TYPES_FB2.contains(mime) || MimeType.TEXT_XML.equals(mime)) {
 			return "fb2";
 		}
-		if (MimeType.APP_FB2_ZIP.equals(mime) || MimeType.APP_ZIP.equals(mime)) {
+		if (MimeType.TYPES_FB2_ZIP.contains(mime) || MimeType.APP_ZIP.equals(mime)) {
 			return "fb2.zip";
 		}
 		return "fb2";

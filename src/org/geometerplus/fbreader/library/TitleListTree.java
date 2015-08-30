@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ public class TitleListTree extends FirstLevelTree {
 		if (prefix == null) {
 			return false;
 		}
-		final TitleTree temp = new TitleTree(Collection, prefix);
+		final TitleTree temp = new TitleTree(Collection, PluginCollection, prefix);
 		int position = Collections.binarySearch(subtrees(), temp);
 		if (position >= 0) {
 			return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,20 +22,24 @@ package org.geometerplus.android.fbreader.network.action;
 import android.app.Activity;
 import android.content.Intent;
 
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 import org.geometerplus.fbreader.network.NetworkTree;
 
-import org.geometerplus.android.fbreader.network.NetworkLibraryActivity;
 import org.geometerplus.android.fbreader.network.NetworkBookInfoActivity;
+import org.geometerplus.android.fbreader.network.NetworkLibraryActivity;
 
 import org.geometerplus.android.util.UIUtil;
 
 import org.geometerplus.android.fbreader.OrientationUtil;
 
 public class ShowBookInfoAction extends BookAction {
-	public ShowBookInfoAction(Activity activity) {
+	private final ZLNetworkContext myNetworkContext;
+
+	public ShowBookInfoAction(Activity activity, ZLNetworkContext nc) {
 		super(activity, ActionCode.SHOW_BOOK_ACTIVITY, "bookInfo");
+		myNetworkContext = nc;
 	}
 
 	@Override
@@ -45,11 +49,7 @@ public class ShowBookInfoAction extends BookAction {
 		} else {
 			UIUtil.wait("loadInfo", new Runnable() {
 				public void run() {
-					try {
-						getBook(tree).loadFullInformation();
-					} catch (ZLNetworkException e) {
-						e.printStackTrace();
-					}
+					getBook(tree).loadFullInformation(myNetworkContext);
 					myActivity.runOnUiThread(new Runnable() {
 						public void run() {
 							showBookInfo(tree);

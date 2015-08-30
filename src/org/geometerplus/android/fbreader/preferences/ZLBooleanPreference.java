@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ import org.geometerplus.zlibrary.core.resources.ZLResource;
 class ZLBooleanPreference extends ZLCheckBoxPreference {
 	private final ZLBooleanOption myOption;
 
-	ZLBooleanPreference(Context context, ZLBooleanOption option, ZLResource rootResource, String resourceKey) {
-		super(context, rootResource, resourceKey);
+	ZLBooleanPreference(Context context, ZLBooleanOption option, ZLResource resource) {
+		super(context, resource);
 		myOption = option;
 		setChecked(option.getValue());
 	}

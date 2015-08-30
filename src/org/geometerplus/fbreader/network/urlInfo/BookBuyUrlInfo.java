@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ public class BookBuyUrlInfo extends BookUrlInfo {
 
 	public final Money Price;
 
-	public BookBuyUrlInfo(Type type, Format format, String url, MimeType mime, Money price) {
-		super(type, format, url, mime);
+	public BookBuyUrlInfo(Type type, String url, MimeType mime, Money price) {
+		super(type, url, mime);
 		Price = price;
 	}
 }

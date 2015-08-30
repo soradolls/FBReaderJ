@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,8 @@ public interface INetworkLink extends Comparable<INetworkLink> {
 	public enum Type {
 		Predefined(0),
 		Custom(1),
-		Local(2);
+		Local(2),
+		Sync(3);
 
 		public final int Index;
 
@@ -63,7 +64,9 @@ public interface INetworkLink extends Comparable<INetworkLink> {
 	int getId();
 	void setId(int id);
 
-	String getSiteName();
+	String getStringId();
+	String getShortName();
+	String getHostName();
 	String getTitle();
 	String getSummary();
 

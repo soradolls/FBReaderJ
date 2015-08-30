@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,10 @@
 package org.geometerplus.fbreader.network.authentication.litres;
 
 import org.geometerplus.zlibrary.core.xml.ZLStringMap;
+import org.geometerplus.zlibrary.core.network.ZLNetworkAuthenticationException;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
+import org.geometerplus.fbreader.network.AlreadyPurchasedException;
 import org.geometerplus.fbreader.network.NetworkException;
 
 class LitResPurchaseXMLReader extends LitResAuthenticationXMLReader {
@@ -32,15 +34,11 @@ class LitResPurchaseXMLReader extends LitResAuthenticationXMLReader {
 	public String Account;
 	public String BookId;
 
-	public LitResPurchaseXMLReader(String hostName) {
-		super(hostName);
-	}
-
 	@Override
 	public boolean startElementHandler(String tag, ZLStringMap attributes) {
 		tag = tag.toLowerCase().intern();
 		if (TAG_AUTHORIZATION_FAILED == tag) {
-			setException(new ZLNetworkException(NetworkException.ERROR_AUTHENTICATION_FAILED));
+			setException(new ZLNetworkAuthenticationException());
 		} else {
 			Account = attributes.getValue("account");
 			BookId = attributes.getValue("art");
@@ -49,16 +47,16 @@ class LitResPurchaseXMLReader extends LitResAuthenticationXMLReader {
 			} else if (TAG_PURCHASE_FAILED == tag) {
 				final String error = attributes.getValue("error");
 				if ("1".equals(error)) {
-					setException(new ZLNetworkException(NetworkException.ERROR_PURCHASE_NOT_ENOUGH_MONEY));
+					setException(ZLNetworkException.forCode(NetworkException.ERROR_PURCHASE_NOT_ENOUGH_MONEY));
 				} else if ("2".equals(error)) {
-					setException(new ZLNetworkException(NetworkException.ERROR_PURCHASE_MISSING_BOOK));
+					setException(ZLNetworkException.forCode(NetworkException.ERROR_PURCHASE_MISSING_BOOK));
 				} else if ("3".equals(error)) {
-					setException(new ZLNetworkException(NetworkException.ERROR_PURCHASE_ALREADY_PURCHASED));
+					setException(new AlreadyPurchasedException());
 				} else {
-					setException(new ZLNetworkException(NetworkException.ERROR_INTERNAL));
+					setException(ZLNetworkException.forCode(NetworkException.ERROR_INTERNAL));
 				}
 			} else {
-				setException(new ZLNetworkException(NetworkException.ERROR_SOMETHING_WRONG, HostName));
+				setException(ZLNetworkException.forCode(NetworkException.ERROR_SOMETHING_WRONG, LitResUtil.HOST_NAME));
 			}
 		}
 		return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2012-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,12 +34,13 @@ public class FileTypeCollection {
 		addType(new FileTypeEpub());
 		addType(new FileTypeMobipocket());
 		addType(new FileTypeHtml());
-		addType(new SimpleFileType("plain text", "txt", MimeType.TYPES_TXT));
+		addType(new SimpleFileType("txt", "txt", MimeType.TYPES_TXT));
 		addType(new SimpleFileType("RTF", "rtf", MimeType.TYPES_RTF));
 		addType(new SimpleFileType("PDF", "pdf", MimeType.TYPES_PDF));
 		addType(new FileTypeDjVu());
+		addType(new FileTypeCBZ());
 		addType(new SimpleFileType("ZIP archive", "zip", Collections.singletonList(MimeType.APP_ZIP)));
-		addType(new SimpleFileType("MS Word document", "doc", MimeType.TYPES_DOC));
+		addType(new SimpleFileType("msdoc", "doc", MimeType.TYPES_DOC));
 	}
 
 	private void addType(FileType type) {
@@ -57,6 +58,19 @@ public class FileTypeCollection {
 	public FileType typeForFile(ZLFile file) {
 		for (FileType type : types()) {
 			if (type.acceptsFile(file)) {
+				return type;
+			}
+		}
+		return null;
+	}
+
+	public FileType typeForMime(MimeType mime) {
+		if (mime == null) {
+			return null;
+		}
+		mime = mime.clean();
+		for (FileType type : types()) {
+			if (type.mimeTypes().contains(mime)) {
 				return type;
 			}
 		}

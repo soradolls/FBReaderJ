@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,11 +26,13 @@ import org.geometerplus.zlibrary.core.util.ZLColor;
 
 public abstract class ZLAndroidColorUtil {
 	public static int rgba(ZLColor color, int alpha) {
-		return Color.argb(alpha, color.Red, color.Green, color.Blue);
+		return color != null
+			? Color.argb(alpha, color.Red, color.Green, color.Blue)
+			: Color.argb(alpha, 0, 0, 0);
 	}
 
 	public static int rgb(ZLColor color) {
-		return Color.rgb(color.Red, color.Green, color.Blue);
+		return color != null ? Color.rgb(color.Red, color.Green, color.Blue) : 0;
 	}
 
 	public static ZLColor getAverageColor(Bitmap bitmap) {

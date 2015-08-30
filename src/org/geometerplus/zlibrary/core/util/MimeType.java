@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,6 +61,7 @@ public final class MimeType {
 	// MIME types / application
 	// ???
 	public static final MimeType APP_ZIP = get("application/zip");
+	public static final MimeType APP_RAR = get("application/x-rar-compressed");
 	// unofficial, http://en.wikipedia.org/wiki/EPUB
 	public static final MimeType APP_EPUB_ZIP = get("application/epub+zip");
 	// unofficial, used by flibusta catalog
@@ -75,10 +76,16 @@ public final class MimeType {
 	public static final MimeType APP_FICTIONBOOK = get("application/x-fictionbook");
 	// ???
 	public static final MimeType APP_FICTIONBOOK_XML = get("application/x-fictionbook+xml");
+	// unofficial, used by FBReder book network
+	public static final MimeType APP_FB2_XML = get("application/fb2+xml");
 	// http://www.iana.org/assignments/media-types/application/index.html
 	public static final MimeType APP_PDF = get("application/pdf");
 	// ???
-	//public static final MimeType APP_XPDF = get("application/x-pdf");
+	public static final MimeType APP_XPDF = get("application/x-pdf");
+	// ???
+	public static final MimeType TEXT_PDF = get("text/pdf");
+	// ???
+	public static final MimeType APP_VND_PDF = get("application/vnd.pdf");
 	// http://www.iana.org/assignments/media-types/application/index.html
 	public static final MimeType APP_RTF = get("application/rtf");
 	// unofficial, used by flibusta catalog
@@ -93,17 +100,21 @@ public final class MimeType {
 	public static final MimeType APP_DOC = get("application/doc");
 	// http://www.iana.org/assignments/media-types/application/index.html
 	public static final MimeType APP_MSWORD = get("application/msword");
-	// unofficial, used by data.fbreader.org LitRes catalog
+	// unofficial, used by data.fbreader.org LitRes catalog & FBReader book nework
 	public static final MimeType APP_FB2_ZIP = get("application/fb2+zip");
 	// http://www.iana.org/assignments/media-types/application/index.html
 	public static final MimeType APP_ATOM_XML = get("application/atom+xml");
 	public static final MimeType APP_ATOM_XML_ENTRY = get("application/atom+xml;type=entry");
+	public static final MimeType OPDS = get("application/atom+xml;profile=opds");
 	// http://tools.ietf.org/id/draft-nottingham-rss-media-type-00.txt
 	public static final MimeType APP_RSS_XML = get("application/rss+xml");
 	// ???
 	public static final MimeType APP_OPENSEARCHDESCRIPTION = get("application/opensearchdescription+xml");
 	// unofficial, used by data.fbreader.org LitRes catalog
 	public static final MimeType APP_LITRES = get("application/litres+xml");
+	//???
+	public static final MimeType APP_CBZ = get("application/x-cbz");
+	public static final MimeType APP_CBR = get("application/x-cbr");
 
 	// MIME types / text
 	// ???
@@ -146,7 +157,7 @@ public final class MimeType {
 		 = Arrays.asList(VIDEO_WEBM, VIDEO_OGG, VIDEO_MP4);
 
 	public static final List<MimeType> TYPES_FB2
-		 = Arrays.asList(APP_FICTIONBOOK, APP_FICTIONBOOK_XML, TEXT_FB2);
+		 = Arrays.asList(APP_FICTIONBOOK, APP_FICTIONBOOK_XML, APP_FB2_XML, TEXT_FB2);
 	public static final List<MimeType> TYPES_EPUB
 		 = Arrays.asList(APP_EPUB_ZIP, APP_EPUB);
 	public static final List<MimeType> TYPES_MOBIPOCKET
@@ -158,9 +169,11 @@ public final class MimeType {
 	public static final List<MimeType> TYPES_HTML
 		 = Arrays.asList(TEXT_HTML, APP_HTML, APP_HTMLHTM);
 	public static final List<MimeType> TYPES_PDF
-		 = Arrays.asList(APP_PDF);
+		 = Arrays.asList(APP_PDF, APP_XPDF, TEXT_PDF, APP_VND_PDF);
 	public static final List<MimeType> TYPES_DJVU
 		 = Arrays.asList(IMAGE_VND_DJVU, IMAGE_XDJVU, APP_DJVU);
+	public static final List<MimeType> TYPES_COMIC_BOOK
+		 = Arrays.asList(APP_CBZ, APP_CBR);
 	public static final List<MimeType> TYPES_DOC
 		 = Arrays.asList(APP_MSWORD, APP_DOC);
 	public static final List<MimeType> TYPES_FB2_ZIP
@@ -173,6 +186,13 @@ public final class MimeType {
 	private MimeType(String name, Map<String,String> parameters) {
 		Name = name;
 		myParameters = parameters;
+	}
+
+	public MimeType clean() {
+		if (myParameters == null) {
+			return this;
+		}
+		return get(Name);
 	}
 
 	public String getParameter(String key) {

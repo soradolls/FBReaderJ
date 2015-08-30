@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@ package org.geometerplus.fbreader.network.authentication.litres;
 import java.util.*;
 
 import org.geometerplus.zlibrary.core.resources.ZLResource;
+import org.geometerplus.zlibrary.core.network.ZLNetworkAuthenticationException;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 import org.geometerplus.fbreader.network.*;
@@ -67,7 +68,7 @@ abstract class SortedCatalogItem extends NetworkCatalogItem {
 		for (NetworkItem child : myChildren) {
 			loader.onNewItem(child);
 		}
-		loader.getTree().confirmAllItems();
+		loader.Tree.confirmAllItems();
 	}
 }
 
@@ -175,7 +176,7 @@ public class LitResBookshelfItem extends NetworkURLCatalogItem {
 		// TODO: Maybe it's better to call isAuthorised(true) directly
 		// and let exception fly through???
 		if (!mgr.mayBeAuthorised(true)) {
-			throw new ZLNetworkException(NetworkException.ERROR_AUTHENTICATION_FAILED);
+			throw new ZLNetworkAuthenticationException();
 		}
 		try {
 			if (myForceReload) {
@@ -200,7 +201,7 @@ public class LitResBookshelfItem extends NetworkURLCatalogItem {
 					loader.onNewItem(bySeries);
 				}
 			}
-			loader.getTree().confirmAllItems();
+			loader.Tree.confirmAllItems();
 		}
 	}
 }

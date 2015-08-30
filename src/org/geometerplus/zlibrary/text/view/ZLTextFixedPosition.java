@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,5 +46,19 @@ public class ZLTextFixedPosition extends ZLTextPosition {
 
 	public final int getCharIndex() {
 		return CharIndex;
+	}
+
+	public static class WithTimestamp extends ZLTextFixedPosition {
+		public final long Timestamp;
+
+		public WithTimestamp(int paragraphIndex, int elementIndex, int charIndex, Long stamp) {
+			super(paragraphIndex, elementIndex, charIndex);
+			Timestamp = stamp != null ? stamp : -1;
+		}
+
+		@Override
+		public String toString() {
+			return super.toString() + "; timestamp = " + Timestamp;
+		}
 	}
 }

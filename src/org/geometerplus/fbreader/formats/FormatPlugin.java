@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,15 +26,17 @@ import org.geometerplus.zlibrary.core.drm.FileEncryptionInfo;
 import org.geometerplus.zlibrary.core.encodings.EncodingCollection;
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.image.ZLImage;
+import org.geometerplus.zlibrary.core.resources.ZLResource;
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 
-import org.geometerplus.fbreader.book.Book;
-import org.geometerplus.fbreader.bookmodel.BookModel;
-import org.geometerplus.fbreader.bookmodel.BookReadingException;
+import org.geometerplus.fbreader.book.AbstractBook;
 
 public abstract class FormatPlugin {
+	protected final SystemInfo SystemInfo;
 	private final String myFileType;
 
-	protected FormatPlugin(String fileType) {
+	protected FormatPlugin(SystemInfo systemInfo, String fileType) {
+		SystemInfo = systemInfo;
 		myFileType = fileType;
 	}
 
@@ -42,34 +44,24 @@ public abstract class FormatPlugin {
 		return myFileType;
 	}
 
+	public final String name() {
+		return ZLResource.resource("format").getResource(myFileType).getValue();
+	}
+
 	public ZLFile realBookFile(ZLFile file) throws BookReadingException {
 		return file;
 	}
-	public List<FileEncryptionInfo> readEncryptionInfos(Book book) {
+	public List<FileEncryptionInfo> readEncryptionInfos(AbstractBook book) {
 		return Collections.emptyList();
 	}
-	public abstract void readMetaInfo(Book book) throws BookReadingException;
-	public abstract void readUids(Book book) throws BookReadingException;
-	public abstract void readModel(BookModel model) throws BookReadingException;
-	public abstract void detectLanguageAndEncoding(Book book) throws BookReadingException;
+	public abstract void readMetainfo(AbstractBook book) throws BookReadingException;
+	public abstract void readUids(AbstractBook book) throws BookReadingException;
+	public abstract void detectLanguageAndEncoding(AbstractBook book) throws BookReadingException;
 	public abstract ZLImage readCover(ZLFile file);
 	public abstract String readAnnotation(ZLFile file);
 
-	public enum Type {
-		ANY(false),
-		JAVA(true),
-		NATIVE(true),
-		PLUGIN(false),
-		EXTERNAL(false),
-		NONE(false);
-
-		public final boolean Builtin;
-
-		Type(boolean builtin) {
-			Builtin = builtin;
-		}
-	};
-	public abstract Type type();
+	/* lesser is higher: 0 for ePub/fb2, 5 for other native, 10 for external */
+	public abstract int priority();
 
 	public abstract EncodingCollection supportedEncodings();
 }

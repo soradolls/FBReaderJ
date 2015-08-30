@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,8 @@
 package org.geometerplus.zlibrary.core.util;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public abstract class MiscUtil {
 	public static <T> boolean equals(T o0, T o1) {
@@ -51,18 +53,10 @@ public abstract class MiscUtil {
 		if (map1 == null) {
 			return map2 == null || map2.isEmpty();
 		}
-		if (map1.size() != map2.size()
-				|| !map1.keySet().containsAll(map2.keySet())) {
-			return false;
+		if (map2 == null) {
+			return map1.isEmpty();
 		}
-		for (KeyT key : map1.keySet()) {
-			final ValueT value1 = map1.get(key);
-			final ValueT value2 = map2.get(key);
-			if (!equals(value1, value2)) {
-				return false;
-			}
-		}
-		return true;
+		return map1.equals(map2);
 	}
 
 	public static boolean matchesIgnoreCase(String text, String lowerCasePattern) {
@@ -92,5 +86,15 @@ public abstract class MiscUtil {
 			return Collections.emptyList();
 		}
 		return Arrays.asList(str.split(delimiter));
+	}
+
+	// splits str on any space symbols, keeps quoted substrings
+	public static List<String> smartSplit(String str) {
+		final List<String> tokens = new LinkedList<String>();
+		final Matcher m = Pattern.compile("([^\"\\s:;]+|\".+?\")").matcher(str);
+		while (m.find()) {
+			tokens.add(m.group(1).replace("\"", ""));
+		}
+		return tokens;
 	}
 }

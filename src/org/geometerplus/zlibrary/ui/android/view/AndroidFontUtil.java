@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,51 +19,53 @@
 
 package org.geometerplus.zlibrary.ui.android.view;
 
-import java.util.*;
 import java.io.*;
+import java.util.*;
 
-import android.content.res.AssetManager;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.DefaultHandler;
+
 import android.graphics.Typeface;
 
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.fonts.FileInfo;
 import org.geometerplus.zlibrary.core.fonts.FontEntry;
-import org.geometerplus.zlibrary.core.util.ZLTTFInfoDetector;
-import org.geometerplus.zlibrary.core.xml.ZLStringMap;
-import org.geometerplus.zlibrary.core.xml.ZLXMLReaderAdapter;
+import org.geometerplus.zlibrary.core.util.*;
 
 import org.geometerplus.zlibrary.ui.android.library.ZLAndroidLibrary;
 
 import org.geometerplus.fbreader.Paths;
 
 public final class AndroidFontUtil {
-	private static Map<String,String[]> ourFontAssetMap;
-	private static Map<String,File[]> ourFontFileMap;
-	private static Set<File> ourFileSet;
-	private static long ourTimeStamp;
+	private static volatile Map<String,String[]> ourFontAssetMap;
+	private static volatile Map<String,File[]> ourFontFileMap;
+	private static volatile Set<File> ourFileSet;
+	private static volatile long ourTimeStamp;
 
 	private static Map<String,String[]> getFontAssetMap() {
 		if (ourFontAssetMap == null) {
 			ourFontAssetMap = new HashMap<String,String[]>();
-			new ZLXMLReaderAdapter() {
-				@Override
-				public boolean startElementHandler(String tag, ZLStringMap attributes) {
-					if ("font".equals(tag)) {
-						ourFontAssetMap.put(attributes.getValue("family"), new String[] {
-							"fonts/" + attributes.getValue("regular"),
-							"fonts/" + attributes.getValue("bold"),
-							"fonts/" + attributes.getValue("italic"),
-							"fonts/" + attributes.getValue("boldItalic")
-						});
+			XmlUtil.parseQuietly(
+				ZLFile.createFileByPath("fonts/fonts.xml"),
+				new DefaultHandler() {
+					@Override
+					public void startElement(String uri, String localName, String qName, Attributes attributes) {
+						if ("font".equals(localName)) {
+							ourFontAssetMap.put(attributes.getValue("family"), new String[] {
+								"fonts/" + attributes.getValue("regular"),
+								"fonts/" + attributes.getValue("bold"),
+								"fonts/" + attributes.getValue("italic"),
+								"fonts/" + attributes.getValue("boldItalic")
+							});
+						}
 					}
-					return false;
 				}
-			}.readQuietly(ZLFile.createFileByPath("fonts/fonts.xml"));
+			);
 		}
 		return ourFontAssetMap;
 	}
 
-	private static Map<String,File[]> getFontFileMap(boolean forceReload) {
+	private static synchronized Map<String,File[]> getFontFileMap(boolean forceReload) {
 		final long timeStamp = System.currentTimeMillis();
 		if (forceReload && timeStamp < ourTimeStamp + 1000) {
 			forceReload = false;
@@ -164,15 +166,15 @@ public final class AndroidFontUtil {
 		return null;
 	}
 
-	public static Typeface typeface(FontEntry entry, boolean bold, boolean italic) {
+	public static Typeface typeface(SystemInfo systemInfo, FontEntry entry, boolean bold, boolean italic) {
 		if (entry.isSystem()) {
 			return systemTypeface(entry.Family, bold, italic);
 		} else {
-			return embeddedTypeface(entry, bold, italic);
+			return embeddedTypeface(systemInfo, entry, bold, italic);
 		}
 	}
 
-	private static Typeface systemTypeface(String family, boolean bold, boolean italic) {
+	public static Typeface systemTypeface(String family, boolean bold, boolean italic) {
 		family = realFontFamilyName(family);
 		final int style = (bold ? Typeface.BOLD : 0) | (italic ? Typeface.ITALIC : 0);
 		Typeface[] typefaces = ourTypefaces.get(family);
@@ -228,8 +230,8 @@ public final class AndroidFontUtil {
 	private static final Map<Spec,Object> ourCachedEmbeddedTypefaces = new HashMap<Spec,Object>();
 	private static final Object NULL_OBJECT = new Object();
 
-	private static String alias(String family, boolean bold, boolean italic) {
-		final StringBuilder builder = new StringBuilder(Paths.tempDirectory());
+	private static String alias(SystemInfo systemInfo, String family, boolean bold, boolean italic) {
+		final StringBuilder builder = new StringBuilder(systemInfo.tempDirectory());
 		builder.append("/");
 		builder.append(family);
 		if (bold) {
@@ -272,13 +274,13 @@ public final class AndroidFontUtil {
 		}
 	}
 
-	private static Typeface getOrCreateEmbeddedTypeface(FontEntry entry, boolean bold, boolean italic) {
+	private static Typeface getOrCreateEmbeddedTypeface(SystemInfo systemInfo, FontEntry entry, boolean bold, boolean italic) {
 		final Spec spec = new Spec(entry, bold, italic);
 		Object cached = ourCachedEmbeddedTypefaces.get(spec);
 		if (cached == null) {
 			final FileInfo fileInfo = entry.fileInfo(bold, italic);
 			if (fileInfo != null) {
-				final String realFileName = alias(entry.Family, bold, italic);
+				final String realFileName = alias(systemInfo, entry.Family, bold, italic);
 				if (copy(fileInfo, realFileName)) {
 					try {
 						cached = Typeface.createFromFile(realFileName);
@@ -293,16 +295,16 @@ public final class AndroidFontUtil {
 		return cached instanceof Typeface ? (Typeface)cached : null;
 	}
 
-	private static Typeface embeddedTypeface(FontEntry entry, boolean bold, boolean italic) {
+	private static Typeface embeddedTypeface(SystemInfo systemInfo, FontEntry entry, boolean bold, boolean italic) {
 		{
 			final int index = (bold ? 1 : 0) + (italic ? 2 : 0);
-			final Typeface tf = getOrCreateEmbeddedTypeface(entry, bold, italic);
+			final Typeface tf = getOrCreateEmbeddedTypeface(systemInfo, entry, bold, italic);
 			if (tf != null) {
 				return tf;
 			}
 		}
 		for (int i = 0; i < 4; ++i) {
-			final Typeface tf = getOrCreateEmbeddedTypeface(entry, (i & 1) == 1, (i & 2) == 2);
+			final Typeface tf = getOrCreateEmbeddedTypeface(systemInfo, entry, (i & 1) == 1, (i & 2) == 2);
 			if (tf != null) {
 				return tf;
 			}

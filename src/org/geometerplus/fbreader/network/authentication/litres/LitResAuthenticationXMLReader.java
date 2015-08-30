@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,6 @@ import org.geometerplus.zlibrary.core.xml.ZLXMLReaderAdapter;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 
 class LitResAuthenticationXMLReader extends ZLXMLReaderAdapter {
-	public final String HostName;
-
-	public LitResAuthenticationXMLReader(String hostName) {
-		HostName = hostName;
-	}
-
 	private ZLNetworkException myException;
 
 	protected void setException(ZLNetworkException e) {

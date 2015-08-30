@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ import org.geometerplus.zlibrary.core.network.CookieDatabase;
 import org.geometerplus.android.util.SQLiteUtil;
 
 public class SQLiteCookieDatabase extends CookieDatabase {
-	public static void init(Context context) {
+	public static synchronized void init(Context context) {
 		if (getInstance() == null) {
 			new SQLiteCookieDatabase(context);
 		}
@@ -89,6 +89,26 @@ public class SQLiteCookieDatabase extends CookieDatabase {
 		myDatabase.execSQL(
 			"DELETE FROM Cookie WHERE date_of_expiration <= " + time
 		);
+	}
+
+	@Override
+	protected void removeForDomain(String domain) {
+		if (domain == null) {
+			return;
+		}
+
+		SQLiteStatement statement = myDatabase.compileStatement(
+			"DELETE FROM CookiePort WHERE cookie_id IN " +
+			"(SELECT cookie_id FROM Cookie WHERE host=?)"
+		);
+		statement.bindString(1, domain);
+		statement.execute();
+
+		statement = myDatabase.compileStatement(
+			"DELETE FROM Cookie WHERE host=?"
+		);
+		statement.bindString(1, domain);
+		statement.execute();
 	}
 
 	@Override

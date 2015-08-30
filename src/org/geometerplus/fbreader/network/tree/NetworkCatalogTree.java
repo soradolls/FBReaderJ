@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@ package org.geometerplus.fbreader.network.tree;
 import java.util.*;
 
 import org.geometerplus.zlibrary.core.image.ZLImage;
+import org.geometerplus.zlibrary.core.network.QuietNetworkContext;
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.util.ZLBoolean3;
 
 import org.geometerplus.fbreader.tree.FBTree;
@@ -45,7 +47,6 @@ public class NetworkCatalogTree extends NetworkTree {
 			throw new IllegalArgumentException("item cannot be null");
 		}
 		Item = item;
-		addSpecialTrees();
 	}
 
 	@Override
@@ -77,11 +78,14 @@ public class NetworkCatalogTree extends NetworkTree {
 	}
 
 	synchronized void addItem(final NetworkItem item) {
+		if (!hasChildren() && !isSingleSyncItem(item)) {
+			addSpecialTrees();
+		}
 		if (item instanceof NetworkCatalogItem) {
 			myChildrenItems.add((NetworkCatalogItem)item);
 		}
 		myUnconfirmedTrees.add(NetworkTreeFactory.createNetworkTree(this, item));
-		NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
+		Library.fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
 	}
 
 	@Override
@@ -99,12 +103,12 @@ public class NetworkCatalogTree extends NetworkTree {
 	@Override
 	public String getTreeTitle() {
 		final INetworkLink link = getLink();
-		return link != null ? getName() + " - " + link.getSiteName() : getName();
+		return link != null ? getName() + " - " + link.getTitle() : getName();
 	}
 
 	@Override
 	protected ZLImage createCover() {
-		return createCover(Item);
+		return createCoverForItem(Library, Item, true);
 	}
 
 	public boolean isContentValid() {
@@ -209,16 +213,15 @@ public class NetworkCatalogTree extends NetworkTree {
 		return Item.getStringId();
 	}
 
-	public void startItemsLoader(Authenticator authenticator, boolean resumeNotLoad) {
-		new CatalogExpander(this, authenticator, resumeNotLoad).start();
+	public void startItemsLoader(ZLNetworkContext nc, boolean authenticate, boolean resumeNotLoad) {
+		new CatalogExpander(nc, this, authenticate, resumeNotLoad).start();
 	}
 
 	public synchronized void clearCatalog() {
 		myChildrenItems.clear();
 		myLastTotalChildren = -1;
 		clear();
-		addSpecialTrees();
-		NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
+		Library.fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
 	}
 
 	private final Set<NetworkTree> myUnconfirmedTrees =
@@ -237,10 +240,21 @@ public class NetworkCatalogTree extends NetworkTree {
 	public synchronized void loadMoreChildren(int currentTotal) {
 		if (currentTotal == subtrees().size()
 			&& myLastTotalChildren < currentTotal
-			&& !NetworkLibrary.Instance().isLoadingInProgress(this)
+			&& !Library.isLoadingInProgress(this)
 			&& Item.canResumeLoading()) {
 			myLastTotalChildren = currentTotal;
-			startItemsLoader(null, true);
+			startItemsLoader(new QuietNetworkContext(), false, true);
 		}
+	}
+
+	private boolean isSingleSyncItem(NetworkItem item) {
+		if (!(item instanceof NetworkBookItem)) {
+			return false;
+		}
+		final INetworkLink link = getLink();
+		if (!(link instanceof ISyncNetworkLink)) {
+			return false;
+		}
+		return "fbreader:book:network:description".equals(((NetworkBookItem)item).Id);
 	}
 }

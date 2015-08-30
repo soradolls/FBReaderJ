@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,17 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <stack>
 
+#include <ZLBoolean3.h>
 #include <ZLXMLReader.h>
 #include <ZLVideoEntry.h>
 #include <FontMap.h>
 
 #include "../css/StyleSheetTable.h"
 #include "../css/StyleSheetParser.h"
+#include "../../bookmodel/FBTextKind.h"
+#include "XHTMLTagInfo.h"
 
 class ZLFile;
 
@@ -49,19 +53,30 @@ class XHTMLTagAction {
 
 public:
 	virtual ~XHTMLTagAction();
-	
+
 	virtual void doAtStart(XHTMLReader &reader, const char **xmlattributes) = 0;
 	virtual void doAtEnd(XHTMLReader &reader) = 0;
 	virtual bool isEnabled(XHTMLReadingState state) = 0;
 
 protected:
-	static BookReader &bookReader(XHTMLReader &reader);	
-	static const std::string &pathPrefix(XHTMLReader &reader);	
+	static BookReader &bookReader(XHTMLReader &reader);
+	static const std::string &pathPrefix(XHTMLReader &reader);
 	static void beginParagraph(XHTMLReader &reader);
 	static void endParagraph(XHTMLReader &reader);
 };
 
 class XHTMLReader : public ZLXMLReader {
+
+public:
+	struct TagData {
+		std::vector<FBTextKind> TextKinds;
+		std::vector<shared_ptr<ZLTextStyleEntry> > StyleEntries;
+		ZLBoolean3 PageBreakAfter;
+		ZLTextStyleEntry::DisplayCode DisplayCode;
+		XHTMLTagInfoList Children;
+
+		TagData();
+	};
 
 public:
 	static XHTMLTagAction *addAction(const std::string &tag, XHTMLTagAction *action);
@@ -91,10 +106,17 @@ private:
 
 	bool processNamespaces() const;
 
-	void beginParagraph();
+	void beginParagraph(bool restarted = false);
 	void endParagraph();
-	bool addTextStyleEntry(const std::string tag, const std::string aClass);
-	void addTextStyleEntry(const ZLTextStyleEntry &entry);
+	void restartParagraph(bool addEmptyLine);
+	const XHTMLTagInfoList &tagInfos(size_t depth) const;
+	bool matches(const shared_ptr<CSSSelector::Component> next, int depth = 0, int pos = -1) const;
+
+	void applySingleEntry(shared_ptr<ZLTextStyleEntry> entry);
+	void applyTagStyles(const std::string &tag, const std::string &aClass);
+	void addTextStyleEntry(const ZLTextStyleEntry &entry, unsigned char depth);
+
+	void pushTextKind(FBTextKind kind);
 
 private:
 	mutable std::map<std::string,std::string> myFileNumbers;
@@ -108,16 +130,14 @@ private:
 	bool myNewParagraphInProgress;
 	StyleSheetTable myStyleSheetTable;
 	shared_ptr<FontMap> myFontMap;
-	std::vector<int> myCSSStack;
-	std::vector<shared_ptr<ZLTextStyleEntry> > myStyleEntryStack;
-	int myStylesToRemove;
-	std::vector<bool> myDoPageBreakAfterStack;
+	std::vector<shared_ptr<TagData> > myTagDataStack;
 	bool myCurrentParagraphIsEmpty;
 	shared_ptr<StyleSheetSingleStyleParser> myStyleParser;
 	shared_ptr<StyleSheetTableParser> myTableParser;
 	std::map<std::string,shared_ptr<StyleSheetParserWithCache> > myFileParsers;
 	XHTMLReadingState myReadState;
 	int myBodyCounter;
+	std::stack<int> myListNumStack;
 	bool myMarkNextImageAsCover;
 	shared_ptr<ZLVideoEntry> myVideoEntry;
 
@@ -127,8 +147,11 @@ private:
 	friend class XHTMLTagHyperlinkAction;
 	friend class XHTMLTagPreAction;
 	friend class XHTMLTagParagraphAction;
+	friend class XHTMLTagParagraphWithControlAction;
+	friend class XHTMLTagControlAction;
 	friend class XHTMLTagBodyAction;
-	friend class XHTMLTagRestartParagraphAction;
+	friend class XHTMLTagListAction;
+	friend class XHTMLTagItemAction;
 	friend class XHTMLTagImageAction;
 	friend class XHTMLTagVideoAction;
 	friend class XHTMLTagSourceAction;

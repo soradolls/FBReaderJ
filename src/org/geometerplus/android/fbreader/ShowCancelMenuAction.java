@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 
 package org.geometerplus.android.fbreader;
 
-import android.content.Intent;
-
 import org.geometerplus.fbreader.fbreader.FBReaderApp;
+
+import org.geometerplus.android.fbreader.api.FBReaderIntents;
 
 class ShowCancelMenuAction extends FBAndroidAction {
 	ShowCancelMenuAction(FBReader baseActivity, FBReaderApp fbreader) {
@@ -32,8 +32,10 @@ class ShowCancelMenuAction extends FBAndroidAction {
 	protected void run(Object ... params) {
 		if (!Reader.jumpBack()) {
 			if (Reader.hasCancelActions()) {
-				final Intent intent = new Intent(BaseActivity, CancelActivity.class);
-				BaseActivity.startActivityForResult(intent, FBReader.REQUEST_CANCEL_MENU);
+				BaseActivity.startActivityForResult(
+					FBReaderIntents.defaultInternalIntent(FBReaderIntents.Action.CANCEL_MENU),
+					FBReader.REQUEST_CANCEL_MENU
+				);
 			} else {
 				Reader.closeWindow();
 			}

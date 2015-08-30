@@ -22,7 +22,7 @@ public interface Api {
 	// book information for current book
 	String getBookLanguage() throws ApiException;
 	String getBookTitle() throws ApiException;
-	//List<String> getBookAuthors() throws ApiException;
+	List<String> getBookAuthors() throws ApiException;
 	List<String> getBookTags() throws ApiException;
 	String getBookFilePath() throws ApiException;
 	String getBookHash() throws ApiException;
@@ -38,6 +38,7 @@ public interface Api {
 	String getBookHash(long id) throws ApiException;
 	String getBookUniqueId(long id) throws ApiException;
 	Date getBookLastTurningTime(long id) throws ApiException;
+	float getBookProgress() throws ApiException;
 
 	//long findBookIdByUniqueId(String uniqueId) throws ApiException;
 	//long findBookIdByFilePath(String uniqueId) throws ApiException;
@@ -89,6 +90,6 @@ public interface Api {
 	String getTapActionByCoordinates(String name, int x, int y, int width, int height, String tap) throws ApiException;
 
 	List<MenuNode> getMainMenuContent() throws ApiException;
-	String getResourceString(String ... keys) throws ApiException; 
+	String getResourceString(String ... keys) throws ApiException;
 	Bitmap getBitmap(int resourceId) throws ApiException;
 }

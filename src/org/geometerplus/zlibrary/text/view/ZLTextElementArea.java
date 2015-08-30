@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,11 +19,12 @@
 
 package org.geometerplus.zlibrary.text.view;
 
-final class ZLTextElementArea extends ZLTextFixedPosition {
-	final int XStart;
-	final int XEnd;
-	final int YStart;
-	final int YEnd;
+public final class ZLTextElementArea extends ZLTextFixedPosition {
+	public final int XStart;
+	public final int XEnd;
+	public final int YStart;
+	public final int YEnd;
+	public final int ColumnIndex;
 
 	final int Length;
 	final boolean AddHyphenationSign;
@@ -33,13 +34,14 @@ final class ZLTextElementArea extends ZLTextFixedPosition {
 
 	private final boolean myIsLastInElement;
 
-	ZLTextElementArea(int paragraphIndex, int elementIndex, int charIndex, int length, boolean lastInElement, boolean addHyphenationSign, boolean changeStyle, ZLTextStyle style, ZLTextElement element, int xStart, int xEnd, int yStart, int yEnd) {
+	ZLTextElementArea(int paragraphIndex, int elementIndex, int charIndex, int length, boolean lastInElement, boolean addHyphenationSign, boolean changeStyle, ZLTextStyle style, ZLTextElement element, int xStart, int xEnd, int yStart, int yEnd, int columnIndex) {
 		super(paragraphIndex, elementIndex, charIndex);
 
 		XStart = xStart;
 		XEnd = xEnd;
 		YStart = yStart;
 		YEnd = yEnd;
+		ColumnIndex = columnIndex;
 
 		Length = length;
 		myIsLastInElement = lastInElement;

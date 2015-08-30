@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,18 +23,16 @@ import org.geometerplus.zlibrary.core.util.ZLNetworkUtil;
 
 import org.geometerplus.fbreader.network.INetworkLink;
 
-
 class LitResUtil {
+	public static final String HOST_NAME = "litres.ru";
 
 	public static String url(String path) {
-		String url = "://robot.litres.ru/" + path;
-		if (ZLNetworkUtil.hasParameter(url, "sid") ||
-				ZLNetworkUtil.hasParameter(url, "pwd")) {
-			url = "https" + url;
+		final String url = "://robot.litres.ru/" + path;
+		if (ZLNetworkUtil.hasParameter(url, "sid") || ZLNetworkUtil.hasParameter(url, "pwd")) {
+			return "https" + url;
 		} else {
-			url = "http" + url;
+			return "http" + url;
 		}
-		return url;
 	}
 
 	public static String url(INetworkLink link, String path) {

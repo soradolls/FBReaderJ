@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,17 +21,19 @@ package org.geometerplus.fbreader.network.opds;
 
 import java.util.List;
 
+import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.util.MimeType;
 import org.geometerplus.zlibrary.core.util.MiscUtil;
 
 import org.geometerplus.fbreader.network.BasketItem;
+import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.urlInfo.*;
 import org.geometerplus.fbreader.network.tree.NetworkItemsLoader;
 
 class OPDSBasketItem extends BasketItem {
-	OPDSBasketItem(OPDSNetworkLink link) {
-		super(link);
+	OPDSBasketItem(NetworkLibrary library, OPDSNetworkLink link) {
+		super(library, link);
 	}
 
 	@Override
@@ -45,7 +47,7 @@ class OPDSBasketItem extends BasketItem {
 			for (String id : ids) {
 				loader.onNewItem(getBook(id));
 			}
-			loader.getTree().confirmAllItems();
+			loader.Tree.confirmAllItems();
 			return;
 		}
 
@@ -57,6 +59,6 @@ class OPDSBasketItem extends BasketItem {
 		url = url.replace("{ids}", MiscUtil.join(ids, ","));
 
 		final OPDSCatalogItem.State state = opdsLink.createOperationData(loader);
-		doLoadChildren(state, opdsLink.createNetworkData(url, MimeType.APP_ATOM_XML, state));
+		doLoadChildren(state, opdsLink.createNetworkData(url, state));
 	}
 }

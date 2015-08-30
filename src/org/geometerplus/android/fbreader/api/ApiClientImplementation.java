@@ -51,7 +51,7 @@ public class ApiClientImplementation implements ServiceConnection, Api, ApiMetho
 
 	public synchronized void connect() {
 		if (myInterface == null) {
-			myContext.bindService(FBReaderIntents.defaultIntent(FBReaderIntents.Action.API), this, Context.BIND_AUTO_CREATE);
+			myContext.bindService(FBReaderIntents.defaultInternalIntent(FBReaderIntents.Action.API), this, Context.BIND_AUTO_CREATE);
 			myContext.registerReceiver(myEventReceiver, new IntentFilter(FBReaderIntents.Action.API_CALLBACK));
 		}
 	}
@@ -84,6 +84,10 @@ public class ApiClientImplementation implements ServiceConnection, Api, ApiMetho
 
 	public synchronized void onServiceDisconnected(ComponentName name) {
 		myInterface = null;
+	}
+
+	public synchronized boolean isConnected() {
+		return myInterface != null;
 	}
 
 	private synchronized void checkConnection() throws ApiException {
@@ -142,6 +146,14 @@ public class ApiClientImplementation implements ServiceConnection, Api, ApiMetho
 			throw new ApiException("Cannot cast return type of method " + method + " to int");
 		}
 		return ((ApiObject.Integer)object).Value;
+	}
+
+	private float requestFloat(int method, ApiObject[] params) throws ApiException {
+		final ApiObject object = request(method, params);
+		if (!(object instanceof ApiObject.Float)) {
+			throw new ApiException("Cannot cast return type of method " + method + " to float");
+		}
+		return ((ApiObject.Float)object).Value;
 	}
 
 	private boolean requestBoolean(int method, ApiObject[] params) throws ApiException {
@@ -214,6 +226,10 @@ public class ApiClientImplementation implements ServiceConnection, Api, ApiMetho
 		return new ApiObject[] { ApiObject.envelope(value) };
 	}
 
+	private static ApiObject[] envelope(float value) {
+		return new ApiObject[] { ApiObject.envelope(value) };
+	}
+
 	private static ApiObject[] envelope(long value) {
 		return new ApiObject[] { ApiObject.envelope(value) };
 	}
@@ -282,6 +298,14 @@ public class ApiClientImplementation implements ServiceConnection, Api, ApiMetho
 
 	public String getBookHash() throws ApiException {
 		return requestString(GET_BOOK_HASH, EMPTY_PARAMETERS);
+	}
+
+	public List<String> getBookAuthors() throws ApiException {
+		return requestStringList(LIST_BOOK_AUTHORS, EMPTY_PARAMETERS);
+	}
+
+	public float getBookProgress() throws ApiException {
+		return requestFloat(GET_BOOK_PROGRESS, EMPTY_PARAMETERS);
 	}
 
 	public String getBookUniqueId() throws ApiException {

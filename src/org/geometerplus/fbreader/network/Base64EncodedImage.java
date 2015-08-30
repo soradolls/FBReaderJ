@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,28 +24,22 @@ import java.io.*;
 import org.geometerplus.zlibrary.core.image.ZLBase64EncodedImage;
 import org.geometerplus.zlibrary.core.util.MimeType;
 
-import org.geometerplus.fbreader.Paths;
-
 final class Base64EncodedImage extends ZLBase64EncodedImage {
 	private static final String ENCODED_SUFFIX = ".base64";
 
+	private final MimeType myMimeType;
 	private String myDecodedFileName;
 
-	public Base64EncodedImage(MimeType mimeType) {
-		super(mimeType);
-		new File(makeImagesDir()).mkdirs();
-	}
+	public Base64EncodedImage(NetworkLibrary library, String data, MimeType mimeType) {
+		myMimeType = mimeType;
 
-	public static String makeImagesDir() {
-		return Paths.networkCacheDirectory() + "/base64";
-	}
+		final String dir = library.SystemInfo.networkCacheDirectory() + "/base64";
+		new File(dir).mkdirs();
 
-	public void setData(String data) {
-		myDecodedFileName = makeImagesDir() + File.separator + Integer.toHexString(data.hashCode());
-		final MimeType type = mimeType();
-		if (MimeType.IMAGE_PNG.equals(type)) {
+		myDecodedFileName = dir + File.separator + Integer.toHexString(data.hashCode());
+		if (MimeType.IMAGE_PNG.equals(myMimeType)) {
 			myDecodedFileName += ".png";
-		} else if (MimeType.IMAGE_JPEG.equals(type)) {
+		} else if (MimeType.IMAGE_JPEG.equals(myMimeType)) {
 			myDecodedFileName += ".jpg";
 		}
 

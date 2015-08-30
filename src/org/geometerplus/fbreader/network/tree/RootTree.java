@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ public final class RootTree extends NetworkTree {
 
 	private final String myId;
 
-	public RootTree(String id, boolean isFake) {
+	public RootTree(NetworkLibrary library, String id, boolean isFake) {
+		super(library);
 		IsFake = isFake;
 		myId = id;
 	}

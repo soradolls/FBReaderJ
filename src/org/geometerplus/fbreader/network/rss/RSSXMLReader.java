@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,25 +24,26 @@ import java.util.Map;
 import org.geometerplus.zlibrary.core.xml.ZLStringMap;
 import org.geometerplus.zlibrary.core.xml.ZLXMLReaderAdapter;
 
+import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.atom.*;
 
 public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType extends RSSItem> extends ZLXMLReaderAdapter {
-	
-	public RSSXMLReader(ATOMFeedHandler<MetadataType,EntryType> handler, boolean readEntryNotFeed) {
+	public RSSXMLReader(NetworkLibrary library, ATOMFeedHandler<MetadataType,EntryType> handler, boolean readEntryNotFeed) {
 		myFeedHandler = handler;
 		myState = START;
+		myFormattedBuffer = new FormattedBuffer(library);
 	}
-	
+
 	protected int myState;
 	private final ATOMFeedHandler<MetadataType,EntryType> myFeedHandler;
 	private Map<String,String> myNamespaceMap;
 	private final StringBuilder myBuffer = new StringBuilder();
-	protected final FormattedBuffer myFormattedBuffer = new FormattedBuffer();
+	protected final FormattedBuffer myFormattedBuffer;
 	private EntryType myItem;
 	private RSSAuthor myAuthor;
 	private RSSCategory myCategory;
 	private ATOMId myId;
-	
+
 	private static final int START = 0;
 	protected static final int RSS = 1;
 	protected static final int CHANNEL = 2;
@@ -58,7 +59,7 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 	protected static final int DESCRIPTION = 12;
 	protected static final int CONTENT = 13;
 	protected static final int COMMENTS_RSS = 14;
-	
+
 	protected static final String TAG_RSS = "rss";
 	protected static final String TAG_CHANNEL = "channel";
 	protected static final String TAG_ITEM = "item";
@@ -68,7 +69,7 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 	protected static final String TAG_GUID = "guid";
 	protected static final String TAG_DESCRIPTION = "description";
 	protected static final String TAG_PUBDATE = "pubDate";
-	
+
 	@Override
 	public final boolean startElementHandler(String tag, ZLStringMap attributes) {
 		final int index = tag.indexOf(':');
@@ -80,7 +81,7 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 			tagPrefix = "";
 			tag = tag.intern();
 		}
-		
+
 		return startElementHandler(getNamespace(tagPrefix), tag, attributes, extractBufferContent());
 	}
 
@@ -97,12 +98,12 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 		}
 		return endElementHandler(getNamespace(tagPrefix), tag, extractBufferContent());
 	}
-	
+
 	@Override
 	public final void characterDataHandler(char[] data, int start, int length) {
 		myBuffer.append(data, start, length);
 	}
-	
+
 	public boolean startElementHandler(String ns, String tag, ZLStringMap attributes, String bufferContent) {
 		switch (myState) {
 			case START:
@@ -119,7 +120,7 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 				if (testTag(TAG_TITLE, tag, ns, null)) {
 					myState = C_TITLE;
 				}
-				if (testTag(TAG_LINK, tag, ns, null)) {				
+				if (testTag(TAG_LINK, tag, ns, null)) {
 					myState = C_LINK;
 				}
 				if (testTag(TAG_ITEM, tag, ns, null)) {
@@ -151,7 +152,7 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 		}
 		return false;
 	}
-	
+
 	public boolean endElementHandler(String ns, String tag, String bufferContent) {
 		switch (myState) {
 			case START:
@@ -172,7 +173,7 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 				}
 				break;
 			case C_LINK:
-				if (testTag(TAG_LINK, tag, ns, null)) {				
+				if (testTag(TAG_LINK, tag, ns, null)) {
 					myState = CHANNEL;
 				}
 				break;
@@ -233,11 +234,11 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 		}
 		return false;
 	}
-	
+
 	private void parseTitle(String bufferContent) {
 		String[] marks = {"~ by:", "By"};
 		boolean found = false;
-		
+
 		for (int i = 0; i < marks.length; i++) {
 			int foundIndex = bufferContent.indexOf(marks[i]);
 			if (foundIndex >= 0) {
@@ -253,42 +254,42 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 				break;
 			}
 		}
-		
+
 		if (!found) {
 			myItem.Title = bufferContent;
 		}
 	}
-	
+
 	private String makeFormat(String buffer) {
 		//TODO: maybe need to make the text more readable?
 		StringBuffer s1 = new StringBuffer(buffer);
 		int index;
 		String[] marks = {"Author:", "Price:", "Rating:"};
-		
+
 		for (int i = 0; i < marks.length; i++) {
 			index = s1.indexOf(marks[i]);
 			if (index >= 0) {
 				s1.insert(index, "<br/>");
 			}
 		}
-		
+
 		return s1.toString();
 	}
-	
+
 	public boolean testTag(String name, String tag, String ns, String nsName) {
 		return name == tag && ns == nsName;
 	}
-	
+
 	@Override
 	public final boolean processNamespaces() {
 		return true;
 	}
-	
+
 	@Override
 	public final void namespaceMapChangedHandler(Map<String,String> namespaceMap) {
 		myNamespaceMap = namespaceMap;
 	}
-	
+
 	protected final String getNamespace(String prefix) {
 		if (myNamespaceMap == null) {
 			return null;
@@ -296,7 +297,7 @@ public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType exte
 		final String ns = myNamespaceMap.get(prefix);
 		return ns != null ? ns.intern() : null;
 	}
-	
+
 	private final String extractBufferContent() {
 		final char[] bufferContentArray = myBuffer.toString().toCharArray();
 		myBuffer.delete(0, myBuffer.length());

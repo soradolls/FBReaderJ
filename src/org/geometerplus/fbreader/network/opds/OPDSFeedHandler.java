@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ import org.geometerplus.fbreader.network.authentication.litres.LitResRecommendat
 import org.geometerplus.fbreader.network.urlInfo.*;
 
 class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
+	private final NetworkLibrary myLibrary;
 	private final NetworkCatalogItem myCatalog;
 	private final String myBaseURL;
 	private final OPDSCatalogItem.State myData;
@@ -36,7 +37,6 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 	private int myIndex;
 
 	private String myNextURL;
-	private String myAuthURL;
 	private String mySkipUntilId;
 	private boolean myFoundNewIds;
 
@@ -49,15 +49,17 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 	 * @param result     network results buffer. Must be created using OPDSNetworkLink corresponding to the OPDS feed,
 	 *                   that will be read using this instance of the reader.
 	 */
-	OPDSFeedHandler(String baseURL, OPDSCatalogItem.State result) {
-		myCatalog = result.Loader.getTree().Item;
+	OPDSFeedHandler(NetworkLibrary library, String baseURL, OPDSCatalogItem.State result) {
+		if (!(result.Link instanceof OPDSNetworkLink)) {
+			throw new IllegalArgumentException(result.Link + " is not an instance of OPDSNetworkLink class");
+		}
+
+		myLibrary = library;
+		myCatalog = result.Loader.Tree.Item;
 		myBaseURL = baseURL;
 		myData = result;
 		mySkipUntilId = myData.LastLoadedId;
 		myFoundNewIds = mySkipUntilId != null;
-		if (!(result.Link instanceof OPDSNetworkLink)) {
-			throw new IllegalArgumentException("Parameter `result` has invalid `Link` field value: result.Link must be an instance of OPDSNetworkLink class.");
-		}
 	}
 
 	public void processFeedStart() {
@@ -86,8 +88,6 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 				final String rel = opdsLink.relation(link.getRel(), mime);
 				if (MimeType.APP_ATOM_XML.weakEquals(mime) && "next".equals(rel)) {
 					myNextURL = ZLNetworkUtil.url(myBaseURL, link.getHref());
-				} else if (MimeType.TEXT_HTML.weakEquals(mime) && "auth".equals(rel)) {
-					myAuthURL = ZLNetworkUtil.url(myBaseURL, link.getHref());
 				}
 			}
 		}
@@ -102,7 +102,6 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 			myNextURL = null;
 		}
 		myData.ResumeURI = myFoundNewIds ? myNextURL : null;
-		myData.AuthURI = myAuthURL;
 		myData.LastLoadedId = null;
 	}
 
@@ -118,7 +117,7 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 		}
 
 		String id = null;
-		BookUrlInfo.Format idType = BookUrlInfo.Format.NONE;
+		MimeType idMime = MimeType.NULL;
 
 		final OPDSNetworkLink opdsLink = (OPDSNetworkLink)myData.Link;
 		for (ATOMLink link : entry.Links) {
@@ -128,16 +127,21 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 			if (rel == null && MimeType.APP_ATOM_XML.weakEquals(mime)) {
 				return ZLNetworkUtil.url(myBaseURL, link.getHref());
 			}
-			BookUrlInfo.Format relType = BookUrlInfo.Format.NONE;
-			if (rel == null || rel.startsWith(REL_ACQUISITION_PREFIX)
-					|| rel.startsWith(REL_FBREADER_ACQUISITION_PREFIX)) {
-				relType = OPDSBookItem.formatByMimeType(mime);
+			if (!BookUrlInfo.isMimeSupported(mime, myLibrary.SystemInfo)) {
+				continue;
 			}
-			if (!BookUrlInfo.Format.NONE.equals(relType)
-					&& (id == null || idType.compareTo(relType) < 0
-						|| (idType.equals(relType) && REL_ACQUISITION.equals(rel)))) {
+			if (rel != null
+				&& !rel.startsWith(REL_ACQUISITION_PREFIX)
+				&& !rel.startsWith(REL_FBREADER_ACQUISITION_PREFIX)
+			) {
+				continue;
+			}
+			if (id == null
+				|| BookUrlInfo.isMimeBetterThan(mime, idMime)
+				|| (idMime.equals(mime) && REL_ACQUISITION.equals(rel))
+			) {
 				id = ZLNetworkUtil.url(myBaseURL, link.getHref());
-				idType = relType;
+				idMime = mime;
 			}
 		}
 		return id;
@@ -175,9 +179,10 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 			final MimeType mime = MimeType.get(link.getType());
 			final String rel = opdsLink.relation(link.getRel(), mime);
 			if (rel == null
-					? (!BookUrlInfo.Format.NONE.equals(OPDSBookItem.formatByMimeType(mime)))
-					: (rel.startsWith(REL_ACQUISITION_PREFIX)
-							|| rel.startsWith(REL_FBREADER_ACQUISITION_PREFIX))) {
+					? (BookUrlInfo.isMimeSupported(mime, myLibrary.SystemInfo))
+					: (rel.equals(REL_RELATED)
+						|| rel.startsWith(REL_ACQUISITION_PREFIX)
+						|| rel.startsWith(REL_FBREADER_ACQUISITION_PREFIX))) {
 				hasBookLink = true;
 				break;
 			}
@@ -185,7 +190,10 @@ class OPDSFeedHandler extends AbstractOPDSFeedHandler implements OPDSConstants {
 
 		NetworkItem item;
 		if (hasBookLink) {
-			item = new OPDSBookItem((OPDSNetworkLink)myData.Link, entry, myBaseURL, myIndex++);
+			item = new OPDSBookItem(myLibrary, (OPDSNetworkLink)myData.Link, entry, myBaseURL, myIndex++);
+			for (String identifier : entry.DCIdentifiers) {
+				((OPDSBookItem)item).Identifiers.add(identifier);
+			}
 		} else {
 			item = readCatalogItem(entry);
 		}

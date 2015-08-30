@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,40 +19,22 @@
 
 package org.geometerplus.android.fbreader.crash;
 
-import android.app.Activity;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
-import org.geometerplus.zlibrary.ui.android.R;
+import org.geometerplus.android.fbreader.util.SimpleDialogActivity;
 
-public class MissingNativeLibraryActivity extends Activity {
+public class MissingNativeLibraryActivity extends SimpleDialogActivity {
 	@Override
 	protected void onCreate(Bundle bundle) {
 		super.onCreate(bundle);
-		setContentView(R.layout.missing_native_library);
 
 		final ZLResource resource = ZLResource.resource("crash").getResource("missingNativeLibrary");
-		final ZLResource buttonResource = ZLResource.resource("dialog").getResource("button");
 
 		setTitle(resource.getResource("title").getValue());
-
-		final TextView textView = (TextView)findViewById(R.id.native_library_missing_text);
-		textView.setText(resource.getResource("text").getValue());
-
-		final View buttonsView = findViewById(R.id.native_library_missing_buttons);
-		final Button okButton = (Button)buttonsView.findViewById(R.id.ok_button);
-		okButton.setText(buttonResource.getResource("ok").getValue());
-		okButton.setOnClickListener(new Button.OnClickListener() {
-			public void onClick(View v) {
-				finish();
-			}
-		});
-
-		final Button cancelButton = (Button)buttonsView.findViewById(R.id.cancel_button);
-		cancelButton.setVisibility(View.GONE);
+		textView().setText(resource.getResource("text").getValue());
+		okButton().setOnClickListener(finishListener());
+		setButtonTexts("ok", null);
 	}
 }

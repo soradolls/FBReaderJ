@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import android.widget.TextView;
 
 import yuku.ambilwarna.AmbilWarnaDialog;
 
+import org.geometerplus.zlibrary.core.resources.ZLResource;
 import org.geometerplus.zlibrary.core.util.ZLColor;
 
 import org.geometerplus.zlibrary.ui.android.R;
@@ -46,27 +47,33 @@ public abstract class ColorPreference extends Preference {
 		super.onBindView(view);
 
 		((TextView)view.findViewById(R.id.color_preference_title)).setText(getTitle());
-		final ZLColor color = getSavedColor();
 		view.findViewById(R.id.color_preference_widget).setBackgroundColor(
-			color != null ? ZLAndroidColorUtil.rgb(color) : 0
+			ZLAndroidColorUtil.rgb(getSavedColor())
 		);
 	}
 
 	@Override
 	protected void onClick() {
-		new AmbilWarnaDialog(getContext(), ZLAndroidColorUtil.rgb(getSavedColor()), new AmbilWarnaDialog.OnAmbilWarnaListener() {
-			@Override
-			public void onOk(AmbilWarnaDialog dialog, int color) {
-				if (!callChangeListener(color)) {
-					return;
+		final ZLResource buttonResource = ZLResource.resource("dialog").getResource("button");
+		new AmbilWarnaDialog(
+			getContext(),
+			ZLAndroidColorUtil.rgb(getSavedColor()),
+			new AmbilWarnaDialog.OnAmbilWarnaListener() {
+				@Override
+				public void onOk(AmbilWarnaDialog dialog, int color) {
+					if (!callChangeListener(color)) {
+						return;
+					}
+					saveColor(new ZLColor(color));
+					notifyChanged();
 				}
-				saveColor(new ZLColor(color));
-				notifyChanged();
-			}
 
-			@Override
-			public void onCancel(AmbilWarnaDialog dialog) {
-			}
-		}).show();
+				@Override
+				public void onCancel(AmbilWarnaDialog dialog) {
+				}
+			},
+			buttonResource.getResource("ok").getValue(),
+			buttonResource.getResource("cancel").getValue()
+		).show();
 	}
 }

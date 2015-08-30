@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@ import org.geometerplus.zlibrary.core.util.MimeType;
 import org.geometerplus.zlibrary.core.xml.*;
 
 import org.geometerplus.fbreader.network.NetworkBookItem;
+import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.opds.OPDSBookItem;
 import org.geometerplus.fbreader.network.opds.OPDSNetworkLink;
 import org.geometerplus.fbreader.network.atom.FormattedBuffer;
@@ -33,6 +34,8 @@ import org.geometerplus.fbreader.network.urlInfo.*;
 class LitResXMLReader extends LitResAuthenticationXMLReader {
 	public final OPDSNetworkLink Link;
 	public final List<NetworkBookItem> Books = new LinkedList<NetworkBookItem>();
+
+	private final NetworkLibrary myLibrary;
 
 	private int myIndex;
 
@@ -54,11 +57,11 @@ class LitResXMLReader extends LitResAuthenticationXMLReader {
 
 	private LinkedList<String> myTags = new LinkedList<String>();
 
-	public LitResXMLReader(OPDSNetworkLink link) {
-		super(link.getSiteName());
+	public LitResXMLReader(NetworkLibrary library, OPDSNetworkLink link) {
+		myLibrary = library;
+		myAnnotationBuffer = new FormattedBuffer(library, FormattedBuffer.Type.XHtml);
 		Link = link;
 	}
-
 
 	private static final int START = 0;
 	private static final int CATALOG = 1;
@@ -94,7 +97,7 @@ class LitResXMLReader extends LitResAuthenticationXMLReader {
 
 	private int myState = START;
 	private final StringBuilder myBuffer = new StringBuilder();
-	private FormattedBuffer myAnnotationBuffer = new FormattedBuffer(FormattedBuffer.Type.XHtml);
+	private final FormattedBuffer myAnnotationBuffer;
 
 	@Override
 	public boolean startElementHandler(String tag, ZLStringMap attributes) {
@@ -115,7 +118,6 @@ class LitResXMLReader extends LitResAuthenticationXMLReader {
 
 					myUrls.addInfo(new BookUrlInfo(
 						UrlInfo.Type.BookConditional,
-						BookUrlInfo.Format.FB2_ZIP,
 						"https://robot.litres.ru/pages/catalit_download_book/?art=" + myBookId,
 						MimeType.APP_FB2_ZIP
 					));
@@ -203,6 +205,7 @@ class LitResXMLReader extends LitResAuthenticationXMLReader {
 						MimeType.APP_ATOM_XML_ENTRY
 					));
 					Books.add(new OPDSBookItem(
+						myLibrary,
 						Link,
 						myBookId,
 						myIndex++,

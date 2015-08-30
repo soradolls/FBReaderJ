@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,11 +27,11 @@ import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 import org.geometerplus.fbreader.network.NetworkLibrary;
 
+import org.geometerplus.android.fbreader.api.FBReaderIntents;
 import org.geometerplus.android.fbreader.api.PluginApi;
 
 public class AddCatalogMenuActivity extends MenuActivity {
-	private final ZLResource myResource =
-		NetworkLibrary.Instance().resource().getResource("addCatalog");
+	private final ZLResource myResource = NetworkLibrary.resource().getResource("addCatalog");
 
 	private void addItem(String id, int weight) {
 		myInfos.add(new PluginApi.MenuActionInfo(
@@ -56,7 +56,9 @@ public class AddCatalogMenuActivity extends MenuActivity {
 	@Override
 	protected void runItem(final PluginApi.MenuActionInfo info) {
 		try {
-			startActivity(new Intent(getAction(), info.getId()));
+			startActivity(
+				new Intent(getAction()).addCategory(Intent.CATEGORY_DEFAULT).setData(info.getId())
+			);
 		} catch (ActivityNotFoundException e) {
 		}
 		finish();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,13 +26,13 @@ import android.content.Context;
 import org.geometerplus.zlibrary.core.options.ZLStringOption;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
-import org.geometerplus.android.fbreader.DictionaryUtil;
+import org.geometerplus.android.fbreader.dict.DictionaryUtil;
 
 class DictionaryPreference extends ZLStringListPreference {
 	private final ZLStringOption myOption;
 
-	DictionaryPreference(Context context, ZLResource resource, String resourceKey, ZLStringOption dictionaryOption, List<DictionaryUtil.PackageInfo> infos) {
-		super(context, resource, resourceKey);
+	DictionaryPreference(Context context, ZLResource resource, ZLStringOption dictionaryOption, List<DictionaryUtil.PackageInfo> infos) {
+		super(context, resource);
 
 		myOption = dictionaryOption;
 
@@ -40,8 +40,8 @@ class DictionaryPreference extends ZLStringListPreference {
 		final String[] texts = new String[infos.size()];
 		int index = 0;
 		for (DictionaryUtil.PackageInfo i : infos) {
-			values[index] = i.Id;
-			texts[index] = i.Title;
+			values[index] = i.getId();
+			texts[index] = i.getTitle();
 			++index;
 		}
 		setLists(values, texts);

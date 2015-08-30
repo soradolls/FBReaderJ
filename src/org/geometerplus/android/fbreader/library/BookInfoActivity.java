@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,9 +34,10 @@ import android.view.View;
 import android.view.Window;
 import android.widget.*;
 
+import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.filesystem.ZLPhysicalFile;
 import org.geometerplus.zlibrary.core.image.ZLImage;
-import org.geometerplus.zlibrary.core.image.ZLLoadableImage;
+import org.geometerplus.zlibrary.core.image.ZLImageProxy;
 import org.geometerplus.zlibrary.core.language.Language;
 import org.geometerplus.zlibrary.core.language.ZLLanguageUtil;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
@@ -45,7 +46,10 @@ import org.geometerplus.zlibrary.ui.android.R;
 import org.geometerplus.zlibrary.ui.android.image.ZLAndroidImageData;
 import org.geometerplus.zlibrary.ui.android.image.ZLAndroidImageManager;
 
+import org.geometerplus.fbreader.Paths;
 import org.geometerplus.fbreader.book.*;
+import org.geometerplus.fbreader.formats.PluginCollection;
+import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.HtmlUtil;
 
 import org.geometerplus.android.fbreader.FBReader;
@@ -53,8 +57,9 @@ import org.geometerplus.android.fbreader.OrientationUtil;
 import org.geometerplus.android.fbreader.api.FBReaderIntents;
 import org.geometerplus.android.fbreader.libraryService.BookCollectionShadow;
 import org.geometerplus.android.fbreader.preferences.EditBookInfoActivity;
+import org.geometerplus.android.fbreader.util.AndroidImageSynchronizer;
 
-public class BookInfoActivity extends Activity implements IBookCollection.Listener {
+public class BookInfoActivity extends Activity implements IBookCollection.Listener<Book> {
 	private static final boolean ENABLE_EXTENDED_FILE_INFO = false;
 
 	public static final String FROM_READING_MODE_KEY = "fbreader.from.reading.mode";
@@ -62,6 +67,9 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 	private final ZLResource myResource = ZLResource.resource("bookInfo");
 	private Book myBook;
 	private boolean myDontReloadBook;
+
+	private final AndroidImageSynchronizer myImageSynchronizer = new AndroidImageSynchronizer(this);
+
 	private final BookCollectionShadow myCollection = new BookCollectionShadow();
 
 	@Override
@@ -73,7 +81,7 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 
 		final Intent intent = getIntent();
 		myDontReloadBook = intent.getBooleanExtra(FROM_READING_MODE_KEY, false);
-		myBook = FBReaderIntents.getBookExtra(intent);
+		myBook = FBReaderIntents.getBookExtra(intent, myCollection);
 
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.book_info);
@@ -85,13 +93,16 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 
 		OrientationUtil.setOrientation(this, getIntent());
 
-		if (myBook != null) {
-			// we do force language & encoding detection
-			myBook.getEncoding();
+		final PluginCollection pluginCollection =
+			PluginCollection.Instance(Paths.systemInfo(this));
 
-			setupCover(myBook);
+		if (myBook != null) {
+			// we force language & encoding detection
+			BookUtil.getEncoding(myBook, pluginCollection);
+
+			setupCover(myBook, pluginCollection);
 			setupBookInfo(myBook);
-			setupAnnotation(myBook);
+			setupAnnotation(myBook, pluginCollection);
 			setupFileInfo(myBook);
 		}
 
@@ -104,7 +115,7 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 				}
 			}
 		});
-		setupButton(R.id.book_info_button_edit, "editInfo", new View.OnClickListener() {
+		setupButton(R.id.book_info_button_edit, "edit", new View.OnClickListener() {
 			public void onClick(View view) {
 				final Intent intent =
 					new Intent(getApplicationContext(), EditBookInfoActivity.class);
@@ -115,7 +126,7 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 		setupButton(R.id.book_info_button_reload, "reloadInfo", new View.OnClickListener() {
 			public void onClick(View view) {
 				if (myBook != null) {
-					myBook.reloadInfoFromFile();
+					BookUtil.reloadInfoFromFile(myBook, pluginCollection);
 					setupBookInfo(myBook);
 					myDontReloadBook = false;
 					myCollection.bindToService(BookInfoActivity.this, new Runnable() {
@@ -144,6 +155,7 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 	protected void onDestroy() {
 		myCollection.removeListener(this);
 		myCollection.unbind();
+		myImageSynchronizer.clear();
 
 		super.onDestroy();
 	}
@@ -174,35 +186,45 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 		((TextView)layout.findViewById(R.id.book_info_value)).setText(value);
 	}
 
-	private void setupCover(Book book) {
+	private void setupCover(Book book, PluginCollection pluginCollection) {
 		final ImageView coverView = (ImageView)findViewById(R.id.book_cover);
+
+		coverView.setVisibility(View.GONE);
+		coverView.setImageDrawable(null);
+
+		final ZLImage image = CoverUtil.getCover(book, pluginCollection);
+
+		if (image == null) {
+			return;
+		}
+
+		if (image instanceof ZLImageProxy) {
+			((ZLImageProxy)image).startSynchronization(myImageSynchronizer, new Runnable() {
+				public void run() {
+					runOnUiThread(new Runnable() {
+						public void run() {
+							setCover(coverView, image);
+						}
+					});
+				}
+			});
+		} else {
+			setCover(coverView, image);
+		}
+	}
+
+	private void setCover(ImageView coverView, ZLImage image) {
+		final ZLAndroidImageData data =
+			((ZLAndroidImageManager)ZLAndroidImageManager.Instance()).getImageData(image);
+		if (data == null) {
+			return;
+		}
 
 		final DisplayMetrics metrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(metrics);
 
 		final int maxHeight = metrics.heightPixels * 2 / 3;
 		final int maxWidth = maxHeight * 2 / 3;
-
-		coverView.setVisibility(View.GONE);
-		coverView.setImageDrawable(null);
-
-		final ZLImage image = BookUtil.getCover(book);
-
-		if (image == null) {
-			return;
-		}
-
-		if (image instanceof ZLLoadableImage) {
-			final ZLLoadableImage loadableImage = (ZLLoadableImage)image;
-			if (!loadableImage.isSynchronized()) {
-				loadableImage.synchronize();
-			}
-		}
-		final ZLAndroidImageData data =
-			((ZLAndroidImageManager)ZLAndroidImageManager.Instance()).getImageData(image);
-		if (data == null) {
-			return;
-		}
 
 		final Bitmap coverBitmap = data.getBitmap(2 * maxWidth, 2 * maxHeight);
 		if (coverBitmap == null) {
@@ -257,16 +279,16 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 		setupInfoPair(R.id.book_language, "language", new Language(language).Name);
 	}
 
-	private void setupAnnotation(Book book) {
+	private void setupAnnotation(Book book, PluginCollection pluginCollection) {
 		final TextView titleView = (TextView)findViewById(R.id.book_info_annotation_title);
 		final TextView bodyView = (TextView)findViewById(R.id.book_info_annotation_body);
-		final String annotation = BookUtil.getAnnotation(book);
+		final String annotation = BookUtil.getAnnotation(book, pluginCollection);
 		if (annotation == null) {
 			titleView.setVisibility(View.GONE);
 			bodyView.setVisibility(View.GONE);
 		} else {
 			titleView.setText(myResource.getResource("annotation").getValue());
-			bodyView.setText(HtmlUtil.getHtmlText(annotation));
+			bodyView.setText(HtmlUtil.getHtmlText(NetworkLibrary.Instance(Paths.systemInfo(this)), annotation));
 			bodyView.setMovementMethod(new LinkMovementMethod());
 			bodyView.setTextColor(ColorStateList.valueOf(bodyView.getTextColors().getDefaultColor()));
 		}
@@ -275,11 +297,12 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 	private void setupFileInfo(Book book) {
 		((TextView)findViewById(R.id.file_info_title)).setText(myResource.getResource("fileInfo").getValue());
 
-		setupInfoPair(R.id.file_name, "name", book.File.getPath());
+		setupInfoPair(R.id.file_name, "name", book.getPath());
 		if (ENABLE_EXTENDED_FILE_INFO) {
-			setupInfoPair(R.id.file_type, "type", book.File.getExtension());
+			final ZLFile bookFile = BookUtil.fileByBook(book);
+			setupInfoPair(R.id.file_type, "type", bookFile.getExtension());
 
-			final ZLPhysicalFile physFile = book.File.getPhysicalFile();
+			final ZLPhysicalFile physFile = bookFile.getPhysicalFile();
 			final File file = physFile == null ? null : physFile.javaFile();
 			if (file != null && file.exists() && file.isFile()) {
 				setupInfoPair(R.id.file_size, "size", formatSize(file.length()));
@@ -320,7 +343,7 @@ public class BookInfoActivity extends Activity implements IBookCollection.Listen
 	}
 
 	public void onBookEvent(BookEvent event, Book book) {
-		if (event == BookEvent.Updated && book.equals(myBook)) {
+		if (event == BookEvent.Updated && myCollection.sameBook(book, myBook)) {
 			myBook.updateFrom(book);
 			setupBookInfo(book);
 			myDontReloadBook = false;

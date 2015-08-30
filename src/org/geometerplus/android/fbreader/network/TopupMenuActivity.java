@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ public class TopupMenuActivity extends MenuActivity {
 	protected void init() {
 		setTitle(NetworkLibrary.resource().getResource("topupTitle").getValue());
 		final String url = getIntent().getData().toString();
-		myLink = NetworkLibrary.Instance().getLinkByUrl(url);
+		myLink = Util.networkLibrary(this).getLinkByUrl(url);
 		myAmount = (Money)getIntent().getSerializableExtra(AMOUNT_KEY);
 
 		if (myLink.getUrlInfo(UrlInfo.Type.TopUp) != null) {
@@ -72,7 +72,7 @@ public class TopupMenuActivity extends MenuActivity {
 
 	@Override
 	protected String getAction() {
-		return "android.fbreader.action.network.TOPUP";
+		return Util.TOPUP_ACTION;
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,12 +21,15 @@ package org.geometerplus.android.fbreader.preferences;
 
 import java.util.HashMap;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.*;
-import android.content.Intent;
 
 import org.geometerplus.zlibrary.core.options.*;
 import org.geometerplus.zlibrary.core.resources.ZLResource;
+
+import org.geometerplus.zlibrary.ui.android.network.SQLiteCookieDatabase;
 
 import org.geometerplus.android.fbreader.OrientationUtil;
 
@@ -62,26 +65,32 @@ abstract class ZLPreferenceActivity extends android.preference.PreferenceActivit
 		}
 
 		public Preference addOption(ZLBooleanOption option, String resourceKey) {
-			return addPreference(
-				new ZLBooleanPreference(ZLPreferenceActivity.this, option, Resource, resourceKey)
-			);
-		}
-
-		public Preference addOption(ZLStringOption option, String resourceKey) {
-			return addPreference(
-				new ZLStringOptionPreference(ZLPreferenceActivity.this, option, Resource, resourceKey)
-			);
+			return addPreference(new ZLBooleanPreference(
+				ZLPreferenceActivity.this, option, Resource.getResource(resourceKey)
+			));
 		}
 
 		public Preference addOption(ZLColorOption option, String resourceKey) {
+			return addPreference(new ZLColorPreference(
+				ZLPreferenceActivity.this, Resource, resourceKey, option
+			));
+		}
+
+		public Preference addOption(ZLIntegerRangeOption option, String resourceKey) {
+			return addPreference(new ZLIntegerRangePreference(
+				ZLPreferenceActivity.this, Resource.getResource(resourceKey), option
+			));
+		}
+
+		public <T extends Enum<T>> Preference addOption(ZLEnumOption<T> option, String key) {
 			return addPreference(
-				new ZLColorPreference(ZLPreferenceActivity.this, Resource, resourceKey, option)
+				new ZLEnumPreference<T>(ZLPreferenceActivity.this, option, Resource.getResource(key))
 			);
 		}
 
-		public <T extends Enum<T>> Preference addOption(ZLEnumOption<T> option, String resourceKey) {
+		public <T extends Enum<T>> Preference addOption(ZLEnumOption<T> option, String key, String valuesKey) {
 			return addPreference(
-				new ZLEnumPreference<T>(ZLPreferenceActivity.this, option, Resource, resourceKey)
+				new ZLEnumPreference<T>(ZLPreferenceActivity.this, option, Resource.getResource(key), Resource.getResource(valuesKey))
 			);
 		}
 	}
@@ -107,7 +116,7 @@ abstract class ZLPreferenceActivity extends android.preference.PreferenceActivit
 
 	public Preference addOption(ZLBooleanOption option, String resourceKey) {
 		ZLBooleanPreference preference =
-			new ZLBooleanPreference(ZLPreferenceActivity.this, option, Resource, resourceKey);
+			new ZLBooleanPreference(ZLPreferenceActivity.this, option, Resource.getResource(resourceKey));
 		myScreen.addPreference(preference);
 		return preference;
 	}
@@ -126,16 +135,27 @@ abstract class ZLPreferenceActivity extends android.preference.PreferenceActivit
 
 		Thread.setDefaultUncaughtExceptionHandler(new org.geometerplus.zlibrary.ui.android.library.UncaughtExceptionHandler(this));
 
+		SQLiteCookieDatabase.init(this);
+
 		myScreen = getPreferenceManager().createPreferenceScreen(this);
 
 		final Intent intent = getIntent();
+		final Uri data = intent.getData();
+		final String screenId;
+		if (Intent.ACTION_VIEW.equals(intent.getAction())
+				&& data != null && "fbreader-preferences".equals(data.getScheme())) {
+			screenId = data.getEncodedSchemeSpecificPart();
+		} else {
+			screenId = intent.getStringExtra(SCREEN_KEY);
+		}
+
 		Config.Instance().runOnConnect(new Runnable() {
 			public void run() {
 				init(intent);
+				final Screen screen = myScreenMap.get(screenId);
+				setPreferenceScreen(screen != null ? screen.myScreen : myScreen);
 			}
 		});
-		final Screen screen = myScreenMap.get(intent.getStringExtra(SCREEN_KEY));
-		setPreferenceScreen(screen != null ? screen.myScreen : myScreen);
 	}
 
 	@Override

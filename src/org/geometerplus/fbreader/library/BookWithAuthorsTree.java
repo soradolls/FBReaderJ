@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,10 +20,11 @@
 package org.geometerplus.fbreader.library;
 
 import org.geometerplus.fbreader.book.*;
+import org.geometerplus.fbreader.formats.PluginCollection;
 
 public class BookWithAuthorsTree extends BookTree {
-	BookWithAuthorsTree(IBookCollection collection, Book book) {
-		super(collection, book);
+	BookWithAuthorsTree(IBookCollection collection, PluginCollection pluginCollection, Book book) {
+		super(collection, pluginCollection, book);
 	}
 
 	BookWithAuthorsTree(LibraryTree parent, Book book) {
