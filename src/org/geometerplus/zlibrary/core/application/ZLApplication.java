@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@ package org.geometerplus.zlibrary.core.application;
 
 import java.util.*;
 
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 import org.geometerplus.zlibrary.core.util.ZLBoolean3;
 import org.geometerplus.zlibrary.core.view.ZLView;
 import org.geometerplus.zlibrary.core.view.ZLViewWidget;
@@ -34,12 +35,15 @@ public abstract class ZLApplication {
 
 	public static final String NoAction = "none";
 
+	public final SystemInfo SystemInfo;
+
 	private volatile ZLApplicationWindow myWindow;
 	private volatile ZLView myView;
 
 	private final HashMap<String,ZLAction> myIdToActionMap = new HashMap<String,ZLAction>();
 
-	protected ZLApplication() {
+	protected ZLApplication(SystemInfo systemInfo) {
+		SystemInfo = systemInfo;
 		ourInstance = this;
 	}
 
@@ -51,7 +55,7 @@ public abstract class ZLApplication {
 				widget.reset();
 				widget.repaint();
 			}
-			onViewChanged();
+			hideActivePopup();
 		}
 	}
 
@@ -125,10 +129,6 @@ public abstract class ZLApplication {
 		for (PopupPanel popup : popupPanels()) {
 			popup.update();
 		}
-	}
-
-	public final void onViewChanged() {
-		hideActivePopup();
 	}
 
 	public final void hideActivePopup() {

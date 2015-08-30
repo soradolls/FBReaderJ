@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,9 +31,9 @@ import org.geometerplus.zlibrary.core.resources.ZLResource;
 
 import org.geometerplus.zlibrary.text.hyphenation.ZLTextHyphenator;
 
+import org.geometerplus.fbreader.Paths;
 import org.geometerplus.fbreader.book.*;
-import org.geometerplus.fbreader.bookmodel.BookReadingException;
-import org.geometerplus.fbreader.formats.FormatPlugin;
+import org.geometerplus.fbreader.formats.*;
 
 import org.geometerplus.android.fbreader.api.FBReaderIntents;
 import org.geometerplus.android.fbreader.libraryService.BookCollectionShadow;
@@ -89,15 +89,17 @@ class BookLanguagePreference extends LanguagePreference {
 }
 
 class EncodingPreference extends ZLStringListPreference {
+	private final PluginCollection myPluginCollection;
 	private final Book myBook;
 
 	EncodingPreference(Context context, ZLResource resource, Book book) {
 		super(context, resource);
 		myBook = book;
+		myPluginCollection = PluginCollection.Instance(Paths.systemInfo(context));
 
 		final FormatPlugin plugin;
 		try {
-			plugin = book.getPlugin();
+			plugin = BookUtil.getPlugin(myPluginCollection, book);
 		} catch (BookReadingException e) {
 			return;
 		}
@@ -123,7 +125,7 @@ class EncodingPreference extends ZLStringListPreference {
 			setInitialValue(codes[0]);
 			setEnabled(false);
 		} else {
-			final String bookEncoding = book.getEncoding();
+			final String bookEncoding = BookUtil.getEncoding(book, myPluginCollection);
 			if (bookEncoding != null) {
 				setInitialValue(bookEncoding.toLowerCase());
 			}
@@ -135,7 +137,7 @@ class EncodingPreference extends ZLStringListPreference {
 		super.onDialogClosed(result);
 		if (result) {
 			final String value = getValue();
-			if (!value.equalsIgnoreCase(myBook.getEncoding())) {
+			if (!value.equalsIgnoreCase(BookUtil.getEncoding(myBook, myPluginCollection))) {
 				myBook.setEncoding(value);
 				((EditBookInfoActivity)getContext()).saveBook();
 			}
@@ -261,7 +263,7 @@ public class EditBookInfoActivity extends ZLPreferenceActivity {
 	protected void onStart() {
 		super.onStart();
 
-		myBook = FBReaderIntents.getBookExtra(getIntent());
+		myBook = FBReaderIntents.getBookExtra(getIntent(), myCollection);
 
 		if (myBook == null) {
 			finish();

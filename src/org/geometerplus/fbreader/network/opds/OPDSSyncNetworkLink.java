@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -60,12 +60,12 @@ public class OPDSSyncNetworkLink extends OPDSNetworkLink implements ISyncNetwork
 		return NetworkLibrary.resource().getResource("sync");
 	}
 
-	public OPDSSyncNetworkLink() {
-		this(-1, resource().getValue(), initialUrlInfos());
+	public OPDSSyncNetworkLink(NetworkLibrary library) {
+		this(library, -1, resource().getValue(), initialUrlInfos());
 	}
 
-	private OPDSSyncNetworkLink(int id, String title, UrlInfoCollection<UrlInfoWithDate> infos) {
-		super(id, title, null, null, infos);
+	private OPDSSyncNetworkLink(NetworkLibrary library, int id, String title, UrlInfoCollection<UrlInfoWithDate> infos) {
+		super(library, id, title, null, null, infos);
 	}
 
 	public String getSummary() {

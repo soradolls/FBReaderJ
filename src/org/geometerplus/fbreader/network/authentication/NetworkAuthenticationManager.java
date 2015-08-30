@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,11 +33,11 @@ import org.geometerplus.fbreader.network.urlInfo.*;
 public abstract class NetworkAuthenticationManager {
 	private static final HashMap<String,NetworkAuthenticationManager> ourManagers = new HashMap<String,NetworkAuthenticationManager>();
 
-	public static NetworkAuthenticationManager createManager(INetworkLink link, Class<? extends NetworkAuthenticationManager> managerClass) {
+	public static NetworkAuthenticationManager createManager(NetworkLibrary library, INetworkLink link, Class<? extends NetworkAuthenticationManager> managerClass) {
 		NetworkAuthenticationManager mgr = ourManagers.get(link.getStringId());
 		if (mgr == null) {
 			if (managerClass == LitResAuthenticationManager.class) {
-				mgr = new LitResAuthenticationManager((OPDSNetworkLink)link);
+				mgr = new LitResAuthenticationManager(library, (OPDSNetworkLink)link);
 			}
 			if (mgr != null) {
 				ourManagers.put(link.getStringId(), mgr);

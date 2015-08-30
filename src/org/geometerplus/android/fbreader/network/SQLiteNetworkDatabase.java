@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,8 @@ import org.geometerplus.android.util.SQLiteUtil;
 class SQLiteNetworkDatabase extends NetworkDatabase {
 	private final SQLiteDatabase myDatabase;
 
-	SQLiteNetworkDatabase(Application application) {
+	SQLiteNetworkDatabase(Application application, NetworkLibrary library) {
+		super(library);
 		myDatabase = application.openOrCreateDatabase("network.db", Context.MODE_PRIVATE, null);
 		migrate();
 	}

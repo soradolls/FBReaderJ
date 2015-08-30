@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -69,15 +69,15 @@ void PluginCollection::deleteInstance() {
 }
 
 PluginCollection::PluginCollection() {
-	JNIEnv *env = AndroidUtil::getEnv();
-	jobject instance = AndroidUtil::StaticMethod_PluginCollection_Instance->call();
-	myJavaInstance = env->NewGlobalRef(instance);
-	env->DeleteLocalRef(instance);
+	//JNIEnv *env = AndroidUtil::getEnv();
+	//jobject instance = AndroidUtil::StaticMethod_PluginCollection_Instance->call();
+	//myJavaInstance = env->NewGlobalRef(instance);
+	//env->DeleteLocalRef(instance);
 }
 
 PluginCollection::~PluginCollection() {
-	JNIEnv *env = AndroidUtil::getEnv();
-	env->DeleteGlobalRef(myJavaInstance);
+	//JNIEnv *env = AndroidUtil::getEnv();
+	//env->DeleteGlobalRef(myJavaInstance);
 }
 
 shared_ptr<FormatPlugin> PluginCollection::pluginByType(const std::string &fileType) const {

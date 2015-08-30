@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,17 +29,24 @@ import org.geometerplus.zlibrary.text.view.ZLTextFixedPosition;
 
 import org.geometerplus.fbreader.book.Book;
 import org.geometerplus.fbreader.book.IBookCollection;
+import org.geometerplus.fbreader.fbreader.options.SyncOptions;
 
 public class SyncData {
 	public final static class ServerBookInfo {
 		public final List<String> Hashes;
 		public final String Title;
-		public final boolean Downloadable;
+		public final String DownloadUrl;
+		public final String Mimetype;
+		public final String ThumbnailUrl;
+		public final int Size;
 
-		private ServerBookInfo(List<String> hashes, String title, boolean downloadable) {
+		private ServerBookInfo(List<String> hashes, String title, String downloadUrl, String mimetype, String thumbnailUrl, int size) {
 			Hashes = Collections.unmodifiableList(hashes);
 			Title = title;
-			Downloadable = downloadable;
+			DownloadUrl = downloadUrl;
+			Mimetype = mimetype;
+			ThumbnailUrl = thumbnailUrl;
+			Size = size;
 		}
 	}
 
@@ -49,10 +56,69 @@ public class SyncData {
 		new ZLStringOption("SyncData", "CurrentBookHash", "");
 	private final ZLStringOption myCurrentBookTimestamp =
 		new ZLStringOption("SyncData", "CurrentBookTimestamp", "");
-	private final ZLStringListOption myServerBookHashes =
-		new ZLStringListOption("SyncData", "ServerBookHashes", Collections.<String>emptyList(), ";");
-	private final ZLStringOption myServerBookTitle =
-		new ZLStringOption("SyncData", "ServerBookTitle", "");
+
+	private static class ServerBook {
+		final ZLStringListOption Hashes =
+			new ZLStringListOption("SyncData", "ServerBookHashes", Collections.<String>emptyList(), ";");
+		final ZLStringOption Title =
+			new ZLStringOption("SyncData", "ServerBookTitle", "");
+		final ZLStringOption DownloadUrl =
+			new ZLStringOption("SyncData", "ServerBookDownloadUrl", "");
+		final ZLStringOption Mimetype =
+			new ZLStringOption("SyncData", "ServerBookMimetype", "");
+		final ZLStringOption ThumbnailUrl =
+			new ZLStringOption("SyncData", "ServerBookThumbnailUrl", "");
+		final ZLIntegerOption Size =
+			new ZLIntegerOption("SyncData", "ServerBookSize", 0);
+
+		void init(Map<String,Object> book) {
+			if (book == null) {
+				reset();
+			} else {
+				Hashes.setValue((List<String>)book.get("all_hashes"));
+				Title.setValue((String)book.get("title"));
+
+				final String downloadUrl = (String)book.get("download_url");
+				DownloadUrl.setValue(downloadUrl != null ? downloadUrl : "");
+				final String mimetype = (String)book.get("mimetype");
+				Mimetype.setValue(mimetype != null ? mimetype : "");
+				final String thumbnailUrl = (String)book.get("thumbnail_url");
+				ThumbnailUrl.setValue(thumbnailUrl != null ? thumbnailUrl : "");
+				final Long size = (Long)book.get("size");
+				Size.setValue(size != null ? (int)(long)size : 0);
+			}
+		}
+
+		void reset() {
+			Hashes.setValue(Collections.<String>emptyList());
+			Title.setValue("");
+			DownloadUrl.setValue("");
+			Mimetype.setValue("");
+			ThumbnailUrl.setValue("");
+			Size.setValue(0);
+		}
+
+		private static String fullUrl(ZLStringOption option) {
+			final String value = option.getValue();
+			return !"".equals(value) ? SyncOptions.BASE_URL + value : null;
+		}
+
+		ServerBookInfo getInfo() {
+			final List<String> hashes = Hashes.getValue();
+			if (hashes.size() == 0) {
+				return null;
+			}
+			return new ServerBookInfo(
+				hashes,
+				Title.getValue(),
+				fullUrl(DownloadUrl),
+				Mimetype.getValue(),
+				fullUrl(ThumbnailUrl),
+				Size.getValue()
+			);
+		}
+	}
+	private final ServerBook myServerBook = new ServerBook();
 
 	private Map<String,Object> position2Map(ZLTextFixedPosition.WithTimestamp pos) {
 		final Map<String,Object> map = new HashMap<String,Object>();
@@ -72,7 +138,7 @@ public class SyncData {
 		);
 	}
 
-	private Map<String,Object> positionMap(IBookCollection collection, Book book) {
+	private Map<String,Object> positionMap(IBookCollection<Book> collection, Book book) {
 		if (book == null) {
 			return null;
 		}
@@ -80,7 +146,7 @@ public class SyncData {
 		return pos != null ? position2Map(pos) : null;
 	}
 
-	public Map<String,Object> data(IBookCollection collection) {
+	public Map<String,Object> data(IBookCollection<Book> collection) {
 		final Map<String,Object> map = new HashMap<String,Object>();
 		map.put("generation", myGeneration.getValue());
 		map.put("timestamp", System.currentTimeMillis());
@@ -93,7 +159,7 @@ public class SyncData {
 				myCurrentBookHash.setValue(newHash);
 				if (oldHash.length() != 0) {
 					myCurrentBookTimestamp.setValue(String.valueOf(System.currentTimeMillis()));
-					myServerBookHashes.setValue(Collections.<String>emptyList());
+					myServerBook.reset();
 				}
 			}
 			final String currentBookHash = newHash != null ? newHash : oldHash;
@@ -147,13 +213,7 @@ public class SyncData {
 			}
 		}
 
-		final Map<String,Object> currentBook = (Map<String,Object>)data.get("currentbook");
-		if (currentBook != null) {
-			myServerBookHashes.setValue((List<String>)currentBook.get("all_hashes"));
-			myServerBookTitle.setValue((String)currentBook.get("title"));
-		} else {
-			myServerBookHashes.setValue(Collections.<String>emptyList());
-		}
+		myServerBook.init((Map<String,Object>)data.get("currentbook"));
 
 		return data.size() > 1;
 	}
@@ -171,14 +231,7 @@ public class SyncData {
 	}
 
 	public ServerBookInfo getServerBookInfo() {
-		final List<String> hashes = myServerBookHashes.getValue();
-		if (hashes.size() == 0) {
-			return null;
-		}
-		return new ServerBookInfo(
-			// TODO: get downloadable info from server
-			hashes, myServerBookTitle.getValue(), true
-		);
+		return myServerBook.getInfo();
 	}
 
 	public ZLTextFixedPosition.WithTimestamp getAndCleanPosition(String hash) {

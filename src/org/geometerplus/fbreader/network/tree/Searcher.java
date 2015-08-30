@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ class Searcher extends NetworkItemsLoader {
 
 	@Override
 	public void doBefore() {
-		NetworkLibrary.Instance().NetworkSearchPatternOption.setValue(myPattern);
+		Tree.Library.NetworkSearchPatternOption.setValue(myPattern);
 	}
 
 	@Override
@@ -45,15 +45,15 @@ class Searcher extends NetworkItemsLoader {
 
 	@Override
 	public void load() throws ZLNetworkException {
-		final SearchItem item = (SearchItem)getTree().Item;
+		final SearchItem item = (SearchItem)Tree.Item;
 		if (myPattern.equals(item.getPattern())) {
-			if (getTree().hasChildren()) {
+			if (Tree.hasChildren()) {
 				myItemFound = true;
-				NetworkLibrary.Instance().fireModelChangedEvent(
-					NetworkLibrary.ChangeListener.Code.Found, getTree()
+				Tree.Library.fireModelChangedEvent(
+					NetworkLibrary.ChangeListener.Code.Found, Tree
 				);
 			} else {
-				NetworkLibrary.Instance().fireModelChangedEvent(
+				Tree.Library.fireModelChangedEvent(
 					NetworkLibrary.ChangeListener.Code.NotFound
 				);
 			}
@@ -65,10 +65,10 @@ class Searcher extends NetworkItemsLoader {
 	@Override
 	public synchronized void onNewItem(final NetworkItem item) {
 		if (!myItemFound) {
-			((SearchCatalogTree)getTree()).setPattern(myPattern);
-			getTree().clearCatalog();
-			NetworkLibrary.Instance().fireModelChangedEvent(
-				NetworkLibrary.ChangeListener.Code.Found, getTree()
+			((SearchCatalogTree)Tree).setPattern(myPattern);
+			Tree.clearCatalog();
+			Tree.Library.fireModelChangedEvent(
+				NetworkLibrary.ChangeListener.Code.Found, Tree
 			);
 			myItemFound = true;
 		}
@@ -78,7 +78,7 @@ class Searcher extends NetworkItemsLoader {
 	@Override
 	protected void onFinish(ZLNetworkException exception, boolean interrupted) {
 		if (!interrupted && !myItemFound) {
-			NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.NotFound);
+			Tree.Library.fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.NotFound);
 		}
 	}
 }

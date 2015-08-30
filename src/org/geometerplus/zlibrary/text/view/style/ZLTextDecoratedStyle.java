@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,8 +43,11 @@ public abstract class ZLTextDecoratedStyle extends ZLTextStyle {
 	private int mySpaceBefore;
 	private int mySpaceAfter;
 	private int myVerticalAlign;
-	private int myLeftIndent;
-	private int myRightIndent;
+	private Boolean myIsVerticallyAligned;
+	private int myLeftMargin;
+	private int myRightMargin;
+	private int myLeftPadding;
+	private int myRightPadding;
 	private int myFirstLineIndent;
 	private ZLTextMetrics myMetrics;
 
@@ -72,8 +75,10 @@ public abstract class ZLTextDecoratedStyle extends ZLTextStyle {
 		mySpaceBefore = getSpaceBeforeInternal(metrics, myFontSize);
 		mySpaceAfter = getSpaceAfterInternal(metrics, myFontSize);
 		myVerticalAlign = getVerticalAlignInternal(metrics, myFontSize);
-		myLeftIndent = getLeftIndentInternal(metrics, myFontSize);
-		myRightIndent = getRightIndentInternal(metrics, myFontSize);
+		myLeftMargin = getLeftMarginInternal(metrics, myFontSize);
+		myRightMargin = getRightMarginInternal(metrics, myFontSize);
+		myLeftPadding = getLeftPaddingInternal(metrics, myFontSize);
+		myRightPadding = getRightPaddingInternal(metrics, myFontSize);
 		myFirstLineIndent = getFirstLineIndentInternal(metrics, myFontSize);
 	}
 
@@ -159,22 +164,49 @@ public abstract class ZLTextDecoratedStyle extends ZLTextStyle {
 	protected abstract int getVerticalAlignInternal(ZLTextMetrics metrics, int fontSize);
 
 	@Override
-	public final int getLeftIndent(ZLTextMetrics metrics) {
-		if (!metrics.equals(myMetrics)) {
-			initMetricsCache(metrics);
+	public boolean isVerticallyAligned() {
+		if (myIsVerticallyAligned == null) {
+			myIsVerticallyAligned = Parent.isVerticallyAligned() || isVerticallyAlignedInternal();
 		}
-		return myLeftIndent;
+		return myIsVerticallyAligned;
 	}
-	protected abstract int getLeftIndentInternal(ZLTextMetrics metrics, int fontSize);
+	protected abstract boolean isVerticallyAlignedInternal();
 
 	@Override
-	public final int getRightIndent(ZLTextMetrics metrics) {
+	public final int getLeftMargin(ZLTextMetrics metrics) {
 		if (!metrics.equals(myMetrics)) {
 			initMetricsCache(metrics);
 		}
-		return myRightIndent;
+		return myLeftMargin;
 	}
-	protected abstract int getRightIndentInternal(ZLTextMetrics metrics, int fontSize);
+	protected abstract int getLeftMarginInternal(ZLTextMetrics metrics, int fontSize);
+
+	@Override
+	public final int getRightMargin(ZLTextMetrics metrics) {
+		if (!metrics.equals(myMetrics)) {
+			initMetricsCache(metrics);
+		}
+		return myRightMargin;
+	}
+	protected abstract int getRightMarginInternal(ZLTextMetrics metrics, int fontSize);
+
+	@Override
+	public final int getLeftPadding(ZLTextMetrics metrics) {
+		if (!metrics.equals(myMetrics)) {
+			initMetricsCache(metrics);
+		}
+		return myLeftPadding;
+	}
+	protected abstract int getLeftPaddingInternal(ZLTextMetrics metrics, int fontSize);
+
+	@Override
+	public final int getRightPadding(ZLTextMetrics metrics) {
+		if (!metrics.equals(myMetrics)) {
+			initMetricsCache(metrics);
+		}
+		return myRightPadding;
+	}
+	protected abstract int getRightPaddingInternal(ZLTextMetrics metrics, int fontSize);
 
 	@Override
 	public final int getFirstLineIndent(ZLTextMetrics metrics) {

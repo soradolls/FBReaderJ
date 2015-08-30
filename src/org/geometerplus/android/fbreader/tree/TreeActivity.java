@@ -1,5 +1,5 @@
-/*);
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+/*
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.*;
 
+import org.geometerplus.android.util.UIMessageUtil;
 import org.geometerplus.android.util.UIUtil;
 
 import org.geometerplus.fbreader.tree.FBTree;
@@ -108,7 +109,7 @@ public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 					parent = getTreeByKey(myHistory.remove(myHistory.size() - 1));
 				}
 			}
-			if (parent == null) {
+			if (parent == null && myCurrentTree != null) {
 				parent = myCurrentTree.Parent;
 			}
 			if (parent != null && !isTreeInvisible(parent)) {
@@ -214,7 +215,7 @@ public abstract class TreeActivity<T extends FBTree> extends ListActivity {
 				);
 				break;
 			case CANNOT_OPEN:
-				UIUtil.showErrorMessage(TreeActivity.this, tree.getOpeningStatusMessage());
+				UIMessageUtil.showErrorMessage(TreeActivity.this, tree.getOpeningStatusMessage());
 				break;
 		}
 	}

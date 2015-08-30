@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,20 +24,21 @@ import java.util.Map;
 import org.geometerplus.zlibrary.core.xml.ZLStringMap;
 import org.geometerplus.zlibrary.core.xml.ZLXMLReaderAdapter;
 
+import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.atom.*;
 
 public class RSSXMLReader<MetadataType extends RSSChannelMetadata,EntryType extends RSSItem> extends ZLXMLReaderAdapter {
-
-	public RSSXMLReader(ATOMFeedHandler<MetadataType,EntryType> handler, boolean readEntryNotFeed) {
+	public RSSXMLReader(NetworkLibrary library, ATOMFeedHandler<MetadataType,EntryType> handler, boolean readEntryNotFeed) {
 		myFeedHandler = handler;
 		myState = START;
+		myFormattedBuffer = new FormattedBuffer(library);
 	}
 
 	protected int myState;
 	private final ATOMFeedHandler<MetadataType,EntryType> myFeedHandler;
 	private Map<String,String> myNamespaceMap;
 	private final StringBuilder myBuffer = new StringBuilder();
-	protected final FormattedBuffer myFormattedBuffer = new FormattedBuffer();
+	protected final FormattedBuffer myFormattedBuffer;
 	private EntryType myItem;
 	private RSSAuthor myAuthor;
 	private RSSCategory myCategory;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,6 +67,7 @@ public interface ActionCode {
 	String INCREASE_FONT = "increaseFont";
 	String DECREASE_FONT = "decreaseFont";
 
+	String DISPLAY_BOOK_POPUP = "displayBookPopup";
 	String PROCESS_HYPERLINK = "processHyperlink";
 
 	String SELECTION_SHOW_PANEL = "selectionShowPanel";
@@ -79,6 +80,8 @@ public interface ActionCode {
 
 	String OPEN_VIDEO = "video";
 
+	String HIDE_TOAST = "hideToast";
+	String OPEN_START_SCREEN = "openStartScreen";
 	String OPEN_WEB_HELP = "help";
 	String INSTALL_PLUGINS = "plugins";
 }

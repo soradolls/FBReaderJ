@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,12 +105,20 @@ public class ZLTextNGStyle extends ZLTextDecoratedStyle {
 	}
 
 	@Override
-	protected int getLeftIndentInternal(ZLTextMetrics metrics, int fontSize) {
-		return myDescription.getLeftIndent(metrics, Parent.getLeftIndent(metrics), fontSize);
+	protected int getLeftMarginInternal(ZLTextMetrics metrics, int fontSize) {
+		return myDescription.getLeftMargin(metrics, Parent.getLeftMargin(metrics), fontSize);
 	}
 	@Override
-	protected int getRightIndentInternal(ZLTextMetrics metrics, int fontSize) {
-		return myDescription.getRightIndent(metrics, Parent.getRightIndent(metrics), fontSize);
+	protected int getRightMarginInternal(ZLTextMetrics metrics, int fontSize) {
+		return myDescription.getRightMargin(metrics, Parent.getRightMargin(metrics), fontSize);
+	}
+	@Override
+	protected int getLeftPaddingInternal(ZLTextMetrics metrics, int fontSize) {
+		return myDescription.getLeftPadding(metrics, Parent.getLeftPadding(metrics), fontSize);
+	}
+	@Override
+	protected int getRightPaddingInternal(ZLTextMetrics metrics, int fontSize) {
+		return myDescription.getRightPadding(metrics, Parent.getRightPadding(metrics), fontSize);
 	}
 	@Override
 	protected int getFirstLineIndentInternal(ZLTextMetrics metrics, int fontSize) {
@@ -127,6 +135,10 @@ public class ZLTextNGStyle extends ZLTextDecoratedStyle {
 	@Override
 	protected int getVerticalAlignInternal(ZLTextMetrics metrics, int fontSize) {
 		return myDescription.getVerticalAlign(metrics, Parent.getVerticalAlign(metrics), fontSize);
+	}
+	@Override
+	protected boolean isVerticallyAlignedInternal() {
+		return myDescription.hasNonZeroVerticalAlign();
 	}
 	@Override
 	protected int getSpaceBeforeInternal(ZLTextMetrics metrics, int fontSize) {

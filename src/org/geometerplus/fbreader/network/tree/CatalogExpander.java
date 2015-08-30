@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,12 +37,20 @@ class CatalogExpander extends NetworkItemsLoader {
 
 	@Override
 	public void doBefore() throws ZLNetworkException {
-		final INetworkLink link = getTree().getLink();
+		final INetworkLink link = Tree.getLink();
 		if (myAuthenticate && link != null && link.authenticationManager() != null) {
 			final NetworkAuthenticationManager mgr = link.authenticationManager();
 			try {
 				if (mgr.isAuthorised(true) && mgr.needsInitialization()) {
-					mgr.initialize();
+					new Thread() {
+						public void run() {
+							try {
+								mgr.initialize();
+							} catch (ZLNetworkException e) {
+								e.printStackTrace();
+							}
+						}
+					}.start();
 				}
 			} catch (ZLNetworkException e) {
 				mgr.logOut();
@@ -53,35 +61,34 @@ class CatalogExpander extends NetworkItemsLoader {
 	@Override
 	public void load() throws ZLNetworkException {
 		if (myResumeNotLoad) {
-			getTree().Item.resumeLoading(this);
+			Tree.Item.resumeLoading(this);
 		} else {
-			getTree().Item.loadChildren(this);
+			Tree.Item.loadChildren(this);
 		}
 	}
 
 	@Override
 	protected void onFinish(ZLNetworkException exception, boolean interrupted) {
-		if (interrupted && (!getTree().Item.supportsResumeLoading() || exception != null)) {
-			getTree().clearCatalog();
+		if (interrupted && (!Tree.Item.supportsResumeLoading() || exception != null)) {
+			Tree.clearCatalog();
 		} else {
-			getTree().removeUnconfirmedItems();
+			Tree.removeUnconfirmedItems();
 			if (!interrupted) {
 				if (exception != null) {
-					NetworkLibrary.Instance().fireModelChangedEvent(
+					Tree.Library.fireModelChangedEvent(
 						NetworkLibrary.ChangeListener.Code.NetworkError, exception.getMessage()
 					);
 				} else {
-					getTree().updateLoadedTime();
-					if (getTree().subtrees().isEmpty()) {
-						NetworkLibrary.Instance().fireModelChangedEvent(
+					Tree.updateLoadedTime();
+					if (Tree.subtrees().isEmpty()) {
+						Tree.Library.fireModelChangedEvent(
 							NetworkLibrary.ChangeListener.Code.EmptyCatalog
 						);
 					}
 				}
 			}
-			final NetworkLibrary library = NetworkLibrary.Instance();
-			library.invalidateVisibility();
-			library.synchronize();
+			Tree.Library.invalidateVisibility();
+			Tree.Library.synchronize();
 		}
 	}
 }

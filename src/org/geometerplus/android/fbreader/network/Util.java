@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,14 +22,16 @@ package org.geometerplus.android.fbreader.network;
 import java.util.List;
 
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
 import org.geometerplus.zlibrary.core.network.ZLNetworkContext;
 import org.geometerplus.zlibrary.core.network.ZLNetworkException;
 import org.geometerplus.zlibrary.core.options.Config;
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 
+import org.geometerplus.fbreader.Paths;
 import org.geometerplus.fbreader.network.*;
 import org.geometerplus.fbreader.network.authentication.NetworkAuthenticationManager;
 import org.geometerplus.fbreader.network.urlInfo.BookUrlInfo;
@@ -39,8 +41,8 @@ import org.geometerplus.android.util.UIUtil;
 import org.geometerplus.android.util.PackageUtil;
 
 public abstract class Util implements UserRegistrationConstants {
-	static final String AUTHORIZATION_ACTION = "android.fbreader.action.network.AUTHORIZATION";
-	static final String SIGNIN_ACTION = "android.fbreader.action.network.SIGNIN";
+	static final String AUTHORISATION_ACTION = "android.fbreader.action.network.AUTHORISATION";
+	public static final String SIGNIN_ACTION = "android.fbreader.action.network.SIGNIN";
 	static final String TOPUP_ACTION = "android.fbreader.action.network.TOPUP";
 	static final String EXTRA_CATALOG_ACTION = "android.fbreader.action.network.EXTRA_CATALOG";
 
@@ -55,16 +57,20 @@ public abstract class Util implements UserRegistrationConstants {
 		return intent;
 	}
 
+	public static NetworkLibrary networkLibrary(Context context) {
+		return NetworkLibrary.Instance(Paths.systemInfo(context));
+	}
+
 	static void initLibrary(final Activity activity, final ZLNetworkContext nc, final Runnable action) {
 		Config.Instance().runOnConnect(new Runnable() {
 			public void run() {
 				UIUtil.wait("loadingNetworkLibrary", new Runnable() {
 					public void run() {
+						final NetworkLibrary library = networkLibrary(activity);
 						if (SQLiteNetworkDatabase.Instance() == null) {
-							new SQLiteNetworkDatabase(activity.getApplication());
+							new SQLiteNetworkDatabase(activity.getApplication(), library);
 						}
 
-						final NetworkLibrary library = NetworkLibrary.Instance();
 						if (!library.isInitialized()) {
 							try {
 								library.initialize(nc);
@@ -80,31 +86,13 @@ public abstract class Util implements UserRegistrationConstants {
 		});
 	}
 
-	static Intent authorisationIntent(INetworkLink link, Uri id) {
-		final Intent intent = new Intent(AUTHORIZATION_ACTION, id);
+	public static Intent authorisationIntent(INetworkLink link, Activity activity, Class<? extends Activity> cls) {
+		final Intent intent = new Intent(activity, cls);
 		intent.putExtra(CATALOG_URL, link.getUrl(UrlInfo.Type.Catalog));
 		intent.putExtra(SIGNIN_URL, link.getUrl(UrlInfo.Type.SignIn));
 		intent.putExtra(SIGNUP_URL, link.getUrl(UrlInfo.Type.SignUp));
 		intent.putExtra(RECOVER_PASSWORD_URL, link.getUrl(UrlInfo.Type.RecoverPassword));
 		return intent;
-	}
-
-	private static Intent registrationIntent(INetworkLink link) {
-		return authorisationIntent(link, Uri.parse(link.getUrl(UrlInfo.Type.Catalog) + "/register"));
-	}
-
-	public static boolean isRegistrationSupported(Activity activity, INetworkLink link) {
-		return PackageUtil.canBeStarted(activity, registrationIntent(link), true);
-	}
-
-	public static void runRegistrationDialog(Activity activity, INetworkLink link) {
-		try {
-			final Intent intent = registrationIntent(link);
-			if (PackageUtil.canBeStarted(activity, intent, true)) {
-				activity.startActivity(intent);
-			}
-		} catch (ActivityNotFoundException e) {
-		}
 	}
 
 	public static void runAuthenticationDialog(Activity activity, INetworkLink link, Runnable onSuccess) {
@@ -118,9 +106,17 @@ public abstract class Util implements UserRegistrationConstants {
 		activity.startActivity(intent);
 	}
 
+	public static boolean isOurLink(String url) {
+		try {
+			return Uri.parse(url).getHost().endsWith(".fbreader.org");
+		} catch (Throwable t) {
+			return false;
+		}
+	}
+
 	public static void openInBrowser(Activity activity, String url) {
 		if (url != null) {
-			url = NetworkLibrary.Instance().rewriteUrl(url, true);
+			url = networkLibrary(activity).rewriteUrl(url, true);
 			activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
 		}
 	}
@@ -133,10 +129,10 @@ public abstract class Util implements UserRegistrationConstants {
 			activity.startService(
 				new Intent(Intent.ACTION_VIEW, Uri.parse(ref.Url),
 						activity.getApplicationContext(), BookDownloaderService.class)
-					.putExtra(BookDownloaderService.BOOK_MIME, ref.Mime.toString())
-					.putExtra(BookDownloaderService.REFERENCE_TYPE_KEY, resolvedType)
-					.putExtra(BookDownloaderService.CLEAN_URL_KEY, ref.cleanUrl())
-					.putExtra(BookDownloaderService.TITLE_KEY, book.Title)
+					.putExtra(BookDownloaderService.Key.BOOK_MIME, ref.Mime.toString())
+					.putExtra(BookDownloaderService.Key.BOOK_KIND, resolvedType)
+					.putExtra(BookDownloaderService.Key.CLEAN_URL, ref.cleanUrl())
+					.putExtra(BookDownloaderService.Key.BOOK_TITLE, book.Title)
 			);
 		}
 	}

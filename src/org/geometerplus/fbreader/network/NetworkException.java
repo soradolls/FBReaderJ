@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,9 +30,9 @@ public abstract class NetworkException extends ZLNetworkException {
 	public static final String ERROR_BOOK_NOT_PURCHASED = "bookNotPurchased";
 	public static final String ERROR_DOWNLOAD_LIMIT_EXCEEDED = "downloadLimitExceeded";
 
-	public static final String ERROR_EMAIL_WAS_NOT_SPECIFIED = "emailNotSpecified";
+	public static final String ERROR_EMAIL_NOT_SPECIFIED = "emailNotSpecified";
 
-	public static final String ERROR_NO_USER_EMAIL = "noUserEmail";
+	public static final String ERROR_NO_USER_FOR_EMAIL = "noUserForEmail";
 
 	public static final String ERROR_UNSUPPORTED_OPERATION = "unsupportedOperation";
 

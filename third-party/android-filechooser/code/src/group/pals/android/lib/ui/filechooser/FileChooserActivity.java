@@ -309,6 +309,7 @@ public class FileChooserActivity extends Activity {
          * THEME
          */
 
+        /*
         if (getIntent().hasExtra(_Theme)) {
             int theme;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH)
@@ -319,6 +320,7 @@ public class FileChooserActivity extends Activity {
                 theme = getIntent().getIntExtra(_Theme, android.R.style.Theme);
             setTheme(theme);
         }
+        */
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.afc_file_chooser);
@@ -349,10 +351,10 @@ public class FileChooserActivity extends Activity {
         mViewSort = (ImageView) findViewById(R.id.afc_filechooser_activity_button_sort);
         mViewFoldersView = (ImageView) findViewById(R.id.afc_filechooser_activity_button_folders_view);
         mViewCreateFolder = (ImageView) findViewById(R.id.afc_filechooser_activity_button_create_folder);
-    	if (!getIntent().getBooleanExtra(_ShowNewFolderButton, true)) {
-			mViewCreateFolder.setVisibility(View.GONE);
-		}
-		mFilenameRegexp = getIntent().getStringExtra(_FilenameRegExp);
+        if (!getIntent().getBooleanExtra(_ShowNewFolderButton, true)) {
+            mViewCreateFolder.setVisibility(View.GONE);
+        }
+        mFilenameRegexp = getIntent().getStringExtra(_FilenameRegExp);
         mViewGoBack = (ImageView) findViewById(R.id.afc_filechooser_activity_button_go_back);
         mViewGoForward = (ImageView) findViewById(R.id.afc_filechooser_activity_button_go_forward);
         mViewLocations = (ViewGroup) findViewById(R.id.afc_filechooser_activity_view_locations);
@@ -456,6 +458,11 @@ public class FileChooserActivity extends Activity {
     @Override
     public void onBackPressed() {
         IFile currentLoc = getLocation();
+        if (currentLoc == null || mHistory == null) {
+            super.onBackPressed();
+            return;
+        }
+
         IFile preLoc = null;
         while (currentLoc.equalsToPath(preLoc = mHistory.prevOf(currentLoc)))
             mHistory.remove(preLoc);
@@ -1041,8 +1048,14 @@ public class FileChooserActivity extends Activity {
                             return;
                         }
 
-                        IFile dir = mFileProvider.fromPath(String
-                                .format("%s/%s", getLocation().getAbsolutePath(), name));
+                        final IFileProvider fileProvider = mFileProvider;
+                        final IFile location = getLocation();
+                        if (fileProvider == null || location == null) {
+                            return;
+                        }
+
+                        IFile dir = fileProvider.fromPath(String
+                                .format("%s/%s", location.getAbsolutePath(), name));
                         if (dir.mkdir()) {
                             Dlg.toast(FileChooserActivity.this, getString(R.string.afc_msg_done), Dlg._LengthShort);
                             setLocation(getLocation(), null);
@@ -1369,7 +1382,7 @@ public class FileChooserActivity extends Activity {
                  * navigation buttons
                  */
                 createLocationButtons(path);
-				
+
                 /*
                  * update UI elements
                  */
@@ -1497,10 +1510,13 @@ public class FileChooserActivity extends Activity {
                 }
                 break;
             case DirectoriesOnly:
-                if(((File)getLocation()).canWrite()){
+            {
+                final File file = (File)getLocation();
+                if (file != null && file.canWrite()) {
                     returnPath = getLocation().getAbsolutePath();
                 }
                 break;
+            }
             case FilesAndDirectories:
                 if(files == null || files.isEmpty()){
                     returnPath = getLocation().getAbsolutePath();
@@ -1661,9 +1677,9 @@ public class FileChooserActivity extends Activity {
         final boolean isDirectoryWriteable = ((File)dir).canWrite();
         mViewCreateFolder.setEnabled(isDirectoryWriteable);
         mBtnOk.setEnabled(
-			isDirectoryWriteable ||
-        	mFileProvider.getFilterMode() == IFileProvider.FilterMode.AnyDirectories
-		);
+            isDirectoryWriteable ||
+            mFileProvider.getFilterMode() == IFileProvider.FilterMode.AnyDirectories
+        );
     }
     
     private final View.OnLongClickListener mBtnGoBackForwardOnLongClickListener = new View.OnLongClickListener() {
@@ -1894,16 +1910,16 @@ public class FileChooserActivity extends Activity {
             else {
                 if (mIsMultiSelection) {
                     return;
-				}
+                }
 
                 if (mIsSaveDialog) {
                     doCheckSaveasFilenameAndFinish(data.getFile().getName());
                 } else {
-            		final IFileAdapter.Bag bag = (IFileAdapter.Bag)view.getTag();
-					if (bag != null && bag.mIsAccessible) {
-                    	doFinish(data.getFile());
-					}
-				}
+                    final IFileAdapter.Bag bag = (IFileAdapter.Bag)view.getTag();
+                    if (bag != null && bag.mIsAccessible) {
+                        doFinish(data.getFile());
+                    }
+                }
             }// single tap to choose files
         }// onItemClick()
     };// mViewFilesOnItemClickListener

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,8 +31,6 @@ import org.geometerplus.zlibrary.core.options.Config;
 import org.geometerplus.android.fbreader.api.FBReaderIntents;
 
 public final class ConfigShadow extends Config implements ServiceConnection {
-	static final String OPTION_CHANGE_EVENT_ACTION = "fbreader.config_service.option_change_event";
-
 	private final Context myContext;
 	private volatile ConfigInterface myInterface;
 	private final List<Runnable> myDeferredActions = new LinkedList<Runnable>();
@@ -70,7 +68,9 @@ public final class ConfigShadow extends Config implements ServiceConnection {
 		if (myInterface != null) {
 			runnable.run();
 		} else {
-			myDeferredActions.add(runnable);
+			synchronized (myDeferredActions) {
+				myDeferredActions.add(runnable);
+			}
 		}
 	}
 
@@ -185,11 +185,21 @@ public final class ConfigShadow extends Config implements ServiceConnection {
 	}
 
 	// method from ServiceConnection interface
-	public synchronized void onServiceConnected(ComponentName name, IBinder service) {
-		myInterface = ConfigInterface.Stub.asInterface(service);
-		myContext.registerReceiver(myReceiver, new IntentFilter(OPTION_CHANGE_EVENT_ACTION));
-		while (!myDeferredActions.isEmpty()) {
-			myDeferredActions.remove(0).run();
+	public void onServiceConnected(ComponentName name, IBinder service) {
+		synchronized (this) {
+			myInterface = ConfigInterface.Stub.asInterface(service);
+			myContext.registerReceiver(
+				myReceiver, new IntentFilter(FBReaderIntents.Event.CONFIG_OPTION_CHANGE)
+			);
+		}
+
+		final List<Runnable> actions;
+		synchronized (myDeferredActions) {
+			actions = new ArrayList<Runnable>(myDeferredActions);
+			myDeferredActions.clear();
+		}
+		for (Runnable a : actions) {
+			a.run();
 		}
 	}
 

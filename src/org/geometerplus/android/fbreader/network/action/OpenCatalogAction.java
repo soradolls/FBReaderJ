@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,7 +75,7 @@ public class OpenCatalogAction extends Action {
 	}
 
 	private void doExpandCatalog(final NetworkCatalogTree tree) {
-		final NetworkItemsLoader loader = NetworkLibrary.Instance().getStoredLoader(tree);
+		final NetworkItemsLoader loader = myLibrary.getStoredLoader(tree);
 		if (loader != null && loader.canResumeLoading()) {
 			doOpenTree(tree);
 		} else if (loader != null) {
@@ -105,18 +105,6 @@ public class OpenCatalogAction extends Action {
 		}
 
 		tree.startItemsLoader(myNetworkContext, true, resumeNotLoad);
-		processExtraData(tree.Item.extraData(), new Runnable() {
-			public void run() {
-				doOpenTree(tree);
-			}
-		});
-	}
-
-	private void processExtraData(Map<String,String> extraData, final Runnable postRunnable) {
-		if (extraData != null && !extraData.isEmpty()) {
-			PackageUtil.runInstallPluginDialog(myActivity, extraData, postRunnable);
-		} else {
-			postRunnable.run();
-		}
+		doOpenTree(tree);
 	}
 }

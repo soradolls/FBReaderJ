@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,24 +88,37 @@ public class ZLTextNGStyleDescription {
 		);
 	}
 
-	int getLeftIndent(ZLTextMetrics metrics, int base, int fontSize) {
+	boolean hasNonZeroVerticalAlign() {
+		final ZLTextStyleEntry.Length length = parseLength(VerticalAlignOption.getValue());
+		return length != null && length.Size != 0;
+	}
+
+	int getLeftMargin(ZLTextMetrics metrics, int base, int fontSize) {
 		final ZLTextStyleEntry.Length length = parseLength(MarginLeftOption.getValue());
 		if (length == null) {
 			return base;
 		}
-		return ZLTextStyleEntry.compute(
-			length, metrics, fontSize, ZLTextStyleEntry.Feature.LENGTH_LEFT_INDENT
+		return base + ZLTextStyleEntry.compute(
+			length, metrics, fontSize, ZLTextStyleEntry.Feature.LENGTH_MARGIN_LEFT
 		);
 	}
 
-	int getRightIndent(ZLTextMetrics metrics, int base, int fontSize) {
+	int getRightMargin(ZLTextMetrics metrics, int base, int fontSize) {
 		final ZLTextStyleEntry.Length length = parseLength(MarginRightOption.getValue());
 		if (length == null) {
 			return base;
 		}
-		return ZLTextStyleEntry.compute(
-			length, metrics, fontSize, ZLTextStyleEntry.Feature.LENGTH_RIGHT_INDENT
+		return base + ZLTextStyleEntry.compute(
+			length, metrics, fontSize, ZLTextStyleEntry.Feature.LENGTH_MARGIN_RIGHT
 		);
+	}
+
+	int getLeftPadding(ZLTextMetrics metrics, int base, int fontSize) {
+		return base;
+	}
+
+	int getRightPadding(ZLTextMetrics metrics, int base, int fontSize) {
+		return base;
 	}
 
 	int getFirstLineIndent(ZLTextMetrics metrics, int base, int fontSize) {

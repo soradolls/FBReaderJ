@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ public class CatalogManagerActivity extends ListActivity {
 		if (enabledIds.size() > 0) {
 			final List<CatalogItem> cItems = new ArrayList<CatalogItem>();
 			for (String id : enabledIds) {
-				final NetworkTree tree = NetworkLibrary.Instance().getCatalogTreeByUrlAll(id);
+				final NetworkTree tree = Util.networkLibrary(this).getCatalogTreeByUrlAll(id);
 				if (tree != null && tree.getLink() != null) {
 					cItems.add(new CatalogItem(id, true, tree));
 				}
@@ -78,7 +78,7 @@ public class CatalogManagerActivity extends ListActivity {
 		if (disabledIds.size() > 0) {
 			final TreeSet<CatalogItem> cItems = new TreeSet<CatalogItem>();
 			for (String id : disabledIds) {
-				final NetworkTree tree = NetworkLibrary.Instance().getCatalogTreeByUrlAll(id);
+				final NetworkTree tree = Util.networkLibrary(this).getCatalogTreeByUrlAll(id);
 				if (tree != null && tree.getLink() != null) {
 					cItems.add(new CatalogItem(id, false, tree));
 				}

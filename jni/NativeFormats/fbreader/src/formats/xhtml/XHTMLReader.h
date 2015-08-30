@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <vector>
 #include <stack>
 
+#include <ZLBoolean3.h>
 #include <ZLXMLReader.h>
 #include <ZLVideoEntry.h>
 #include <FontMap.h>
@@ -70,7 +71,8 @@ public:
 	struct TagData {
 		std::vector<FBTextKind> TextKinds;
 		std::vector<shared_ptr<ZLTextStyleEntry> > StyleEntries;
-		bool PageBreakAfter;
+		ZLBoolean3 PageBreakAfter;
+		ZLTextStyleEntry::DisplayCode DisplayCode;
 		XHTMLTagInfoList Children;
 
 		TagData();
@@ -106,11 +108,13 @@ private:
 
 	void beginParagraph(bool restarted = false);
 	void endParagraph();
-	void restartParagraph();
+	void restartParagraph(bool addEmptyLine);
 	const XHTMLTagInfoList &tagInfos(size_t depth) const;
 	bool matches(const shared_ptr<CSSSelector::Component> next, int depth = 0, int pos = -1) const;
-	void addTextStyleEntry(const std::string &tag, const std::string &aClass);
-	void addTextStyleEntry(const ZLTextStyleEntry &entry);
+
+	void applySingleEntry(shared_ptr<ZLTextStyleEntry> entry);
+	void applyTagStyles(const std::string &tag, const std::string &aClass);
+	void addTextStyleEntry(const ZLTextStyleEntry &entry, unsigned char depth);
 
 	void pushTextKind(FBTextKind kind);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ class LibraryTreeAdapter extends TreeAdapter {
 			LayoutInflater.from(parent.getContext()).inflate(R.layout.library_tree_item, parent, false);
 
 		final boolean unread =
-			tree.getBook() != null && !tree.getBook().labels().contains(Book.READ_LABEL);
+			tree.getBook() != null && !tree.getBook().hasLabel(Book.READ_LABEL);
 
 		final TextView nameView = ViewUtil.findTextView(view, R.id.library_tree_item_name);
 		if (unread) {
@@ -95,6 +95,8 @@ class LibraryTreeAdapter extends TreeAdapter {
 	private int getCoverResourceId(LibraryTree tree) {
 		if (tree.getBook() != null) {
 			return R.drawable.ic_list_library_book;
+		} else if (tree instanceof ExternalViewTree) {
+			return R.drawable.plugin_bookshelf;
 		} else if (tree instanceof FavoritesTree) {
 			return R.drawable.ic_list_library_favorites;
 		} else if (tree instanceof RecentBooksTree || tree instanceof SyncTree) {

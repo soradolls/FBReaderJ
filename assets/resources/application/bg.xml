@@ -24,22 +24,31 @@
 		<node name="favorites" value="Избрани">
 			<node name="summary" value="Моите любими книги"/>
 		</node>
+		<node name="chooseView" value="Choose view" toBeTranslated="true"/>
+		<node name="wideCardsView" value="Wide cards" toBeTranslated="true"/>
+		<node name="smallCardsView" value="Small cards" toBeTranslated="true"/>
+		<node name="tinyCardsView" value="Tiny cards" toBeTranslated="true"/>
+		<node name="coversView" value="Covers" toBeTranslated="true"/>
+		<node name="oldView" value="Classic" toBeTranslated="true"/>
+		<node name="bookshelfView" value="Bookshelf view" toBeTranslated="true">
+			<node name="summary" value="Switch to thumbnail view" toBeTranslated="true"/>
+		</node>
 		<node name="found" value="Намерени">
 			<node name="summary" value="Резултат от търсенето за: %s"/>
 		</node>
 		<node name="sync" value="Synchronisation" toBeTranslated="true">
 			<node name="summary" value="Books by synchronisation status" toBeTranslated="true"/>
 			<node name="sync-success" value="Synchronised" toBeTranslated="true">
-				<node name="summary" value="Books uploaded to the server" toBeTranslated="true"/>
+				<node name="summary" value="Books successfully uploaded to the server" toBeTranslated="true"/>
 			</node>
 			<node name="sync-failure" value="Synchronisation failed" toBeTranslated="true">
-				<node name="summary" value="Books not uploaded to the server due some problems" toBeTranslated="true"/>
+				<node name="summary" value="Books not uploaded to the server due to errors" toBeTranslated="true"/>
 			</node>
 			<node name="sync-deleted" value="Deleted from server" toBeTranslated="true">
-				<node name="summary" value="Books not accessible from the server more" toBeTranslated="true"/>
+				<node name="summary" value="Books no longer accessible from the server" toBeTranslated="true"/>
 			</node>
 			<node name="sync-tosync" value="Not synchronised yet" toBeTranslated="true">
-				<node name="summary" value="Books to be uploaded to the server" toBeTranslated="true"/>
+				<node name="summary" value="Books yet to be uploaded to the server" toBeTranslated="true"/>
 			</node>
 		</node>
 		<node name="fileTree" value="Файлова система">
@@ -71,7 +80,7 @@
 	</node>
 	<node name="networkLibrary" value="FBReader: мрежова библиотека">
 		<node name="sync" value="FBReader® book network" toBeTranslated="true">
-			<node name="summary" value="My personal catalog" toBeTranslated="true"/>
+			<node name="summary" value="My personal catalogue" toBeTranslated="true"/>
 		</node>
 		<node name="byAuthor" value="Автор">
 			<node name="summary" value="Книги, подредени по автори"/>
@@ -117,6 +126,8 @@
 		<node name="stopSearching" value="Прекрати търсенето"/>
 		<node name="signIn" value="Вход"/>
 		<node name="signOut" value="Изход (%s)"/>
+		<node name="signUp" value="Sign up" toBeTranslated="true"/>
+		<node name="quickBuy" value="Quick buy" toBeTranslated="true"/>
 		<node name="topup" value="Зареждане на сметка (баланс: %s)"/>
 		<node name="topupTitle" value="Зареждане на сметка"/>
 		<node name="topupViaBrowser" value="Отвори в браузера"/>
@@ -222,11 +233,11 @@
 		</node>
 	</node>
 	<node name="bookDownloader">
-		<node name="tickerSuccess" value="Книгата е свалена"/>
-		<node name="tickerError" value="Грешка при свалянето на книгата"/>
-		<node name="contentSuccess" value="Свалянето завърши"/>
-		<node name="contentError" value="Грешка при свалянето"/>
-		<node name="downloadingStarted" value="Свалянето на книгата започна"/>
+		<node name="downloadCompleteTicker" value="Книгата е свалена"/>
+		<node name="downloadFailedTicker" value="Грешка при свалянето на книгата"/>
+		<node name="downloadComplete" value="Свалянето завърши"/>
+		<node name="downloadFailed" value="Грешка при свалянето"/>
+		<node name="downloadStarted" value="Свалянето на книгата започна"/>
 		<node name="alreadyDownloading" value="Книгата вече се сваля"/>
 		<node name="cannotCreateDirectory" value="Невъзможно създаване на каталога %s"/>
 		<node name="cannotCreateFile" value="Невъзможно създаване на файла %s"/>
@@ -239,14 +250,23 @@
 	<node name="bookmarksView">
 		<node name="thisBook" value="Тази книга"/>
 		<node name="allBooks" value="Всички книги"/>
-		<node name="found" value="Намерено"/>
 		<node name="new" value="Ново отбелязване"/>
-		<node name="open" value="Отвори"/>
-		<node name="edit" value="Редактирай отбелязването"/>
-		<node name="delete" value="Премахни отбелязването"/>
-		<node name="menu">
-			<node name="search" value="Търси"/>
-		</node>
+		<node name="openBook" value="Отвори"/>
+		<node name="editBookmark" value="Редактирай отбелязването"/>
+		<node name="deleteBookmark" value="Премахни отбелязването"/>
+		<node name="search" value="Търси"/>
+	</node>
+	<node name="editBookmark">
+		<node name="text" value="Text" toBeTranslated="true"/>
+		<node name="style" value="Style" toBeTranslated="true"/>
+		<node name="delete" value="Delete" toBeTranslated="true"/>
+		<node name="deleteBookmark" value="Премахни отбелязването"/>
+		<node name="saveText" value="Save text" toBeTranslated="true"/>
+		<node name="editStyle" value="Редактирай стил…"/>
+	</node>
+	<node name="toast">
+		<node name="more" value="More" toBeTranslated="true"/>
+		<node name="offline" value="Offline" toBeTranslated="true"/>
 	</node>
 	<node name="cancelMenu">
 		<node name="library" value="Отвори библиотеката"/>
@@ -258,10 +278,6 @@
 		<node name="close" value="Затвори FBReader"/>
 	</node>
 	<node name="style" value="Стил %s"/>
-	<node name="highlightingStyleMenu">
-		<node name="editStyle" value="Редактирай стил…"/>
-		<node name="deleteBookmark" value="Премахни отбелязването"/>
-	</node>
 	<node name="editStyle">
 		<node name="name" value="Име на стил"/>
 		<node name="invisible" value="Невидим">
@@ -275,19 +291,20 @@
 		<node name="openInDictionary" value="Отвори в речника"/>
 		<node name="quoteFrom" value="Цитат от %s"/>
 		<node name="textInBuffer" value="Текст в буфера:&#10;%s"/>
-		<node name="bookmarkCreated" value="Отбелязване на:&#10;%s"/>
 		<node name="clearSelection" value="Премахни"/>
 	</node>
 	<node name="sharing">
-		<node name="sharedFrom" value="Изпратено от &lt;a href=&quot;http://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
+		<node name="sharedFrom" value="Изпратено от &lt;a href=&quot;https://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
 	</node>
 	<node name="menu">
+		<node name="openStartScreen" value="Start screen" toBeTranslated="true"/>
 		<node name="preferences" value="Настройки"/>
 		<node name="bookInfo" value="За книгата"/>
 		<node name="library" value="Библиотека"/>
 		<node name="toc" value="Съдържание"/>
 		<node name="day" value="Ден"/>
 		<node name="night" value="Нощ"/>
+		<node name="dayNight" value="Day/Night" toBeTranslated="true"/>
 		<node name="yotaSwitchToBackScreen" value="Превключи към заден екран"/>
 		<node name="yotaSwitchToFrontScreen" value="Превключи към преден екран"/>
 		<node name="networkLibrary" value="Мрежова библиотека"/>
@@ -314,6 +331,7 @@
 		<node name="screenOrientationReverseLandscape" value="обърната хоризонтално"/>
 		<node name="increaseFont" value="Увеличи шрифта"/>
 		<node name="decreaseFont" value="Намали шрифта"/>
+		<node name="changeFontSize" value="Zoom in/out" toBeTranslated="true"/>
 		<node name="toggleFullscreen" value="На цял екран"/>
 		<node name="bookmarks" value="Отбелязани"/>
 		<node name="help" value="Помощ"/>
@@ -331,6 +349,9 @@
 	<node name="Preferences">
 		<node name="sync" value="Synchronisation" toBeTranslated="true">
 			<node name="summary" value="Book network settings" toBeTranslated="true"/>
+			<node name="site" value="Read more about synchronisation" toBeTranslated="true">
+				<node name="url" value="https://books.fbreader.org/help.html" toBeTranslated="true"/>
+			</node>
 			<node name="enable" value="Enable synchronisation" toBeTranslated="true">
 				<node name="summaryOn" value="Synchronise my library with FBReader book network server" toBeTranslated="true"/>
 				<node name="summaryOnWithAccount" value="Synchronise my library as %s" toBeTranslated="true"/>
@@ -349,7 +370,7 @@
 			<node name="metainfo" value="Synchronise metainfo (title, tags, etc.)" toBeTranslated="true"/>
 			<node name="changeCurrentBook" value="Change current book" toBeTranslated="true">
 				<node name="summaryOn" value="Open same book on all devices" toBeTranslated="true"/>
-				<node name="summaryOff" value="Just synchronise positions, do not change book automatically" toBeTranslated="true"/>
+				<node name="summaryOff" value="Synchronise reading positions, but do not open same book on all devices" toBeTranslated="true"/>
 			</node>
 		</node>
 		<node name="directories" value="Каталози">
@@ -603,6 +624,17 @@
 				</node>
 			</node>
 		</node>
+		<node name="toast" value="Pop-ups" toBeTranslated="true">
+			<node name="summary" value="Footnote windows, etc." toBeTranslated="true"/>
+			<node name="showFootnoteToast" value="Show linked text in a popup" toBeTranslated="true">
+				<node name="never" value="Never" toBeTranslated="true"/>
+				<node name="footnotesOnly" value="For footnotes only" toBeTranslated="true"/>
+				<node name="footnotesAndSuperscripts" value="For footnotes and superscript links" toBeTranslated="true"/>
+				<node name="allInternalLinks" value="For all internal links" toBeTranslated="true"/>
+			</node>
+			<node name="footnoteToastDuration" value="How long to display link popup" toBeTranslated="true"/>
+			<node name="fontSizePercent" value="Font size (percent from regular text)" toBeTranslated="true"/>
+		</node>
 		<node name="css" value="CSS">
 			<node name="summary" value="CSS форматиране"/>
 			<node name="fontFamily" value="Шрифтова фамилия">
@@ -626,7 +658,7 @@
 			<node name="summary" value="Настройки на цвета"/>
 			<node name="background" value="Фон">
 				<node name="chooser">
-					<node name="solidColor" value="Solid color…" toBeTranslated="true"/>
+					<node name="solidColor" value="Solid colour…" toBeTranslated="true"/>
 					<node name="predefined" value="Predefined texture…" toBeTranslated="true"/>
 					<node name="selectFile" value="Select file…" toBeTranslated="true"/>
 				</node>
@@ -640,7 +672,7 @@
 			<node name="fillMode" value="Fill mode" toBeTranslated="true">
 				<node name="tile" value="Tile" toBeTranslated="true"/>
 				<node name="tileMirror" value="Mirrored tile" toBeTranslated="true"/>
-				<node name="fullscreen" value="Full screen" toBeTranslated="true"/>
+				<node name="fullscreen" value="Fullscreen" toBeTranslated="true"/>
 				<node name="stretch" value="Stretch to fill screen" toBeTranslated="true"/>
 				<node name="tileVertically" value="Stretch horizontally, tile vertically" toBeTranslated="true"/>
 				<node name="tileHorizontally" value="Stretch vertically, tile horizontally" toBeTranslated="true"/>
@@ -652,7 +684,10 @@
 			<node name="hyperlinkVisited" value="Посетена препратка"/>
 			<node name="highlightingForeground" value="Search results" toBeTranslated="true"/>
 			<node name="highlightingBackground" value="Фон на резултата от търсенето"/>
-			<node name="footer" value="Долен колонтитул"/>
+			<node name="footerOldStyle" value="Footer (old style)" toBeTranslated="true"/>
+			<node name="footerBackground" value="Footer background" toBeTranslated="true"/>
+			<node name="footerForeground" value="Footer text" toBeTranslated="true"/>
+			<node name="footerForegroundUnread" value="Footer line" toBeTranslated="true"/>
 		</node>
 		<node name="margins" value="Граници">
 			<node name="summary" value="Текстови граници"/>
@@ -669,9 +704,13 @@
 				<node name="show" value="Вертикален скрол бар"/>
 				<node name="showAsProgress" value="Вертикален прогрес бар"/>
 				<node name="showAsFooter" value="Долен колонтитул"/>
+				<node name="showAsFooterOldStyle" value="Horizontal footer (old style)" toBeTranslated="true"/>
 			</node>
 			<node name="footerHeight" value="Височина на долния колонтитул"/>
-			<node name="footerColor" value="Цвят на долния колонтитул"/>
+			<node name="footerOldStyleColor" value="Footer (old style) colour" toBeTranslated="true"/>
+			<node name="footerBackgroundColor" value="Footer background colour" toBeTranslated="true"/>
+			<node name="footerForegroundColor" value="Footer text colour" toBeTranslated="true"/>
+			<node name="footerForegroundUnreadColor" value="Footer line colour" toBeTranslated="true"/>
 			<node name="tocMarks" value="Покажи съдържание по раздели">
 				<node name="summaryOn" value="Покажи съдържание по раздели в долния колонтитул"/>
 				<node name="summaryOff" value="Не показвай съдържание по раздели в долния колонтитул"/>
@@ -713,6 +752,7 @@
 				<node name="none" value="Изключи анимацията"/>
 				<node name="curl" value="Анимация тип curl"/>
 				<node name="slide" value="Анимация тип slide"/>
+				<node name="slideOldStyle" value="Slide animation (old style)" toBeTranslated="true"/>
 				<node name="shift" value="Анимация тип shift"/>
 			</node>
 			<node name="animationSpeed" value="Скорост на анимацията">
@@ -734,14 +774,25 @@
 				<node name="custom" value="Стандартно…"/>
 			</node>
 		</node>
-		<node name="dictionary" value="Речник">
-			<node name="summary" value="Настройки на речника"/>
-			<node name="dictionary" value="Речник"/>
-			<node name="translator" value="Преводач"/>
+		<node name="dictionary" value="Dictionary &amp; translator" toBeTranslated="true">
+			<node name="summary" value="Translation settings" toBeTranslated="true"/>
+			<node name="dictionary" value="Look up single word in" toBeTranslated="true"/>
+			<node name="translator" value="Translate phrases via" toBeTranslated="true"/>
+			<node name="translateOffline" value="Google Translate: use offline translator (if installed)" toBeTranslated="true">
+				<node name="always" value="Always" toBeTranslated="true"/>
+				<node name="onError" value="Automatically, if online translation fails" toBeTranslated="true"/>
+				<node name="ask" value="Ask if online translation fails" toBeTranslated="true"/>
+				<node name="never" value="Never" toBeTranslated="true"/>
+			</node>
+			<node name="translationToastDuration" value="How long to show translation popup" toBeTranslated="true"/>
+			<node name="errorToastDuration" value="How long to show error message" toBeTranslated="true"/>
+			<node name="sourceLanguage" value="Translate from" toBeTranslated="true">
+				<node name="detect" value="Automatically detect language" toBeTranslated="true"/>
+			</node>
 			<node name="targetLanguage" value="Преведи на">
 				<node name="any" value="всички езици"/>
 			</node>
-			<node name="tappingAction" value="Действие при продължителен натиск по екрана">
+			<node name="longTapAction" value="Действие при продължителен натиск по екрана">
 				<node name="doNothing" value="Не се извършва действие"/>
 				<node name="selectSingleWord" value="Селектиране на една дума"/>
 				<node name="startSelecting" value="Започване на селекция"/>
@@ -755,7 +806,7 @@
 		<node name="images" value="Изображения">
 			<node name="summary" value="Настройки на изображенията"/>
 			<node name="backgroundColor" value="Цвят на фона при преглед на цял екран"/>
-			<node name="tappingAction" value="Действие при продължителен натиск по екрана">
+			<node name="longTapAction" value="Действие при продължителен натиск по екрана">
 				<node name="doNothing" value="Не се извършва действие"/>
 				<node name="selectImage" value="Селектиране на изображението"/>
 				<node name="openImageView" value="Включване на преглед на цял екран"/>
@@ -769,6 +820,11 @@
 				<node name="summaryOn" value="Настройвай цвят на изображение според фона"/>
 				<node name="summaryOff" value="Не настройвай цвят на изображение"/>
 			</node>
+		</node>
+		<node name="menu" value="Menu" toBeTranslated="true">
+			<node name="summary" value="Main menu items" toBeTranslated="true"/>
+			<node name="enabled" value="Активиран"/>
+			<node name="disabled" value="Деактивиран"/>
 		</node>
 		<node name="cancelMenu" value="Меню за изход">
 			<node name="summary" value="Списък на действия при натискане на бутона 'Назад'"/>
@@ -811,7 +867,7 @@
 			<node name="summary" value="Версия, контакти"/>
 			<node name="version" value="Версия"/>
 			<node name="site" value="Сайт">
-				<node name="url" value="http://fbreader.org/"/>
+				<node name="url" value="https://fbreader.org/"/>
 			</node>
 			<node name="email" value="Пишете ни">
 				<node name="url" value="mailto:contact@fbreader.org"/>
@@ -838,16 +894,18 @@
 	</node>
 	<node name="dialog">
 		<node name="button">
+			<node name="noThanks" value="No, thanks" toBeTranslated="true"/>
 			<node name="install" value="Инсталирай"/>
 			<node name="update" value="Обнови"/>
 			<node name="skip" value="Пропусни"/>
 			<node name="buy" value="Купи"/>
 			<node name="buyAndDownload" value="Купи и свали"/>
+			<node name="download" value="Свали"/>
 			<node name="continue" value="Продължи"/>
 			<node name="editUrl" value="Редактирай URL"/>
 			<node name="tryAgain" value="Повтори"/>
 			<node name="openBook" value="Чети"/>
-			<node name="editInfo" value="Редактирай"/>
+			<node name="edit" value="Редактирай"/>
 			<node name="reloadInfo" value="Обнови"/>
 			<node name="shareBook" value="Сподели"/>
 			<node name="topup" value="Зареждане на сметка"/>
@@ -869,6 +927,11 @@
 		<node name="backgroundAuthentication">
 			<node name="message" value="Authentication required" toBeTranslated="true"/>
 		</node>
+		<node name="missingDictionary" value="Missing %s" toBeTranslated="true">
+			<node name="install" value="Install %s" toBeTranslated="true"/>
+			<node name="configure" value="Configure translation" toBeTranslated="true"/>
+			<node name="skip" value="Skip" toBeTranslated="true"/>
+		</node>
 		<node name="installDictionary">
 			<node name="title" value="Инсталиране на речник"/>
 			<node name="message" value="Искате ли да инсталирате %s?"/>
@@ -878,14 +941,35 @@
 		</node>
 		<node name="deleteMultipleBookBox">
 			<node name="title" value="Delete books" toBeTranslated="true"/>
-			<node name="message" value="%s book files will be removed irreversibly. Are you sure?" toBeTranslated="true"/>
+			<node name="message" value="%s files will be removed permanently. Are you sure?" toBeTranslated="true"/>
 		</node>
 		<node name="redownloadFileBox">
 			<node name="message" value="Съществуващ файл. Презаписване?"/>
 		</node>
+		<node name="litresUserRegistration">
+			<node name="title" value="Register User" toBeTranslated="true"/>
+			<node name="login" value="Username" toBeTranslated="true"/>
+			<node name="password" value="Password" toBeTranslated="true"/>
+			<node name="confirmPassword" value="Password&#10;confirmation" toBeTranslated="true"/>
+			<node name="email" value="Email" toBeTranslated="true"/>
+		</node>
+		<node name="litresAutoSignIn">
+			<node name="title" value="Signing in" toBeTranslated="true"/>
+			<node name="email" value="Email" toBeTranslated="true"/>
+			<node name="actions">
+				<node name="title" value="Unable to sign in with email&#10;%s" toBeTranslated="true"/>
+				<node name="recover" value="Recover account information" toBeTranslated="true"/>
+				<node name="signIn" value="Sign in manually" toBeTranslated="true"/>
+				<node name="anotherEmail" value="Select another email" toBeTranslated="true"/>
+			</node>
+			<node name="signedIn" value="You are signed in with email address %s." toBeTranslated="true"/>
+			<node name="registrationSuccessful" value="We created a LitRes account for you. Detailed information has been sent to %s." toBeTranslated="true"/>
+			<node name="passwordSent" value="Your account information was sent to %s. Please check your mailbox." toBeTranslated="true"/>
+		</node>
 		<node name="waitMessage">
-			<node name="tryConnect" value="Trying to connect. Please, wait…" toBeTranslated="true"/>
-			<node name="downloadingFile" value="Сваляне на книгата %s"/>
+			<node name="translating" value="Translation in progress…" toBeTranslated="true"/>
+			<node name="tryConnect" value="Trying to connect. Please wait…" toBeTranslated="true"/>
+			<node name="downloadingBook" value="Сваляне на книгата %s"/>
 			<node name="search" value="Търсене. Моля, изчакайте…"/>
 			<node name="loadInfo" value="Зареждане. Моля, изчакайте…"/>
 			<node name="loadingBook" value="Книгата се зарежда. Моля, изчакайте…"/>
@@ -901,7 +985,10 @@
 			<node name="updatingCatalogsList" value="Обновяване на списъка с каталози. Моля, изчакайте…"/>
 			<node name="updatingAccountInformation" value="Обновяване на информацията за акаунта. Моля, изчакайте…"/>
 			<node name="initDRMEngine" value="Инициализиране на DRM енджин. Моля, изчакайте…"/>
-			<node name="acquireLicense" value="Получаване на лиценз. Моля, изчакайте…"/>
+			<node name="acquireLicence" value="Получаване на лиценз. Моля, изчакайте…"/>
+			<node name="registerUser" value="Registering new account. Please wait…" toBeTranslated="true"/>
+			<node name="autoSignIn" value="Signing in. Please wait…" toBeTranslated="true"/>
+			<node name="recoverPassword" value="Recovering password. Please wait…" toBeTranslated="true"/>
 		</node>
 		<node name="networkError">
 			<node name="internalError" value="Грешка на сървъра"/>
@@ -910,11 +997,19 @@
 			<node name="purchaseAlreadyPurchased" value="Книгата е вече купена"/>
 			<node name="bookNotPurchased" value="Книгата още не е купена"/>
 			<node name="downloadLimitExceeded" value="Изчерпан лимит на сваляне"/>
-			<node name="noUserEmail" value="Няма потребител с такъв адрес"/>
+			<node name="noUserForEmail" value="Няма потребител с такъв адрес"/>
 			<node name="unsupportedOperation" value="Операцията не се поддържа"/>
 			<node name="notAnOPDS" value="Това не е OPDS каталог"/>
 			<node name="noRequiredInformation" value="Информацията не е налична в каталога"/>
 			<node name="cacheDirectoryError" value="Невъзможно създаване на кеш директория"/>
+			<node name="usernameAlreadyInUse" value="Username already in use" toBeTranslated="true"/>
+			<node name="usernameNotSpecified" value="Username should not be blank" toBeTranslated="true"/>
+			<node name="passwordNotSpecified" value="Password should not be blank" toBeTranslated="true"/>
+			<node name="passwordsDoNotMatch" value="The two passwords do not match" toBeTranslated="true"/>
+			<node name="emailNotSpecified" value="Email address is blank" toBeTranslated="true"/>
+			<node name="emailAlreadyInUse" value="Email address is already in use" toBeTranslated="true"/>
+			<node name="invalidEMail" value="Invalid email address" toBeTranslated="true"/>
+			<node name="tooManyRegistrations" value="Too many registrations from your IP address;&#10;please try again in a few minutes" toBeTranslated="true"/>
 		</node>
 		<node name="AuthenticationDialog">
 			<node name="title" value="Оторизация"/>
@@ -990,7 +1085,15 @@
 			<node name="permissionDenied" value="Няма достъп"/>
 		</node>
 		<node name="missingPlugin">
-			<node name="title" value="Plugin for %s files is not installed. Install right now?" toBeTranslated="true"/>
+			<node name="title" value="Plugin for %s files is not installed. Install now?" toBeTranslated="true"/>
+		</node>
+		<node name="licensing">
+			<node name="title" value="%s is not licensed" toBeTranslated="true"/>
+			<node name="message" value="Purchase on Google Play now?" toBeTranslated="true"/>
+		</node>
+		<node name="retryLicensing">
+			<node name="title" value="Cannot verify %s licence" toBeTranslated="true"/>
+			<node name="message" value="Try again?" toBeTranslated="true"/>
 		</node>
 	</node>
 	<node name="errorMessage">
@@ -1018,7 +1121,9 @@
 		<node name="emptyNetworkSearchResults" value="Книгата не е намерена"/>
 		<node name="videoServiceNotWorking" value="Видео услугата не е достъпна"/>
 		<node name="videoPlayerNotFound" value="На това устройство няма инсталиран видео плейър"/>
-		<node name="bookIsMissing" value="Book '%s' is not found on the device, sorry" toBeTranslated="true"/>
+		<node name="bookIsMissingTitle" value="Missing book" toBeTranslated="true"/>
+		<node name="bookIsMissing" value="Book '%s' is not found on the device" toBeTranslated="true"/>
+		<node name="downloadFailed" value="Грешка при свалянето"/>
 	</node>
 	<node name="external">
 		<node name="browser" value="Браузер"/>
@@ -1040,7 +1145,7 @@
 		</node>
 	</node>
 	<node name="links">
-		<node name="faqPage" value="http://fbreader.org/faq-page"/>
+		<node name="faqPage" value="https://fbreader.org/faq-page"/>
 	</node>
 	<node name="plugins" value="Инсталиране на допълнителни модули">
 		<node name="noMorePlugins" value="Няма нови модули към момента"/>
@@ -1051,7 +1156,7 @@
 			<node name="summary" value="Чети на глас"/>
 		</node>
 		<node name="calibre_server_integration" value="Calibre connection" toBeTranslated="true">
-			<node name="summary" value="Connect Calibre server in your local network" toBeTranslated="true"/>
+			<node name="summary" value="Connect to Calibre server in your local network" toBeTranslated="true"/>
 		</node>
 		<node name="local_opds_scanner" value="Локален OPDS сканер">
 			<node name="summary" value="Търси книги в локалната мрежа"/>
@@ -1071,6 +1176,9 @@
 		<node name="djvu" value="DjVu" toBeTranslated="true">
 			<node name="summary" value="Read books in DjVu format" toBeTranslated="true"/>
 		</node>
+		<node name="cbr" value="Comic Books" toBeTranslated="true">
+			<node name="summary" value="Read comic books (CBR, CBZ)" toBeTranslated="true"/>
+		</node>
 	</node>
 	<node name="drm">
 		<node name="encryptedSection" value="Криптирана секция"/>
@@ -1083,5 +1191,33 @@
 		<node name="positiveLength" value="Например: 20px, 10pt, 0.8em, 1ex, 120%%"/>
 		<node name="length" value="Например: -2px, 10pt, -0.8em, 1.1ex, -40%%"/>
 		<node name="percent" value="Например: 125%%"/>
+	</node>
+	<node name="duration">
+		<node name="duration1" value="1 second" toBeTranslated="true"/>
+		<node name="duration3" value="3 seconds" toBeTranslated="true"/>
+		<node name="duration5" value="5 seconds" toBeTranslated="true"/>
+		<node name="duration10" value="10 seconds" toBeTranslated="true"/>
+		<node name="duration20" value="20 seconds" toBeTranslated="true"/>
+		<node name="duration40" value="40 seconds" toBeTranslated="true"/>
+		<node name="duration60" value="1 minute" toBeTranslated="true"/>
+		<node name="duration300" value="5 minutes" toBeTranslated="true"/>
+	</node>
+	<node name="dictanErrors">
+		<node name="unknown" value="Unknown error" toBeTranslated="true"/>
+		<node name="noArticle" value="No article found for “%s”" toBeTranslated="true"/>
+		<node name="cannotOpenDictionary" value="Cannot open dictionary" toBeTranslated="true"/>
+		<node name="noDictionarySelected" value="Dictionary not selected; please adjust Dictan settings" toBeTranslated="true"/>
+	</node>
+	<node name="premium" value="FBReader Premium Edition" toBeTranslated="true">
+		<node name="shortTitle" value="FBReader Premium" toBeTranslated="true"/>
+		<node name="conflict" value="Both FBReader and FBReader Premium appear to be installed. Which one would you like to run?" toBeTranslated="true"/>
+	</node>
+	<node name="widget">
+		<node name="simple">
+			<node name="selectIcon" value="Select widget icon" toBeTranslated="true"/>
+			<node name="selectAction" value="Select action" toBeTranslated="true"/>
+			<node name="book" value="Read book" toBeTranslated="true"/>
+			<node name="library" value="Open library" toBeTranslated="true"/>
+		</node>
 	</node>
 </resources>

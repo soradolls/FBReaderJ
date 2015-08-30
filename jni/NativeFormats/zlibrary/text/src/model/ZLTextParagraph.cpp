@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,8 +46,10 @@ short ZLTextStyleEntry::length(Feature featureId, const Metrics &metrics) const 
 		case SIZE_UNIT_PERCENT:
 			switch (featureId) {
 				default:
-				case LENGTH_LEFT_INDENT:
-				case LENGTH_RIGHT_INDENT:
+				case LENGTH_MARGIN_LEFT:
+				case LENGTH_MARGIN_RIGHT:
+				case LENGTH_PADDING_LEFT:
+				case LENGTH_PADDING_RIGHT:
 				case LENGTH_FIRST_LINE_INDENT:
 					return (myLengths[featureId].Size * metrics.FullWidth + 50) / 100;
 				case LENGTH_SPACE_BEFORE:

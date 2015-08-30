@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ public abstract class AndroidNetworkContext extends ZLNetworkContext {
 	@Override
 	public Map<String,String> authenticate(URI uri, String realm, Map<String,String> params) {
 		if (!"https".equalsIgnoreCase(uri.getScheme())) {
-			return Collections.singletonMap("error", "Connection is not secure");
+			return errorMap("Connection is not secure");
 		}
 
 		String authUrl = null;

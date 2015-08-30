@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,18 +21,19 @@ package org.geometerplus.fbreader.formats;
 
 import org.geometerplus.zlibrary.core.encodings.AutoEncodingCollection;
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 
-import org.geometerplus.fbreader.book.Book;
+import org.geometerplus.fbreader.book.AbstractBook;
 import org.geometerplus.fbreader.book.BookUtil;
 
 public abstract class ExternalFormatPlugin extends FormatPlugin {
-	protected ExternalFormatPlugin(String fileType) {
-		super(fileType);
+	protected ExternalFormatPlugin(SystemInfo systemInfo, String fileType) {
+		super(systemInfo, fileType);
 	}
 
 	@Override
-	public Type type() {
-		return Type.EXTERNAL;
+	public int priority() {
+		return 10;
 	}
 
 	public abstract String packageName();
@@ -48,7 +49,7 @@ public abstract class ExternalFormatPlugin extends FormatPlugin {
 	}
 
 	@Override
-	public void detectLanguageAndEncoding(Book book) {
+	public void detectLanguageAndEncoding(AbstractBook book) {
 	}
 
 	@Override
@@ -57,9 +58,14 @@ public abstract class ExternalFormatPlugin extends FormatPlugin {
 	}
 
 	@Override
-	public void readUids(Book book) {
+	public void readUids(AbstractBook book) {
 		if (book.uids().isEmpty()) {
-			book.addUid(BookUtil.createUid(book.File, "SHA-256"));
+			book.addUid(BookUtil.createUid(book, "SHA-256"));
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "ExternalFormatPlugin [" + supportedFileType() + "]";
 	}
 }

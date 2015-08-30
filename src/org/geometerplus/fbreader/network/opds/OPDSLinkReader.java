@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ import java.io.*;
 import org.geometerplus.zlibrary.core.filesystem.ZLPhysicalFile;
 import org.geometerplus.zlibrary.core.network.*;
 
-import org.geometerplus.fbreader.Paths;
 import org.geometerplus.fbreader.network.*;
 
 public class OPDSLinkReader {
@@ -39,10 +38,10 @@ public class OPDSLinkReader {
 		CLEAR
 	};
 
-	public static List<INetworkLink> loadOPDSLinks(ZLNetworkContext nc, CacheMode cacheMode) throws ZLNetworkException {
-		final OPDSLinkXMLReader xmlReader = new OPDSLinkXMLReader();
+	public static List<INetworkLink> loadOPDSLinks(NetworkLibrary library, ZLNetworkContext nc, CacheMode cacheMode) throws ZLNetworkException {
+		final OPDSLinkXMLReader xmlReader = new OPDSLinkXMLReader(library);
 
-		final File dirFile = new File(Paths.networkCacheDirectory());
+		final File dirFile = new File(library.SystemInfo.networkCacheDirectory());
 		if (!dirFile.exists() && !dirFile.mkdirs()) {
 			nc.perform(new ZLNetworkRequest.Get(CATALOGS_URL) {
 				@Override

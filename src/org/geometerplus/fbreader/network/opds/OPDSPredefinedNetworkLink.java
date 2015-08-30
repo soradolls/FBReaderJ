@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,7 @@
 package org.geometerplus.fbreader.network.opds;
 
 import org.geometerplus.fbreader.network.IPredefinedNetworkLink;
+import org.geometerplus.fbreader.network.NetworkLibrary;
 import org.geometerplus.fbreader.network.urlInfo.*;
 
 public class OPDSPredefinedNetworkLink extends OPDSNetworkLink implements IPredefinedNetworkLink {
@@ -27,8 +28,8 @@ public class OPDSPredefinedNetworkLink extends OPDSNetworkLink implements IPrede
 
 	private final String myPredefinedId;
 
-	public OPDSPredefinedNetworkLink(int id, String predefinedId, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
-		super(id, title, summary, language, infos);
+	public OPDSPredefinedNetworkLink(NetworkLibrary library, int id, String predefinedId, String title, String summary, String language, UrlInfoCollection<UrlInfoWithDate> infos) {
+		super(library, id, title, summary, language, infos);
 		myPredefinedId = predefinedId;
 	}
 
@@ -54,6 +55,6 @@ public class OPDSPredefinedNetworkLink extends OPDSNetworkLink implements IPrede
 	}
 
 	public boolean servesHost(String hostname) {
-		return hostname != null && hostname.matches(getShortName());
+		return hostname != null && hostname.indexOf(getShortName()) != -1;
 	}
 }

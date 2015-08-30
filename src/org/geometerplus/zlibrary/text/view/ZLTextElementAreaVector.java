@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,23 +24,25 @@ import java.util.*;
 final class ZLTextElementAreaVector {
 	private final List<ZLTextElementArea> myAreas =
 		Collections.synchronizedList(new ArrayList<ZLTextElementArea>());
-	private final List<ZLTextRegion> myElementRegions =
-		Collections.synchronizedList(new ArrayList<ZLTextRegion>());
+	private final List<ZLTextRegion> myElementRegions = new ArrayList<ZLTextRegion>();
 	private ZLTextRegion myCurrentElementRegion;
 
 	void clear() {
-		myElementRegions.clear();
-		myCurrentElementRegion = null;
-		myAreas.clear();
+		synchronized (myAreas) {
+			myElementRegions.clear();
+			myCurrentElementRegion = null;
+			myAreas.clear();
+		}
 	}
 
 	public int size() {
 		return myAreas.size();
 	}
 
-	// TODO: remove this unsafe method
-	public ZLTextElementArea get(int index) {
-		return myAreas.get(index);
+	public List<ZLTextElementArea> areas() {
+		synchronized (myAreas) {
+			return new ArrayList<ZLTextElementArea>(myAreas);
+		}
 	}
 
 	public ZLTextElementArea getFirstArea() {
@@ -71,6 +73,8 @@ final class ZLTextElementAreaVector {
 					soul = new ZLTextVideoRegionSoul(area, (ZLTextVideoElement)area.Element);
 				} else if (area.Element instanceof ZLTextWord && !((ZLTextWord)area.Element).isASpace()) {
 					soul = new ZLTextWordRegionSoul(area, (ZLTextWord)area.Element);
+				} else if (area.Element instanceof ExtensionElement) {
+					soul = new ExtensionRegionSoul(area, (ExtensionElement)area.Element);
 				}
 				if (soul != null) {
 					myCurrentElementRegion = new ZLTextRegion(soul, myAreas, myAreas.size());
@@ -139,7 +143,7 @@ final class ZLTextElementAreaVector {
 		if (soul == null) {
 			return null;
 		}
-		synchronized (myElementRegions) {
+		synchronized (myAreas) {
 			for (ZLTextRegion region : myElementRegions) {
 				if (soul.equals(region.getSoul())) {
 					return region;
@@ -152,7 +156,7 @@ final class ZLTextElementAreaVector {
 	ZLTextRegion findRegion(int x, int y, int maxDistance, ZLTextRegion.Filter filter) {
 		ZLTextRegion bestRegion = null;
 		int distance = maxDistance + 1;
-		synchronized (myElementRegions) {
+		synchronized (myAreas) {
 			for (ZLTextRegion region : myElementRegions) {
 				if (filter.accepts(region)) {
 					final int d = region.distanceTo(x, y);
@@ -166,8 +170,30 @@ final class ZLTextElementAreaVector {
 		return bestRegion;
 	}
 
+	static class RegionPair {
+		ZLTextRegion Before;
+		ZLTextRegion After;
+	}
+
+	RegionPair findRegionsPair(int x, int y, int columnIndex, ZLTextRegion.Filter filter) {
+		RegionPair pair = new RegionPair();
+		synchronized (myAreas) {
+			for (ZLTextRegion region : myElementRegions) {
+				if (filter.accepts(region)) {
+					if (region.isBefore(x, y, columnIndex)) {
+						pair.Before = region;
+					} else {
+						pair.After = region;
+						break;
+					}
+				}
+			}
+		}
+		return pair;
+	}
+
 	protected ZLTextRegion nextRegion(ZLTextRegion currentRegion, ZLTextView.Direction direction, ZLTextRegion.Filter filter) {
-		synchronized (myElementRegions) {
+		synchronized (myAreas) {
 			if (myElementRegions.isEmpty()) {
 				return null;
 			}

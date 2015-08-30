@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,6 +55,6 @@ public class RecentCatalogListItem extends NetworkCatalogItem {
 		for (int i = 0; i < 5; ++i) {
 			loader.onNewItem(new RecentCatalogItem("Catalog " + i, "Visited ..."));
 		}
-		loader.getTree().confirmAllItems();
+		loader.Tree.confirmAllItems();
 	}
 }

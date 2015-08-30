@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,9 +36,10 @@ import org.geometerplus.zlibrary.ui.android.network.SQLiteCookieDatabase;
 import org.geometerplus.fbreader.book.*;
 import org.geometerplus.fbreader.fbreader.options.SyncOptions;
 import org.geometerplus.fbreader.network.sync.SyncData;
+import org.geometerplus.android.fbreader.api.FBReaderIntents;
 import org.geometerplus.android.fbreader.libraryService.BookCollectionShadow;
 
-public class SyncService extends Service implements IBookCollection.Listener {
+public class SyncService extends Service implements IBookCollection.Listener<Book> {
 	private static void log(String message) {
 		Log.d("FBReader.Sync", message);
 	}
@@ -48,8 +49,9 @@ public class SyncService extends Service implements IBookCollection.Listener {
 		Uploaded(Book.SYNCHRONISED_LABEL),
 		ToBeDeleted(Book.SYNC_DELETED_LABEL),
 		Failure(Book.SYNC_FAILURE_LABEL),
+		AuthenticationError(null),
 		ServerError(null),
-		SyncronizationDisabled(null),
+		SynchronizationDisabled(null),
 		FailedPreviuousTime(null),
 		HashNotComputed(null);
 
@@ -75,26 +77,57 @@ public class SyncService extends Service implements IBookCollection.Listener {
 		new SyncNetworkContext(this, mySyncOptions, mySyncOptions.UploadAllBooks);
 	private final SyncNetworkContext mySyncPositionsContext =
 		new SyncNetworkContext(this, mySyncOptions, mySyncOptions.Positions);
+	private final SyncNetworkContext mySyncBookmarksContext =
+		new SyncNetworkContext(this, mySyncOptions, mySyncOptions.Bookmarks);
 
 	private static volatile Thread ourSynchronizationThread;
 	private static volatile Thread ourQuickSynchronizationThread;
 
 	private final List<Book> myQueue = Collections.synchronizedList(new LinkedList<Book>());
 
-	private final Set<String> myActualHashesFromServer = new HashSet<String>();
-	private final Set<String> myDeletedHashesFromServer = new HashSet<String>();
-	private volatile boolean myHashTablesAreInitialized = false;
+	private static final class Hashes {
+		final Set<String> Actual = new HashSet<String>();
+		final Set<String> Deleted = new HashSet<String>();
+		volatile boolean Initialised = false;
+
+		void clear() {
+			Actual.clear();
+			Deleted.clear();
+			Initialised = false;
+		}
+
+		void addAll(Collection<String> actual, Collection<String> deleted) {
+			if (actual != null) {
+				Actual.addAll(actual);
+			}
+			if (deleted != null) {
+				Deleted.addAll(deleted);
+			}
+		}
+
+		@Override
+		public String toString() {
+			return String.format(
+				"%s/%s HASHES (%s)",
+				Actual.size(),
+				Deleted.size(),
+				Initialised ? "complete" : "partial"
+			);
+		}
+	};
+
+	private final Hashes myHashesFromServer = new Hashes();
 
 	private PendingIntent syncIntent() {
 		return PendingIntent.getService(
-			this, 0, new Intent(this, getClass()).setAction(SyncOperations.Action.SYNC), 0
+			this, 0, new Intent(this, getClass()).setAction(FBReaderIntents.Action.SYNC_SYNC), 0
 		);
 	}
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		final String action = intent != null ? intent.getAction() : SyncOperations.Action.SYNC;
-		if (SyncOperations.Action.START.equals(action)) {
+		final String action = intent != null ? intent.getAction() : FBReaderIntents.Action.SYNC_SYNC;
+		if (FBReaderIntents.Action.SYNC_START.equals(action)) {
 			final AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
 			alarmManager.cancel(syncIntent());
 
@@ -112,23 +145,23 @@ public class SyncService extends Service implements IBookCollection.Listener {
 					alarmManager.setInexactRepeating(
 						AlarmManager.ELAPSED_REALTIME,
 						SystemClock.elapsedRealtime(),
-						AlarmManager.INTERVAL_HALF_HOUR,
+						AlarmManager.INTERVAL_HOUR,
 						syncIntent()
 					);
 					SQLiteCookieDatabase.init(SyncService.this);
 					myCollection.bindToService(SyncService.this, myQuickSynchroniser);
 				}
 			});
-		} else if (SyncOperations.Action.STOP.equals(action)) {
+		} else if (FBReaderIntents.Action.SYNC_STOP.equals(action)) {
 			final AlarmManager alarmManager = (AlarmManager)getSystemService(ALARM_SERVICE);
 			alarmManager.cancel(syncIntent());
 			log("stopped");
 			stopSelf();
-		} else if (SyncOperations.Action.SYNC.equals(action)) {
+		} else if (FBReaderIntents.Action.SYNC_SYNC.equals(action)) {
 			SQLiteCookieDatabase.init(this);
 			myCollection.bindToService(this, myQuickSynchroniser);
 			myCollection.bindToService(this, myStandardSynchroniser);
-		} else if (SyncOperations.Action.QUICK_SYNC.equals(action)) {
+		} else if (FBReaderIntents.Action.SYNC_QUICK_SYNC.equals(action)) {
 			log("quick sync");
 			SQLiteCookieDatabase.init(this);
 			myCollection.bindToService(this, myQuickSynchroniser);
@@ -143,37 +176,42 @@ public class SyncService extends Service implements IBookCollection.Listener {
 	}
 
 	private void addBook(Book book) {
-		if (book.File.getPhysicalFile() != null) {
+		if (BookUtil.fileByBook(book).getPhysicalFile() != null) {
 			myQueue.add(book);
 		}
 	}
 
-	private synchronized void clearHashTables() {
-		myActualHashesFromServer.clear();
-		myDeletedHashesFromServer.clear();
-		myHashTablesAreInitialized = false;
-	}
-
 	private synchronized void initHashTables() {
-		if (myHashTablesAreInitialized) {
+		if (myHashesFromServer.Initialised) {
 			return;
 		}
 
 		try {
 			myBookUploadContext.reloadCookie();
-			myBookUploadContext.perform(new PostRequest("all.hashes", null) {
-				@Override
-				public void processResponse(Object response) {
-					final Map<String,List<String>> map = (Map<String,List<String>>)response;
-					myActualHashesFromServer.addAll(map.get("actual"));
-					myDeletedHashesFromServer.addAll(map.get("deleted"));
-					myHashTablesAreInitialized = true;
-				}
-			});
-			log(String.format("RECEIVED: %s/%s HASHES", myActualHashesFromServer.size(), myDeletedHashesFromServer.size()));
-		} catch (SyncronizationDisabledException e) {
+			final int pageSize = 500;
+			final Map<String,String> data = new HashMap<String,String>();
+			data.put("page_size", String.valueOf(pageSize));
+			for (int pageNo = 0; !myHashesFromServer.Initialised; ++pageNo) {
+				data.put("page_no", String.valueOf(pageNo));
+				myBookUploadContext.perform(new PostRequest("all.hashes.paged", data) {
+					@Override
+					public void processResponse(Object response) {
+						final Map<String,List<String>> map = (Map<String,List<String>>)response;
+						final List<String> actualHashes = map.get("actual");
+						final List<String> deletedHashes = map.get("deleted");
+						myHashesFromServer.addAll(actualHashes, deletedHashes);
+						if (actualHashes.size() < pageSize && deletedHashes.size() < pageSize) {
+							myHashesFromServer.Initialised = true;
+						}
+					}
+				});
+				log("RECEIVED: " + myHashesFromServer.toString());
+			}
+		} catch (SynchronizationDisabledException e) {
+			myHashesFromServer.clear();
 			throw e;
 		} catch (Exception e) {
+			myHashesFromServer.clear();
 			e.printStackTrace();
 		}
 	}
@@ -195,7 +233,7 @@ public class SyncService extends Service implements IBookCollection.Listener {
 
 						final Map<Status,Integer> statusCounts = new HashMap<Status,Integer>();
 						try {
-							clearHashTables();
+							myHashesFromServer.clear();
 							for (BookQuery q = new BookQuery(new Filter.Empty(), 20);; q = q.next()) {
 								final List<Book> books = myCollection.books(q);
 								if (books.isEmpty()) {
@@ -205,14 +243,15 @@ public class SyncService extends Service implements IBookCollection.Listener {
 									addBook(b);
 								}
 							}
-							while (!myQueue.isEmpty()) {
+							Status status = null;
+							while (!myQueue.isEmpty() && status != Status.AuthenticationError) {
 								final Book book = myQueue.remove(0);
 								++count;
-								final Status status = uploadBookToServer(book);
+								status = uploadBookToServer(book);
 								if (status.Label != null) {
 									for (String label : Status.AllLabels) {
 										if (status.Label.equals(label)) {
-											book.addLabel(label);
+											book.addNewLabel(label);
 										} else {
 											book.removeLabel(label);
 										}
@@ -251,6 +290,8 @@ public class SyncService extends Service implements IBookCollection.Listener {
 					public void run() {
 						try {
 							syncPositions();
+							syncCustomShelves();
+							BookmarkSyncUtil.sync(mySyncBookmarksContext, myCollection);
 						} finally {
 							ourQuickSynchronizationThread = null;
 						}
@@ -274,10 +315,14 @@ public class SyncService extends Service implements IBookCollection.Listener {
 	}
 
 	private final class UploadRequest extends ZLNetworkRequest.FileUpload {
+		private final Book myBook;
+		private final String myHash;
 		Status Result = Status.Failure;
 
-		UploadRequest(File file) {
+		UploadRequest(File file, Book book, String hash) {
 			super(SyncOptions.BASE_URL + "app/book.upload", file, false);
+			myBook = book;
+			myHash = hash;
 		}
 
 		@Override
@@ -299,14 +344,20 @@ public class SyncService extends Service implements IBookCollection.Listener {
 			} catch (Exception e) {
 				// ignore
 			}
+
+			if (hashes != null && !hashes.isEmpty()) {
+				myHashesFromServer.addAll(hashes, null);
+				if (!hashes.contains(myHash)) {
+					myCollection.setHash(myBook, hashes.get(0));
+				}
+			}
 			if (error != null) {
 				log("UPLOAD FAILURE: " + error);
 				if ("ALREADY_UPLOADED".equals(code)) {
 					Result = Status.AlreadyUploaded;
 				}
-			} else if (id != null && hashes != null) {
+			} else if (id != null) {
 				log("UPLOADED SUCCESSFULLY: " + id);
-				myActualHashesFromServer.addAll(hashes);
 				Result = Status.Uploaded;
 			} else {
 				log("UNEXPECED RESPONSE: " + response);
@@ -317,26 +368,26 @@ public class SyncService extends Service implements IBookCollection.Listener {
 	private Status uploadBookToServer(Book book) {
 		try {
 			return uploadBookToServerInternal(book);
-		} catch (SyncronizationDisabledException e) {
-			return Status.SyncronizationDisabled;
+		} catch (SynchronizationDisabledException e) {
+			return Status.SynchronizationDisabled;
 		}
 	}
 
 	private Status uploadBookToServerInternal(Book book) {
-		final File file = book.File.getPhysicalFile().javaFile();
-		if (file.length() > 30 * 1024 * 1024) {
-			return Status.Failure;
-		}
+		final File file = BookUtil.fileByBook(book).getPhysicalFile().javaFile();
 		final String hash = myCollection.getHash(book, false);
-		final boolean force = book.labels().contains(Book.SYNC_TOSYNC_LABEL);
+		final boolean force = book.hasLabel(Book.SYNC_TOSYNC_LABEL);
 		if (hash == null) {
 			return Status.HashNotComputed;
-		} else if (myActualHashesFromServer.contains(hash)) {
+		} else if (myHashesFromServer.Actual.contains(hash)) {
 			return Status.AlreadyUploaded;
-		} else if (!force && myDeletedHashesFromServer.contains(hash)) {
+		} else if (!force && myHashesFromServer.Actual.contains(hash)) {
 			return Status.ToBeDeleted;
-		} else if (!force && book.labels().contains(Book.SYNC_FAILURE_LABEL)) {
+		} else if (!force && book.hasLabel(Book.SYNC_FAILURE_LABEL)) {
 			return Status.FailedPreviuousTime;
+		}
+		if (file.length() > 120 * 1024 * 1024) {
+			return Status.Failure;
 		}
 
 		initHashTables();
@@ -351,6 +402,9 @@ public class SyncService extends Service implements IBookCollection.Listener {
 			};
 		try {
 			myBookUploadContext.perform(verificationRequest);
+		} catch (ZLNetworkAuthenticationException e) {
+			e.printStackTrace();
+			return Status.AuthenticationError;
 		} catch (ZLNetworkException e) {
 			e.printStackTrace();
 			return Status.ServerError;
@@ -360,11 +414,14 @@ public class SyncService extends Service implements IBookCollection.Listener {
 			final String status = (String)result.get("status");
 			if ((force && !"found".equals(status)) || "not found".equals(status)) {
 				try {
-					final UploadRequest uploadRequest = new UploadRequest(file);
+					final UploadRequest uploadRequest = new UploadRequest(file, book, hash);
 					uploadRequest.addHeader("Referer", verificationRequest.getURL());
 					uploadRequest.addHeader("X-CSRFToken", csrfToken);
 					myBookUploadContext.perform(uploadRequest);
 					return uploadRequest.Result;
+				} catch (ZLNetworkAuthenticationException e) {
+					e.printStackTrace();
+					return Status.AuthenticationError;
 				} catch (ZLNetworkException e) {
 					e.printStackTrace();
 					return Status.ServerError;
@@ -372,10 +429,10 @@ public class SyncService extends Service implements IBookCollection.Listener {
 			} else {
 				final List<String> hashes = (List<String>)result.get("hashes");
 				if ("found".equals(status)) {
-					myActualHashesFromServer.addAll(hashes);
+					myHashesFromServer.addAll(hashes, null);
 					return Status.AlreadyUploaded;
 				} else /* if ("deleted".equals(status)) */ {
-					myDeletedHashesFromServer.addAll(hashes);
+					myHashesFromServer.addAll(null, hashes);
 					return Status.ToBeDeleted;
 				}
 			}
@@ -393,13 +450,16 @@ public class SyncService extends Service implements IBookCollection.Listener {
 				@Override
 				public void processResponse(Object response) {
 					if (mySyncData.updateFromServer((Map<String,Object>)response)) {
-						sendBroadcast(new Intent(SyncOperations.UPDATED));
+						sendBroadcast(new Intent(FBReaderIntents.Event.SYNC_UPDATED));
 					}
 				}
 			});
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
+	}
+
+	private void syncCustomShelves() {
 	}
 
 	@Override

@@ -8,6 +8,12 @@ import java.util.List;
 
 import org.geometerplus.android.fbreader.libraryService.PositionWithTimestamp;
 
+/**
+ * Warning: this file is an inteface for communication with plugins
+ *    NEVER change method signatures in this file
+ *    NEVER change methods order in this file
+ *    If you need to add new methods, ADD them AT THE END of the interface
+ */
 interface LibraryInterface {
 	void reset(in boolean force);
 
@@ -35,7 +41,7 @@ interface LibraryInterface {
 
 	boolean saveBook(in String book);
 	void removeBook(in String book, in boolean deleteFromDisk);
-	void addBookToRecentList(in String book);
+	void addToRecentlyOpened(in String book);
 
 	String getHash(in String book, in boolean force);
 
@@ -56,4 +62,24 @@ interface LibraryInterface {
 	void saveHighlightingStyle(in String style);
 
 	void rescan(in String path);
+
+	void setHash(in String book, in String hash);
+
+	String getCoverUrl(in String bookPath);
+	String getDescription(in String book);
+
+	List<String> recentlyAddedBooks(in int count);
+	List<String> recentlyOpenedBooks(in int count);
+	void removeFromRecentlyOpened(in String book);
+
+	boolean canRemoveBook(in String book, in boolean deleteFromDisk);
+
+	List<String> formats();
+	boolean setActiveFormats(in List<String> formats);
+
+	List<String> deletedBookmarkUids();
+	void purgeBookmarks(in List<String> uids);
+
+	int getDefaultHighlightingStyleId();
+	void setDefaultHighlightingStyleId(in int styleId);
 }

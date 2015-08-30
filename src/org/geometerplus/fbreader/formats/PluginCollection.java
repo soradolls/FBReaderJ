@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,30 +25,38 @@ import android.os.Build;
 
 import org.geometerplus.zlibrary.core.filesystem.ZLFile;
 import org.geometerplus.zlibrary.core.filetypes.*;
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 
-public class PluginCollection {
+public class PluginCollection implements IFormatPluginCollection {
 	static {
 		System.loadLibrary("NativeFormats-v4");
 	}
 
-	private static PluginCollection ourInstance;
+	private static volatile PluginCollection ourInstance;
 
 	private final List<BuiltinFormatPlugin> myBuiltinPlugins =
 		new LinkedList<BuiltinFormatPlugin>();
 	private final List<ExternalFormatPlugin> myExternalPlugins =
 		new LinkedList<ExternalFormatPlugin>();
 
-	public static PluginCollection Instance() {
+	public static PluginCollection Instance(SystemInfo systemInfo) {
 		if (ourInstance == null) {
-			ourInstance = new PluginCollection();
+			createInstance(systemInfo);
+		}
+		return ourInstance;
+	}
 
-			// This code can not be moved to constructor because nativePlugins() is a native method
-			for (NativeFormatPlugin p : ourInstance.nativePlugins()) {
+	private static synchronized void createInstance(SystemInfo systemInfo) {
+		if (ourInstance == null) {
+			ourInstance = new PluginCollection(systemInfo);
+
+			// This code cannot be moved to constructor
+			// because nativePlugins() is a native method
+			for (NativeFormatPlugin p : ourInstance.nativePlugins(systemInfo)) {
 				ourInstance.myBuiltinPlugins.add(p);
 				System.err.println("native plugin: " + p);
 			}
 		}
-		return ourInstance;
 	}
 
 	public static void deleteInstance() {
@@ -57,10 +65,11 @@ public class PluginCollection {
 		}
 	}
 
-	private PluginCollection() {
+	private PluginCollection(SystemInfo systemInfo) {
 		if (Build.VERSION.SDK_INT >= 8) {
-			myExternalPlugins.add(new DjVuPlugin());
-			myExternalPlugins.add(new PDFPlugin());
+			myExternalPlugins.add(new DjVuPlugin(systemInfo));
+			myExternalPlugins.add(new PDFPlugin(systemInfo));
+			myExternalPlugins.add(new ComicBookPlugin(systemInfo));
 		}
 	}
 
@@ -91,7 +100,23 @@ public class PluginCollection {
 		return null;
 	}
 
-	private native NativeFormatPlugin[] nativePlugins();
+	public List<FormatPlugin> plugins() {
+		final ArrayList<FormatPlugin> all = new ArrayList<FormatPlugin>();
+		all.addAll(myBuiltinPlugins);
+		all.addAll(myExternalPlugins);
+		Collections.sort(all, new Comparator<FormatPlugin>() {
+			public int compare(FormatPlugin p0, FormatPlugin p1) {
+				final int diff = p0.priority() - p1.priority();
+				if (diff != 0) {
+					return diff;
+				}
+				return p0.supportedFileType().compareTo(p1.supportedFileType());
+			}
+		});
+		return all;
+	}
+
+	private native NativeFormatPlugin[] nativePlugins(SystemInfo systemInfo);
 	private native void free();
 
 	protected void finalize() throws Throwable {

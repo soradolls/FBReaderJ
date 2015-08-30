@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,9 @@
 
 package org.geometerplus.zlibrary.ui.android.view;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+
 import android.content.Context;
 import android.graphics.*;
 import android.util.AttributeSet;
@@ -26,28 +29,39 @@ import android.view.*;
 
 import org.geometerplus.zlibrary.core.application.ZLApplication;
 import org.geometerplus.zlibrary.core.application.ZLKeyBindings;
+import org.geometerplus.zlibrary.core.util.SystemInfo;
 import org.geometerplus.zlibrary.core.view.ZLView;
 import org.geometerplus.zlibrary.core.view.ZLViewWidget;
 
+import org.geometerplus.zlibrary.ui.android.view.animation.*;
+
+import org.geometerplus.fbreader.Paths;
 import org.geometerplus.android.fbreader.FBReader;
 
-public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongClickListener {
+public class ZLAndroidWidget extends MainView implements ZLViewWidget, View.OnLongClickListener {
+	public final ExecutorService PrepareService = Executors.newSingleThreadExecutor();
+
 	private final Paint myPaint = new Paint();
-	private final BitmapManager myBitmapManager = new BitmapManager(this);
+
+	private final BitmapManagerImpl myBitmapManager = new BitmapManagerImpl(this);
 	private Bitmap myFooterBitmap;
+	private final SystemInfo mySystemInfo;
 
 	public ZLAndroidWidget(Context context, AttributeSet attrs, int defStyle) {
 		super(context, attrs, defStyle);
+		mySystemInfo = Paths.systemInfo(context);
 		init();
 	}
 
 	public ZLAndroidWidget(Context context, AttributeSet attrs) {
 		super(context, attrs);
+		mySystemInfo = Paths.systemInfo(context);
 		init();
 	}
 
 	public ZLAndroidWidget(Context context) {
 		super(context);
+		mySystemInfo = Paths.systemInfo(context);
 		init();
 	}
 
@@ -83,6 +97,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 //		final int w = getWidth();
 //		final int h = getMainAreaHeight();
 
+		myBitmapManager.setSize(getWidth(), getMainAreaHeight());
 		if (getAnimationProvider().inProgress()) {
 			onDrawInScrolling(canvas);
 		} else {
@@ -107,6 +122,9 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 				case slide:
 					myAnimationProvider = new SlideAnimationProvider(myBitmapManager);
 					break;
+				case slideOldStyle:
+					myAnimationProvider = new SlideOldStyleAnimationProvider(myBitmapManager);
+					break;
 				case shift:
 					myAnimationProvider = new ShiftAnimationProvider(myBitmapManager);
 					break;
@@ -118,9 +136,6 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 	private void onDrawInScrolling(Canvas canvas) {
 		final ZLView view = ZLApplication.Instance().getCurrentView();
 
-//		final int w = getWidth();
-//		final int h = getMainAreaHeight();
-
 		final AnimationProvider animator = getAnimationProvider();
 		final AnimationProvider.Mode oldMode = animator.getMode();
 		animator.doStep();
@@ -129,7 +144,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 			if (animator.getMode().Auto) {
 				postInvalidate();
 			}
-			drawFooter(canvas);
+			drawFooter(canvas, animator);
 		} else {
 			switch (oldMode) {
 				case AnimatedScrollingForward:
@@ -161,7 +176,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 	@Override
 	public void startManualScrolling(int x, int y, ZLView.Direction direction) {
 		final AnimationProvider animator = getAnimationProvider();
-		animator.setup(direction, getWidth(), getMainAreaHeight());
+		animator.setup(direction, getWidth(), getMainAreaHeight(), myColorLevel);
 		animator.startManualScrolling(x, y);
 	}
 
@@ -182,7 +197,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 			return;
 		}
 		final AnimationProvider animator = getAnimationProvider();
-		animator.setup(direction, getWidth(), getMainAreaHeight());
+		animator.setup(direction, getWidth(), getMainAreaHeight(), myColorLevel);
 		animator.startAnimatedScrolling(pageIndex, x, y, speed);
 		if (animator.getMode().Auto) {
 			postInvalidate();
@@ -196,7 +211,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 			return;
 		}
 		final AnimationProvider animator = getAnimationProvider();
-		animator.setup(direction, getWidth(), getMainAreaHeight());
+		animator.setup(direction, getWidth(), getMainAreaHeight(), myColorLevel);
 		animator.startAnimatedScrolling(pageIndex, null, null, speed);
 		if (animator.getMode().Auto) {
 			postInvalidate();
@@ -222,6 +237,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 		}
 
 		final ZLAndroidPaintContext context = new ZLAndroidPaintContext(
+			mySystemInfo,
 			new Canvas(bitmap),
 			new ZLAndroidPaintContext.Geometry(
 				getWidth(),
@@ -236,7 +252,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 		view.paint(context, index);
 	}
 
-	private void drawFooter(Canvas canvas) {
+	private void drawFooter(Canvas canvas, AnimationProvider animator) {
 		final ZLView view = ZLApplication.Instance().getCurrentView();
 		final ZLView.FooterArea footer = view.getFooterArea();
 
@@ -254,6 +270,7 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 			myFooterBitmap = Bitmap.createBitmap(getWidth(), footer.getHeight(), Bitmap.Config.RGB_565);
 		}
 		final ZLAndroidPaintContext context = new ZLAndroidPaintContext(
+			mySystemInfo,
 			new Canvas(myFooterBitmap),
 			new ZLAndroidPaintContext.Geometry(
 				getWidth(),
@@ -266,32 +283,40 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 			view.isScrollbarShown() ? getVerticalScrollbarWidth() : 0
 		);
 		footer.paint(context);
-		canvas.drawBitmap(myFooterBitmap, 0, getHeight() - footer.getHeight(), myPaint);
+		final int voffset = getHeight() - footer.getHeight();
+		if (animator != null) {
+			animator.drawFooterBitmap(canvas, myFooterBitmap, voffset);
+		} else {
+			canvas.drawBitmap(myFooterBitmap, 0, voffset, myPaint);
+		}
 	}
 
 	private void onDrawStatic(final Canvas canvas) {
-		myBitmapManager.setSize(getWidth(), getMainAreaHeight());
 		canvas.drawBitmap(myBitmapManager.getBitmap(ZLView.PageIndex.current), 0, 0, myPaint);
-		drawFooter(canvas);
-		new Thread() {
-			@Override
+		drawFooter(canvas, null);
+		post(new Runnable() {
 			public void run() {
-				final ZLView view = ZLApplication.Instance().getCurrentView();
-				final ZLAndroidPaintContext context = new ZLAndroidPaintContext(
-					canvas,
-					new ZLAndroidPaintContext.Geometry(
-						getWidth(),
-						getHeight(),
-						getWidth(),
-						getMainAreaHeight(),
-						0,
-						0
-					),
-					view.isScrollbarShown() ? getVerticalScrollbarWidth() : 0
-				);
-				view.preparePage(context, ZLView.PageIndex.next);
+				PrepareService.execute(new Runnable() {
+					public void run() {
+						final ZLView view = ZLApplication.Instance().getCurrentView();
+						final ZLAndroidPaintContext context = new ZLAndroidPaintContext(
+							mySystemInfo,
+							canvas,
+							new ZLAndroidPaintContext.Geometry(
+								getWidth(),
+								getHeight(),
+								getWidth(),
+								getMainAreaHeight(),
+								0,
+								0
+							),
+							view.isScrollbarShown() ? getVerticalScrollbarWidth() : 0
+						);
+						view.preparePage(context, ZLView.PageIndex.next);
+					}
+				});
 			}
-		}.start();
+		});
 	}
 
 	@Override
@@ -520,5 +545,10 @@ public class ZLAndroidWidget extends View implements ZLViewWidget, View.OnLongCl
 	private int getMainAreaHeight() {
 		final ZLView.FooterArea footer = ZLApplication.Instance().getCurrentView().getFooterArea();
 		return footer != null ? getHeight() - footer.getHeight() : getHeight();
+	}
+
+	@Override
+	protected void updateColorLevel() {
+		ViewUtil.setColorLevel(myPaint, myColorLevel);
 	}
 }

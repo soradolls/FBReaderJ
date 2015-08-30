@@ -167,10 +167,10 @@ LOCAL_SRC_FILES               := \
 	NativeFormats/fbreader/src/formats/doc/OleUtil.cpp \
 	NativeFormats/fbreader/src/formats/doc/DocInlineImageReader.cpp \
 	NativeFormats/fbreader/src/formats/doc/DocFloatImageReader.cpp \
+	NativeFormats/fbreader/src/formats/doc/DocAnsiConverter.cpp \
 	NativeFormats/fbreader/src/library/Author.cpp \
 	NativeFormats/fbreader/src/library/Book.cpp \
 	NativeFormats/fbreader/src/library/Comparators.cpp \
-	NativeFormats/fbreader/src/library/Library.cpp \
 	NativeFormats/fbreader/src/library/Tag.cpp \
 	NativeFormats/fbreader/src/library/UID.cpp
 

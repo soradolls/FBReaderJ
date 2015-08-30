@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 package org.geometerplus.fbreader.library;
 
 import org.geometerplus.fbreader.book.*;
+import org.geometerplus.fbreader.formats.PluginCollection;
 
 public final class TitleTree extends FilteredTree {
 	public final String Prefix;
 
-	TitleTree(IBookCollection collection, String prefix) {
-		super(collection, new Filter.ByTitlePrefix(prefix));
+	TitleTree(IBookCollection collection, PluginCollection pluginCollection, String prefix) {
+		super(collection, pluginCollection, new Filter.ByTitlePrefix(prefix));
 		Prefix = prefix;
 	}
 

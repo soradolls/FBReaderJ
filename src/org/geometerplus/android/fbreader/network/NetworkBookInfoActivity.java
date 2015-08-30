@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,6 +55,7 @@ import org.geometerplus.android.fbreader.network.action.NetworkBookActions;
 import org.geometerplus.android.fbreader.network.action.OpenCatalogAction;
 import org.geometerplus.android.fbreader.network.auth.ActivityNetworkContext;
 import org.geometerplus.android.fbreader.util.AndroidImageSynchronizer;
+import org.geometerplus.android.util.UIMessageUtil;
 import org.geometerplus.android.util.UIUtil;
 
 public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.ChangeListener {
@@ -94,14 +95,14 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 			}
 		});
 
-		NetworkLibrary.Instance().addChangeListener(this);
+		Util.networkLibrary(this).addChangeListener(this);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 		myNetworkContext.onResume();
-		NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
+		Util.networkLibrary(this).fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
 	}
 
 	@Override
@@ -119,10 +120,10 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 				}
 				myInitializerStarted = true;
 			}
-			final NetworkLibrary library = NetworkLibrary.Instance();
+			final NetworkLibrary library = Util.networkLibrary(NetworkBookInfoActivity.this);
 			if (!library.isInitialized()) {
 				if (SQLiteNetworkDatabase.Instance() == null) {
-					new SQLiteNetworkDatabase(getApplication());
+					new SQLiteNetworkDatabase(getApplication(), library);
 				}
 				try {
 					library.initialize(myNetworkContext);
@@ -135,12 +136,13 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 				if (uri != null && "litres-book".equals(uri.getScheme())) {
 					try {
 						myBook = OPDSBookItem.create(
+							library,
 							myNetworkContext,
 							library.getLinkByStringId("litres.ru"),
 							uri.toString().replace("litres-book://", "http://")
 						);
 					} catch (ZLNetworkException e) {
-						UIUtil.showMessageText(NetworkBookInfoActivity.this, e.getMessage());
+						UIMessageUtil.showMessageText(NetworkBookInfoActivity.this, e.getMessage());
 					}
 					if (myBook != null) {
 						myTree = library.getFakeBookTree(myBook);
@@ -232,7 +234,7 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 							myBook.createRelatedCatalogItem(relatedInfo);
 						if (catalogItem != null) {
 							new OpenCatalogAction(NetworkBookInfoActivity.this, myNetworkContext)
-								.run(NetworkLibrary.Instance().getFakeCatalogTree(catalogItem));
+								.run(Util.networkLibrary(NetworkBookInfoActivity.this).getFakeCatalogTree(catalogItem));
 						} else if (MimeType.TEXT_HTML.equals(relatedInfo.Mime)) {
 							Util.openInBrowser(NetworkBookInfoActivity.this, relatedInfo.Url);
 						}
@@ -335,7 +337,7 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 		final int maxHeight = metrics.heightPixels * 2 / 3;
 		final int maxWidth = maxHeight * 2 / 3;
 		Bitmap coverBitmap = null;
-		final ZLImage cover = NetworkTree.createCover(myBook, false);
+		final ZLImage cover = NetworkTree.createCoverForItem(Util.networkLibrary(this), myBook, false);
 		if (cover != null) {
 			ZLAndroidImageData data = null;
 			final ZLAndroidImageManager mgr = (ZLAndroidImageManager)ZLAndroidImageManager.Instance();
@@ -437,15 +439,13 @@ public class NetworkBookInfoActivity extends Activity implements NetworkLibrary.
 	@Override
 	protected void onStop() {
 		myConnection.unbind(this);
-
-		NetworkLibrary.Instance().removeChangeListener(this);
-
+		Util.networkLibrary(this).removeChangeListener(this);
 		super.onStop();
 	}
 
 	public void onLibraryChanged(NetworkLibrary.ChangeListener.Code code, Object[] params) {
 		if (code == NetworkLibrary.ChangeListener.Code.InitializationFailed) {
-			UIUtil.showMessageText(this, (String)params[0]);
+			UIMessageUtil.showMessageText(this, (String)params[0]);
 			return;
 		}
 

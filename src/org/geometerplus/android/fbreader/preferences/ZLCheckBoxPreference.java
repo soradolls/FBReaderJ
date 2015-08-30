@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,13 @@ public abstract class ZLCheckBoxPreference extends CheckBoxPreference {
 
 		Resource = resource;
 		setTitle(resource.getValue());
-		setSummaryOn(resource.getResource("summaryOn").getValue());
-		setSummaryOff(resource.getResource("summaryOff").getValue());
+		final ZLResource onResource = resource.getResource("summaryOn");
+		if (onResource.hasValue()) {
+			setSummaryOn(onResource.getValue());
+		}
+		final ZLResource offResource = resource.getResource("summaryOff");
+		if (offResource.hasValue()) {
+			setSummaryOff(offResource.getValue());
+		}
 	}
 }

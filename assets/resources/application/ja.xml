@@ -23,6 +23,15 @@
 		<node name="favorites" value="お気に入り">
 			<node name="summary" value="自分で選んだ本"/>
 		</node>
+		<node name="chooseView" value="Choose view" toBeTranslated="true"/>
+		<node name="wideCardsView" value="Wide cards" toBeTranslated="true"/>
+		<node name="smallCardsView" value="Small cards" toBeTranslated="true"/>
+		<node name="tinyCardsView" value="Tiny cards" toBeTranslated="true"/>
+		<node name="coversView" value="Covers" toBeTranslated="true"/>
+		<node name="oldView" value="Classic" toBeTranslated="true"/>
+		<node name="bookshelfView" value="本棚ビュー">
+			<node name="summary" value="現代的な (マテリアルデザインの) ライブラリ表示"/>
+		</node>
 		<node name="found" value="検索結果">
 			<node name="summary" value="検索した文字: %s"/>
 		</node>
@@ -116,6 +125,8 @@
 		<node name="stopSearching" value="検索中止"/>
 		<node name="signIn" value="サインイン"/>
 		<node name="signOut" value="サインアウト (%s)"/>
+		<node name="signUp" value="登録"/>
+		<node name="quickBuy" value="即時購入"/>
 		<node name="topup" value="アカウントにチャージ (現在: %s)"/>
 		<node name="topupTitle" value="アカウントにチャージ"/>
 		<node name="topupViaBrowser" value="ブラウザで開く"/>
@@ -216,11 +227,11 @@
 		</node>
 	</node>
 	<node name="bookDownloader">
-		<node name="tickerSuccess" value="ダウンロードしてあります"/>
-		<node name="tickerError" value="ダウンロードエラー"/>
-		<node name="contentSuccess" value="ダウンロード完了"/>
-		<node name="contentError" value="ダウンロード失敗"/>
-		<node name="downloadingStarted" value="ダウンロードが開始しました"/>
+		<node name="downloadCompleteTicker" value="ダウンロードしてあります"/>
+		<node name="downloadFailedTicker" value="ダウンロードエラー"/>
+		<node name="downloadComplete" value="ダウンロード完了"/>
+		<node name="downloadFailed" value="ダウンロード失敗"/>
+		<node name="downloadStarted" value="ダウンロードが開始しました"/>
 		<node name="alreadyDownloading" value="すでにダウンロード中です"/>
 		<node name="cannotCreateDirectory" value="ディレクトリ %s を作成できません"/>
 		<node name="cannotCreateFile" value="ファイル %s を作成できません"/>
@@ -233,14 +244,23 @@
 	<node name="bookmarksView">
 		<node name="thisBook" value="この本"/>
 		<node name="allBooks" value="すべての本"/>
-		<node name="found" value="検索結果"/>
 		<node name="new" value="しおりを作成"/>
-		<node name="open" value="開く"/>
-		<node name="edit" value="しおりを編集"/>
-		<node name="delete" value="しおりを削除"/>
-		<node name="menu">
-			<node name="search" value="検索"/>
-		</node>
+		<node name="openBook" value="開く"/>
+		<node name="editBookmark" value="しおりを編集"/>
+		<node name="deleteBookmark" value="しおりを削除"/>
+		<node name="search" value="検索"/>
+	</node>
+	<node name="editBookmark">
+		<node name="text" value="メモ"/>
+		<node name="style" value="書式"/>
+		<node name="delete" value="削除"/>
+		<node name="deleteBookmark" value="しおりを削除"/>
+		<node name="saveText" value="メモを保存"/>
+		<node name="editStyle" value="書式を編集"/>
+	</node>
+	<node name="toast">
+		<node name="more" value="続き"/>
+		<node name="offline" value="Offline" toBeTranslated="true"/>
 	</node>
 	<node name="cancelMenu">
 		<node name="library" value="ライブラリを開く"/>
@@ -252,10 +272,6 @@
 		<node name="close" value="FBReader を閉じる"/>
 	</node>
 	<node name="style" value="書式 %s"/>
-	<node name="highlightingStyleMenu">
-		<node name="editStyle" value="書式を編集"/>
-		<node name="deleteBookmark" value="しおりを削除"/>
-	</node>
 	<node name="editStyle">
 		<node name="name" value="書式の名前を変更"/>
 		<node name="invisible" value="透明">
@@ -269,19 +285,20 @@
 		<node name="openInDictionary" value="辞書で開く"/>
 		<node name="quoteFrom" value="引用元: %s"/>
 		<node name="textInBuffer" value="クリップボードにコピーしました:&#10;%s"/>
-		<node name="bookmarkCreated" value="しおりを作成しました:&#10;%s"/>
 		<node name="clearSelection" value="解除"/>
 	</node>
 	<node name="sharing">
-		<node name="sharedFrom" value="共有元: &lt;a href=&quot;http://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
+		<node name="sharedFrom" value="共有元: &lt;a href=&quot;https://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
 	</node>
 	<node name="menu">
+		<node name="openStartScreen" value="スタート画面"/>
 		<node name="preferences" value="設定"/>
 		<node name="bookInfo" value="本の情報"/>
 		<node name="library" value="ライブラリ"/>
 		<node name="toc" value="目次"/>
 		<node name="day" value="日中モード"/>
 		<node name="night" value="夜間モード"/>
+		<node name="dayNight" value="Day/Night" toBeTranslated="true"/>
 		<node name="yotaSwitchToBackScreen" value="背面スクリーンに切替"/>
 		<node name="yotaSwitchToFrontScreen" value="前面スクリーンに切替"/>
 		<node name="networkLibrary" value="ネットワークライブラリ"/>
@@ -308,6 +325,7 @@
 		<node name="screenOrientationReverseLandscape" value="逆ヨコ向き"/>
 		<node name="increaseFont" value="拡大"/>
 		<node name="decreaseFont" value="縮小"/>
+		<node name="changeFontSize" value="Zoom in/out" toBeTranslated="true"/>
 		<node name="toggleFullscreen" value="全画面"/>
 		<node name="bookmarks" value="しおり"/>
 		<node name="help" value="ヘルプ"/>
@@ -325,6 +343,9 @@
 	<node name="Preferences">
 		<node name="sync" value="シンクロ">
 			<node name="summary" value="ブックネットワークの設定"/>
+			<node name="site" value="シンクロについて詳しく読む">
+				<node name="url" value="https://books.fbreader.org/help.html"/>
+			</node>
 			<node name="enable" value="シンクロを有効化">
 				<node name="summaryOn" value="ライブラリを FBReader ブックネットワークサーバとシンクロする"/>
 				<node name="summaryOnWithAccount" value="ライブラリを %s としてシンクロする"/>
@@ -597,6 +618,17 @@
 				</node>
 			</node>
 		</node>
+		<node name="toast" value="Pop-ups" toBeTranslated="true">
+			<node name="summary" value="Footnote windows, etc." toBeTranslated="true"/>
+			<node name="showFootnoteToast" value="リンク先の文章をポップアップで表示">
+				<node name="never" value="しない"/>
+				<node name="footnotesOnly" value="脚注のみ"/>
+				<node name="footnotesAndSuperscripts" value="脚注と上付きリンクのみ"/>
+				<node name="allInternalLinks" value="内部リンクすべて"/>
+			</node>
+			<node name="footnoteToastDuration" value="ポップアップを表示する時間"/>
+			<node name="fontSizePercent" value="Font size (percent from regular text)" toBeTranslated="true"/>
+		</node>
 		<node name="css" value="CSS">
 			<node name="summary" value="本の CSS で定義された値を適用あるいは無視"/>
 			<node name="fontFamily" value="フォント名">
@@ -640,13 +672,16 @@
 				<node name="tileHorizontally" value="画面高さに合わせてからヨコに敷きつめる"/>
 			</node>
 			<node name="selectionBackground" value="選択範囲の背景"/>
-			<node name="selectionForeground" value="選択文字"/>
+			<node name="selectionForeground" value="選択範囲の文字"/>
 			<node name="text" value="標準の文字"/>
 			<node name="hyperlink" value="リンク文字"/>
 			<node name="hyperlinkVisited" value="リンク文字 (訪問済み)"/>
 			<node name="highlightingForeground" value="検索結果の文字"/>
 			<node name="highlightingBackground" value="検索結果の背景"/>
-			<node name="footer" value="フッタ"/>
+			<node name="footerOldStyle" value="フッタ (旧式)"/>
+			<node name="footerBackground" value="フッタ背景"/>
+			<node name="footerForeground" value="フッタ文字"/>
+			<node name="footerForegroundUnread" value="フッタ未読線"/>
 		</node>
 		<node name="margins" value="マージン">
 			<node name="summary" value="本文の余白"/>
@@ -663,9 +698,13 @@
 				<node name="show" value="タテ向きのスライダー"/>
 				<node name="showAsProgress" value="タテ向きの進度メータ"/>
 				<node name="showAsFooter" value="ヨコ向きのフッタ"/>
+				<node name="showAsFooterOldStyle" value="ヨコ向きのフッタ (旧式)"/>
 			</node>
 			<node name="footerHeight" value="フッタ幅"/>
-			<node name="footerColor" value="フッタ色"/>
+			<node name="footerOldStyleColor" value="フッタ (旧式) の色"/>
+			<node name="footerBackgroundColor" value="フッタの背景色"/>
+			<node name="footerForegroundColor" value="フッタの文字色"/>
+			<node name="footerForegroundUnreadColor" value="フッタの未読色"/>
 			<node name="tocMarks" value="目次マークを表示">
 				<node name="summaryOn" value="フッタのバーに目次項目の印を表示する"/>
 				<node name="summaryOff" value="フッタのバーに目次項目の印を表示しない"/>
@@ -707,6 +746,7 @@
 				<node name="none" value="ページめくりのアニメーションなし"/>
 				<node name="curl" value="巻き上げ"/>
 				<node name="slide" value="重ねてスライド"/>
+				<node name="slideOldStyle" value="重ねてスライド (旧式)"/>
 				<node name="shift" value="並べてスライド"/>
 			</node>
 			<node name="animationSpeed" value="アニメーション速度">
@@ -728,14 +768,25 @@
 				<node name="custom" value="独自設定…"/>
 			</node>
 		</node>
-		<node name="dictionary" value="辞書">
-			<node name="summary" value="辞書まわりの設定"/>
-			<node name="dictionary" value="辞書"/>
-			<node name="translator" value="翻訳"/>
+		<node name="dictionary" value="Dictionary &amp; translator" toBeTranslated="true">
+			<node name="summary" value="Translation settings" toBeTranslated="true"/>
+			<node name="dictionary" value="単語を引くとき"/>
+			<node name="translator" value="文を翻訳するとき"/>
+			<node name="translateOffline" value="Google Translate: use offline translator (if installed)" toBeTranslated="true">
+				<node name="always" value="Always" toBeTranslated="true"/>
+				<node name="onError" value="Automatically, if online translation fails" toBeTranslated="true"/>
+				<node name="ask" value="Ask if online translation fails" toBeTranslated="true"/>
+				<node name="never" value="Never" toBeTranslated="true"/>
+			</node>
+			<node name="translationToastDuration" value="How long to show translation popup" toBeTranslated="true"/>
+			<node name="errorToastDuration" value="How long to show error message" toBeTranslated="true"/>
+			<node name="sourceLanguage" value="Translate from" toBeTranslated="true">
+				<node name="detect" value="Automatically detect language" toBeTranslated="true"/>
+			</node>
 			<node name="targetLanguage" value="何語に翻訳">
 				<node name="any" value="すべての言語"/>
 			</node>
-			<node name="tappingAction" value="長押し動作">
+			<node name="longTapAction" value="長押し動作">
 				<node name="doNothing" value="長押しで何もしない"/>
 				<node name="selectSingleWord" value="長押しで単語ひとつ選択"/>
 				<node name="startSelecting" value="長押しで選択開始"/>
@@ -749,7 +800,7 @@
 		<node name="images" value="画像">
 			<node name="summary" value="画像表示の設定"/>
 			<node name="backgroundColor" value="画像閲覧時の背景色"/>
-			<node name="tappingAction" value="長押し動作">
+			<node name="longTapAction" value="長押し動作">
 				<node name="doNothing" value="長押しで何もしない"/>
 				<node name="selectImage" value="長押しで画像を選択"/>
 				<node name="openImageView" value="長押しで画像閲覧"/>
@@ -763,6 +814,11 @@
 				<node name="summaryOn" value="画像の色を背景に合わせて調節"/>
 				<node name="summaryOff" value="画像の色を調節しない"/>
 			</node>
+		</node>
+		<node name="menu" value="Menu" toBeTranslated="true">
+			<node name="summary" value="Main menu items" toBeTranslated="true"/>
+			<node name="enabled" value="有効なカタログ"/>
+			<node name="disabled" value="無効なカタログ"/>
 		</node>
 		<node name="cancelMenu" value="キャンセルメニュー">
 			<node name="summary" value="戻るボタンの動作"/>
@@ -805,7 +861,7 @@
 			<node name="summary" value="バージョン情報や連絡先など"/>
 			<node name="version" value="バージョン"/>
 			<node name="site" value="公式ウェブサイト">
-				<node name="url" value="http://fbreader.org/"/>
+				<node name="url" value="https://fbreader.org/"/>
 			</node>
 			<node name="email" value="メール (英語かロシア語で)">
 				<node name="url" value="mailto:contact@fbreader.org"/>
@@ -832,16 +888,18 @@
 	</node>
 	<node name="dialog">
 		<node name="button">
+			<node name="noThanks" value="No, thanks" toBeTranslated="true"/>
 			<node name="install" value="インストール"/>
 			<node name="update" value="アップデート"/>
 			<node name="skip" value="今回はしない"/>
 			<node name="buy" value="購入"/>
 			<node name="buyAndDownload" value="購入してダウンロード"/>
+			<node name="download" value="ダウンロード"/>
 			<node name="continue" value="続行"/>
 			<node name="editUrl" value="URL 編集"/>
 			<node name="tryAgain" value="もう一度"/>
 			<node name="openBook" value="読む"/>
-			<node name="editInfo" value="編集"/>
+			<node name="edit" value="編集"/>
 			<node name="reloadInfo" value="再読み込み"/>
 			<node name="shareBook" value="共有"/>
 			<node name="topup" value="チャージ"/>
@@ -863,6 +921,11 @@
 		<node name="backgroundAuthentication">
 			<node name="message" value="認証が必要"/>
 		</node>
+		<node name="missingDictionary" value="Missing %s" toBeTranslated="true">
+			<node name="install" value="Install %s" toBeTranslated="true"/>
+			<node name="configure" value="Configure translation" toBeTranslated="true"/>
+			<node name="skip" value="Skip" toBeTranslated="true"/>
+		</node>
 		<node name="installDictionary">
 			<node name="title" value="辞書をインストール"/>
 			<node name="message" value="辞書 %s をインストールしますか?"/>
@@ -877,9 +940,30 @@
 		<node name="redownloadFileBox">
 			<node name="message" value="ファイルがすでに存在します。再ダウンロードしますか?"/>
 		</node>
+		<node name="litresUserRegistration">
+			<node name="title" value="ユーザ登録"/>
+			<node name="login" value="ユーザ名"/>
+			<node name="password" value="パスワード"/>
+			<node name="confirmPassword" value="パスワード&#10;再入力"/>
+			<node name="email" value="メールアドレス"/>
+		</node>
+		<node name="litresAutoSignIn">
+			<node name="title" value="サインイン"/>
+			<node name="email" value="メールアドレス"/>
+			<node name="actions">
+				<node name="title" value="このメールアドレスではサインインできません&#10;%s"/>
+				<node name="recover" value="アカウント情報を忘れた"/>
+				<node name="signIn" value="手動でサインインする"/>
+				<node name="anotherEmail" value="別のメールアドレスを選ぶ"/>
+			</node>
+			<node name="signedIn" value="現在 %s でサインインしています。"/>
+			<node name="registrationSuccessful" value="LitRes アカウントを作成しました。詳細は %s に送信されます。"/>
+			<node name="passwordSent" value="アカウント情報が %s に送信されます。メールボックスをご確認ください。"/>
+		</node>
 		<node name="waitMessage">
+			<node name="translating" value="Translation in progress…" toBeTranslated="true"/>
 			<node name="tryConnect" value="接続しようとしています。しばらくお待ちください…"/>
-			<node name="downloadingFile" value="ダウンロード中です (%s)"/>
+			<node name="downloadingBook" value="ダウンロード中です (%s)"/>
 			<node name="search" value="検索中です。しばらくお待ちください…"/>
 			<node name="loadInfo" value="情報を読み込んでいます。しばらくお待ちください…"/>
 			<node name="loadingBook" value="本を開いています。しばらくお待ちください…"/>
@@ -895,7 +979,10 @@
 			<node name="updatingCatalogsList" value="カタログリストを更新中です。しばらくお待ちください…"/>
 			<node name="updatingAccountInformation" value="アカウント情報を更新中です。しばらくお待ちください…"/>
 			<node name="initDRMEngine" value="DRM エンジンを起動中です。しばらくお待ちください…"/>
-			<node name="acquireLicense" value="ライセンスを取得中です。しばらくお待ちください…"/>
+			<node name="acquireLicence" value="ライセンスを取得中です。しばらくお待ちください…"/>
+			<node name="registerUser" value="新しいアカウントを登録中です。しばらくお待ちください…"/>
+			<node name="autoSignIn" value="サインインしています。しばらくお待ちください…"/>
+			<node name="recoverPassword" value="パスワードを復元中です。しばらくお待ちください…"/>
 		</node>
 		<node name="networkError">
 			<node name="internalError" value="サーバ内部エラー"/>
@@ -904,11 +991,19 @@
 			<node name="purchaseAlreadyPurchased" value="すでに購入済み"/>
 			<node name="bookNotPurchased" value="購入が済んでいません"/>
 			<node name="downloadLimitExceeded" value="ダウンロード制限を超えました"/>
-			<node name="noUserEmail" value="ご指定のメールアドレスでは&#10;ユーザ登録がありません"/>
+			<node name="noUserForEmail" value="ご指定のメールアドレスでは&#10;ユーザ登録がありません"/>
 			<node name="unsupportedOperation" value="未対応な動作"/>
 			<node name="notAnOPDS" value="これは OPDS カタログではありません"/>
 			<node name="noRequiredInformation" value="カタログ中に、必要な情報が欠けています"/>
 			<node name="cacheDirectoryError" value="キャッシュディレクトリを作成できません"/>
+			<node name="usernameAlreadyInUse" value="ユーザ名が既に使われています"/>
+			<node name="usernameNotSpecified" value="ユーザ名は空にできません"/>
+			<node name="passwordNotSpecified" value="パスワードは空にできません"/>
+			<node name="passwordsDoNotMatch" value="入力されたパスワードが一致していません"/>
+			<node name="emailNotSpecified" value="メールアドレスが空です"/>
+			<node name="emailAlreadyInUse" value="メールアドレスが既に使われています"/>
+			<node name="invalidEMail" value="不正なメールアドレスです"/>
+			<node name="tooManyRegistrations" value="お使いの IP からの登録が多すぎます;&#10;数分後に再度お試しください"/>
 		</node>
 		<node name="AuthenticationDialog">
 			<node name="title" value="認証"/>
@@ -986,6 +1081,14 @@
 		<node name="missingPlugin">
 			<node name="title" value="ファイル形式 %s 用のプラグインがインストールされていません。今すぐインストールしますか?"/>
 		</node>
+		<node name="licensing">
+			<node name="title" value="%s is not licensed" toBeTranslated="true"/>
+			<node name="message" value="Purchase on Google Play now?" toBeTranslated="true"/>
+		</node>
+		<node name="retryLicensing">
+			<node name="title" value="Cannot verify %s licence" toBeTranslated="true"/>
+			<node name="message" value="Try again?" toBeTranslated="true"/>
+		</node>
 	</node>
 	<node name="errorMessage">
 		<node name="nativeCodeFailure" value="エラー %s がネイティブコードで ('%s' を読み込み中に) 発生"/>
@@ -1012,7 +1115,9 @@
 		<node name="emptyNetworkSearchResults" value="申し訳ありませんが、本が見当たりません"/>
 		<node name="videoServiceNotWorking" value="申し訳ありませんが、ビデオサービスが利用できません"/>
 		<node name="videoPlayerNotFound" value="このデバイスにはビデオプレイヤがインストールされていないようです"/>
+		<node name="bookIsMissingTitle" value="タイトルなし"/>
 		<node name="bookIsMissing" value="申し訳ありませんが、本体内に '%s' という本が見当たりません"/>
+		<node name="downloadFailed" value="ダウンロード失敗"/>
 	</node>
 	<node name="external">
 		<node name="browser" value="ブラウザ"/>
@@ -1034,7 +1139,7 @@
 		</node>
 	</node>
 	<node name="links">
-		<node name="faqPage" value="http://fbreader.org/faq-page"/>
+		<node name="faqPage" value="https://fbreader.org/faq-page"/>
 	</node>
 	<node name="plugins" value="プラグインをインストール">
 		<node name="noMorePlugins" value="現時点で新しいプラグインはありません。ご了承ください"/>
@@ -1065,6 +1170,9 @@
 		<node name="djvu" value="DjVu">
 			<node name="summary" value="DjVu 形式の本を読む"/>
 		</node>
+		<node name="cbr" value="ComicBooks">
+			<node name="summary" value="CBR, CBZ 形式のマンガを読む"/>
+		</node>
 	</node>
 	<node name="drm">
 		<node name="encryptedSection" value="暗号化されたセクション"/>
@@ -1077,5 +1185,33 @@
 		<node name="positiveLength" value="例: 20px, 10pt, 0.8em, 1ex, 120%%"/>
 		<node name="length" value="例: -2px, 10pt, -0.8em, 1.1ex, -40%%"/>
 		<node name="percent" value="例: 125%%"/>
+	</node>
+	<node name="duration">
+		<node name="duration1" value="1 秒"/>
+		<node name="duration3" value="3 秒"/>
+		<node name="duration5" value="5 秒"/>
+		<node name="duration10" value="10 秒"/>
+		<node name="duration20" value="20 秒"/>
+		<node name="duration40" value="40 seconds" toBeTranslated="true"/>
+		<node name="duration60" value="1 minute" toBeTranslated="true"/>
+		<node name="duration300" value="5 分"/>
+	</node>
+	<node name="dictanErrors">
+		<node name="unknown" value="不明なエラー"/>
+		<node name="noArticle" value="記事がありません: “%s”"/>
+		<node name="cannotOpenDictionary" value="辞書を開くことができません"/>
+		<node name="noDictionarySelected" value="辞書が選択されていません; Dictan で設定を直してください"/>
+	</node>
+	<node name="premium" value="FBReader Premium Edition" toBeTranslated="true">
+		<node name="shortTitle" value="FBReader Premium" toBeTranslated="true"/>
+		<node name="conflict" value="Both FBReader and FBReader Premium appear to be installed. Which one would you like to run?" toBeTranslated="true"/>
+	</node>
+	<node name="widget">
+		<node name="simple">
+			<node name="selectIcon" value="Select widget icon" toBeTranslated="true"/>
+			<node name="selectAction" value="Select action" toBeTranslated="true"/>
+			<node name="book" value="Read book" toBeTranslated="true"/>
+			<node name="library" value="Open library" toBeTranslated="true"/>
+		</node>
 	</node>
 </resources>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,8 +76,12 @@ public class LitResAuthenticationManager extends NetworkAuthenticationManager {
 		}
 	}
 
-	public LitResAuthenticationManager(OPDSNetworkLink link) {
+	private final NetworkLibrary myLibrary;
+
+	public LitResAuthenticationManager(NetworkLibrary library, OPDSNetworkLink link) {
 		super(link);
+
+		myLibrary = library;
 
 		mySidOption = new ZLStringOption(LitResUtil.HOST_NAME, "sid", "");
 		myUserIdOption = new ZLStringOption(LitResUtil.HOST_NAME, "userId", "");
@@ -125,7 +129,7 @@ public class LitResAuthenticationManager extends NetworkAuthenticationManager {
 		changed |= !myPurchasedBooks.isEmpty();
 		myPurchasedBooks.clear();
 		if (changed) {
-			NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SignedIn);
+			myLibrary.fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SignedIn);
 		}
 	}
 
@@ -191,7 +195,7 @@ public class LitResAuthenticationManager extends NetworkAuthenticationManager {
 			request.addPostParameter("login", username);
 			request.addPostParameter("pwd", password);
 			myNetworkContext.perform(request);
-			NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SignedIn);
+			myLibrary.fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SignedIn);
 			initUser(null, xmlReader.Sid, xmlReader.UserId, xmlReader.CanRebill);
 		} catch (ZLNetworkException e) {
 			logOut(false);
@@ -332,8 +336,10 @@ public class LitResAuthenticationManager extends NetworkAuthenticationManager {
 	}
 
 	@Override
-	public synchronized List<NetworkBookItem> purchasedBooks() {
-		return myPurchasedBooks.list();
+	public List<NetworkBookItem> purchasedBooks() {
+		synchronized (InitialisationLock) {
+			return myPurchasedBooks.list();
+		}
 	}
 
 	@Override
@@ -345,8 +351,16 @@ public class LitResAuthenticationManager extends NetworkAuthenticationManager {
 		return !sid.equals(myInitializedDataSid);
 	}
 
+	private final Object InitialisationLock = new Object();
+
 	@Override
 	public void initialize() throws ZLNetworkException {
+		synchronized (InitialisationLock) {
+			initializeInternal();
+		}
+	}
+
+	private void initializeInternal() throws ZLNetworkException {
 		final String sid;
 		final LitResNetworkRequest purchasedBooksRequest;
 		final LitResNetworkRequest accountRequest;
@@ -412,7 +426,7 @@ public class LitResAuthenticationManager extends NetworkAuthenticationManager {
 
 		final LitResNetworkRequest request = new LitResNetworkRequest(
 			LitResUtil.url(Link, query),
-			new LitResXMLReader((OPDSNetworkLink)Link)
+			new LitResXMLReader(myLibrary, (OPDSNetworkLink)Link)
 		);
 		request.addPostParameter("my", "1");
 		request.addPostParameter("sid", sid);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2012-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,7 @@ class FileTypeFB2 extends FileType {
 
 	@Override
 	public String defaultExtension(MimeType mime) {
+		mime = mime.clean();
 		if (MimeType.TYPES_FB2.contains(mime) || MimeType.TEXT_XML.equals(mime)) {
 			return "fb2";
 		}

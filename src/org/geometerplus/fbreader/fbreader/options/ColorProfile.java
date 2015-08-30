@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,8 +38,10 @@ public class ColorProfile {
 			if (size == 0) {
 				ourNames.add(DAY);
 				ourNames.add(NIGHT);
-			} else for (int i = 0; i < size; ++i) {
-				ourNames.add(new ZLStringOption("Colors", "Scheme" + i, "").getValue());
+			} else {
+				for (int i = 0; i < size; ++i) {
+					ourNames.add(new ZLStringOption("Colors", "Scheme" + i, "").getValue());
+				}
 			}
 		}
 		return Collections.unmodifiableList(ourNames);
@@ -67,6 +69,9 @@ public class ColorProfile {
 	public final ZLColorOption HyperlinkTextOption;
 	public final ZLColorOption VisitedHyperlinkTextOption;
 	public final ZLColorOption FooterFillOption;
+	public final ZLColorOption FooterNGBackgroundOption;
+	public final ZLColorOption FooterNGForegroundOption;
+	public final ZLColorOption FooterNGForegroundUnreadOption;
 
 	private ColorProfile(String name, ColorProfile base) {
 		this(name);
@@ -81,6 +86,9 @@ public class ColorProfile {
 		HyperlinkTextOption.setValue(base.HyperlinkTextOption.getValue());
 		VisitedHyperlinkTextOption.setValue(base.VisitedHyperlinkTextOption.getValue());
 		FooterFillOption.setValue(base.FooterFillOption.getValue());
+		FooterNGBackgroundOption.setValue(base.FooterNGBackgroundOption.getValue());
+		FooterNGForegroundOption.setValue(base.FooterNGForegroundOption.getValue());
+		FooterNGForegroundUnreadOption.setValue(base.FooterNGForegroundUnreadOption.getValue());
 	}
 
 	private static ZLColorOption createOption(String profileName, String optionName, int r, int g, int b) {
@@ -103,7 +111,7 @@ public class ColorProfile {
 			SelectionBackgroundOption =
 				createOption(name, "SelectionBackground", 82, 131, 194);
 			SelectionForegroundOption =
-				createOption(name, "SelectionForeground", 255, 255, 220);
+				createNullOption(name, "SelectionForeground");
 			HighlightingBackgroundOption =
 				createOption(name, "Highlighting", 96, 96, 128);
 			HighlightingForegroundOption =
@@ -116,6 +124,12 @@ public class ColorProfile {
 				createOption(name, "VisitedHyperlink", 200, 139, 255);
 			FooterFillOption =
 				createOption(name, "FooterFillOption", 85, 85, 85);
+			FooterNGBackgroundOption =
+				createOption(name, "FooterNGBackgroundOption", 68, 68, 68);
+			FooterNGForegroundOption =
+				createOption(name, "FooterNGForegroundOption", 187, 187, 187);
+			FooterNGForegroundUnreadOption =
+				createOption(name, "FooterNGForegroundUnreadOption", 119, 119, 119);
 		} else {
 			WallpaperOption =
 				new ZLStringOption("Colors", name + ":Wallpaper", "wallpapers/sepia.jpg");
@@ -126,7 +140,7 @@ public class ColorProfile {
 			SelectionBackgroundOption =
 				createOption(name, "SelectionBackground", 82, 131, 194);
 			SelectionForegroundOption =
-				createOption(name, "SelectionForeground", 255, 255, 220);
+				createNullOption(name, "SelectionForeground");
 			HighlightingBackgroundOption =
 				createOption(name, "Highlighting", 255, 192, 128);
 			HighlightingForegroundOption =
@@ -139,6 +153,12 @@ public class ColorProfile {
 				createOption(name, "VisitedHyperlink", 200, 139, 255);
 			FooterFillOption =
 				createOption(name, "FooterFillOption", 170, 170, 170);
+			FooterNGBackgroundOption =
+				createOption(name, "FooterNGBackgroundOption", 68, 68, 68);
+			FooterNGForegroundOption =
+				createOption(name, "FooterNGForegroundOption", 187, 187, 187);
+			FooterNGForegroundUnreadOption =
+				createOption(name, "FooterNGForegroundUnreadOption", 119, 119, 119);
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,20 +25,20 @@ import org.geometerplus.zlibrary.core.fonts.FontManager;
 import org.geometerplus.zlibrary.core.image.ZLImage;
 import org.geometerplus.zlibrary.core.util.*;
 
-public class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
+public final class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
 	private final String myId;
 	private final String myLanguage;
 
-	protected int[] myStartEntryIndices;
-	protected int[] myStartEntryOffsets;
-	protected int[] myParagraphLengths;
-	protected int[] myTextSizes;
-	protected byte[] myParagraphKinds;
+	private int[] myStartEntryIndices;
+	private int[] myStartEntryOffsets;
+	private int[] myParagraphLengths;
+	private int[] myTextSizes;
+	private byte[] myParagraphKinds;
 
-	protected int myParagraphsNumber;
+	private int myParagraphsNumber;
 
-	protected final CharStorage myStorage;
-	protected final Map<String,ZLImage> myImageMap;
+	private final CachedCharStorage myStorage;
+	private final Map<String,ZLImage> myImageMap;
 
 	private ArrayList<ZLTextMark> myMarks;
 
@@ -69,6 +69,9 @@ public class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
 
 		// VideoEntry
 		private ZLVideoEntry myVideoEntry;
+
+		// ExtensionEntry
+		private ExtensionEntry myExtensionEntry;
 
 		// StyleEntry
 		private ZLTextStyleEntry myStyleEntry;
@@ -122,6 +125,10 @@ public class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
 			return myVideoEntry;
 		}
 
+		public ExtensionEntry getExtensionEntry() {
+			return myExtensionEntry;
+		}
+
 		public ZLTextStyleEntry getStyleEntry() {
 			return myStyleEntry;
 		}
@@ -147,14 +154,16 @@ public class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
 				}
 				dataOffset = 0;
 			}
-			byte type = (byte)data[dataOffset];
+			short first = (short)data[dataOffset];
+			byte type = (byte)first;
 			if (type == 0) {
 				data = myStorage.block(++myDataIndex);
 				if (data == null) {
 					return false;
 				}
 				dataOffset = 0;
-				type = (byte)data[0];
+				first = (short)data[0];
+				type = (byte)first;
 			}
 			myType = type;
 			++dataOffset;
@@ -205,9 +214,10 @@ public class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
 				case ZLTextParagraph.Entry.STYLE_CSS:
 				case ZLTextParagraph.Entry.STYLE_OTHER:
 				{
+					final short depth = (short)((first >> 8) & 0xFF);
 					final ZLTextStyleEntry entry =
 						type == ZLTextParagraph.Entry.STYLE_CSS
-							? new ZLTextCSSStyleEntry()
+							? new ZLTextCSSStyleEntry(depth)
 							: new ZLTextOtherStyleEntry();
 
 					final short mask = (short)data[dataOffset++];
@@ -262,6 +272,25 @@ public class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
 					}
 					break;
 				}
+				case ZLTextParagraph.Entry.EXTENSION:
+				{
+					final short kindLength = (short)data[dataOffset++];
+					final String kind = new String(data, dataOffset, kindLength);
+					dataOffset += kindLength;
+
+					final Map<String,String> map = new HashMap<String,String>();
+					final short dataSize = (short)((first >> 8) & 0xFF);
+					for (short i = 0; i < dataSize; ++i) {
+						final short keyLength = (short)data[dataOffset++];
+						final String key = new String(data, dataOffset, keyLength);
+						dataOffset += keyLength;
+						final short valueLength = (short)data[dataOffset++];
+						map.put(key, new String(data, dataOffset, valueLength));
+						dataOffset += valueLength;
+					}
+					myExtensionEntry = new ExtensionEntry(kind, map);
+					break;
+				}
 			}
 			++myCounter;
 			myDataOffset = dataOffset;
@@ -269,26 +298,30 @@ public class ZLTextPlainModel implements ZLTextModel, ZLTextStyleEntry.Feature {
 		}
 	}
 
-	protected ZLTextPlainModel(
+	public ZLTextPlainModel(
 		String id,
 		String language,
+		int paragraphsNumber,
 		int[] entryIndices,
 		int[] entryOffsets,
-		int[] paragraphLenghts,
+		int[] paragraphLengths,
 		int[] textSizes,
 		byte[] paragraphKinds,
-		CharStorage storage,
+		String directoryName,
+		String fileExtension,
+		int blocksNumber,
 		Map<String,ZLImage> imageMap,
 		FontManager fontManager
 	) {
 		myId = id;
 		myLanguage = language;
+		myParagraphsNumber = paragraphsNumber;
 		myStartEntryIndices = entryIndices;
 		myStartEntryOffsets = entryOffsets;
-		myParagraphLengths = paragraphLenghts;
+		myParagraphLengths = paragraphLengths;
 		myTextSizes = textSizes;
 		myParagraphKinds = paragraphKinds;
-		myStorage = storage;
+		myStorage = new CachedCharStorage(directoryName, fileExtension, blocksNumber);
 		myImageMap = imageMap;
 		myFontManager = fontManager;
 	}

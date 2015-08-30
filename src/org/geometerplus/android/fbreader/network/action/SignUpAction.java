@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,17 @@
 package org.geometerplus.android.fbreader.network.action;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.net.Uri;
 
 import org.geometerplus.fbreader.network.INetworkLink;
 import org.geometerplus.fbreader.network.NetworkTree;
-import org.geometerplus.fbreader.network.tree.NetworkCatalogRootTree;
 import org.geometerplus.fbreader.network.authentication.NetworkAuthenticationManager;
+import org.geometerplus.fbreader.network.tree.NetworkCatalogRootTree;
+import org.geometerplus.fbreader.network.urlInfo.UrlInfo;
 
 import org.geometerplus.android.fbreader.network.Util;
+import org.geometerplus.android.fbreader.network.litres.UserRegistrationActivity;
 
 public class SignUpAction extends Action {
 	public SignUpAction(Activity activity) {
@@ -39,16 +43,18 @@ public class SignUpAction extends Action {
 			return false;
 		}
 
-		final INetworkLink link = tree.getLink();
-		final NetworkAuthenticationManager mgr = link.authenticationManager();
-		return
-			mgr != null &&
-			!mgr.mayBeAuthorised(false) &&
-			Util.isRegistrationSupported(myActivity, link);
+		final NetworkAuthenticationManager mgr = tree.getLink().authenticationManager();
+		return mgr != null && !mgr.mayBeAuthorised(false);
 	}
 
 	@Override
 	public void run(NetworkTree tree) {
-		Util.runRegistrationDialog(myActivity, tree.getLink());
+		final INetworkLink link = tree.getLink();
+		try {
+			myActivity.startActivity(Util.authorisationIntent(
+				link, myActivity, UserRegistrationActivity.class
+			));
+		} catch (ActivityNotFoundException e) {
+		}
 	}
 }

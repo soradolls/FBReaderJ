@@ -4,8 +4,7 @@
 <!-- Updated by Ingolf Kübler 2011/06/26 -->
 <!-- Updated by Ingolf Kübler 2011/07/03 -->
 <!-- Updated by Ingolf Kübler 2012/07/01 -->
-<!-- Updated by Matthias Dill 2014/06/10 -->
-<!-- Updated by Matthias Dill 2014/08/11 -->
+<!-- modified by Matthias Dill 2014-2015 -->
 <resources>
 	<node name="library" value="FBReader Bibliothek">
 		<node name="unknownAuthor" value="Unbekannte Autoren"/>
@@ -28,6 +27,15 @@
 		</node>
 		<node name="favorites" value="Favoriten">
 			<node name="summary" value="Meine Lieblingsbücher"/>
+		</node>
+		<node name="chooseView" value="Ansicht wählen"/>
+		<node name="wideCardsView" value="Breite Karten"/>
+		<node name="smallCardsView" value="Schmale Karten"/>
+		<node name="tinyCardsView" value="Winzige Karten"/>
+		<node name="coversView" value="Titelseiten"/>
+		<node name="oldView" value="Klassisch"/>
+		<node name="bookshelfView" value="Wechseln zur Buchregalansicht">
+			<node name="summary" value="Moderne (Material Design) Bibliotheksansicht"/>
 		</node>
 		<node name="found" value="Gefunden">
 			<node name="summary" value="Suchergebnisse für: %s"/>
@@ -122,6 +130,8 @@
 		<node name="stopSearching" value="Suchen stoppen"/>
 		<node name="signIn" value="Anmelden"/>
 		<node name="signOut" value="Abmelden (%s)"/>
+		<node name="signUp" value="Registrieren"/>
+		<node name="quickBuy" value="Schnellkauf"/>
 		<node name="topup" value="Konto aufladen (derzeit: %s)"/>
 		<node name="topupTitle" value="Konto aufladen"/>
 		<node name="topupViaBrowser" value="Seite im Browser öffnen"/>
@@ -222,11 +232,11 @@
 		</node>
 	</node>
 	<node name="bookDownloader">
-		<node name="tickerSuccess" value="Buch wurde herunter geladen"/>
-		<node name="tickerError" value="Fehler beim Herunterladen des Buches"/>
-		<node name="contentSuccess" value="Download abgeschlossen"/>
-		<node name="contentError" value="Download fehlgeschlagen"/>
-		<node name="downloadingStarted" value="Download des Buches wurde gestartet"/>
+		<node name="downloadCompleteTicker" value="Buch wurde herunter geladen"/>
+		<node name="downloadFailedTicker" value="Fehler beim Herunterladen des Buches"/>
+		<node name="downloadComplete" value="Download abgeschlossen"/>
+		<node name="downloadFailed" value="Download fehlgeschlagen"/>
+		<node name="downloadStarted" value="Download des Buches wurde gestartet"/>
 		<node name="alreadyDownloading" value="Das Buch wird schon geladen"/>
 		<node name="cannotCreateDirectory" value="Das Verzeichnis %s kann nicht erstellt werden"/>
 		<node name="cannotCreateFile" value="Die Datei %s kann nicht erstellt werden"/>
@@ -239,14 +249,23 @@
 	<node name="bookmarksView">
 		<node name="thisBook" value="Dieses Buch"/>
 		<node name="allBooks" value="Alle Bücher"/>
-		<node name="found" value="Gefunden"/>
 		<node name="new" value="Neues Lesezeichen"/>
-		<node name="open" value="Zu dem Lesezeichen gehen"/>
-		<node name="edit" value="Lesezeichen bearbeiten"/>
-		<node name="delete" value="Lesezeichen löschen"/>
-		<node name="menu">
-			<node name="search" value="Suchen"/>
-		</node>
+		<node name="openBook" value="Zu dem Lesezeichen gehen"/>
+		<node name="editBookmark" value="Lesezeichen bearbeiten"/>
+		<node name="deleteBookmark" value="Lesezeichen löschen"/>
+		<node name="search" value="Suchen"/>
+	</node>
+	<node name="editBookmark">
+		<node name="text" value="Text"/>
+		<node name="style" value="Stil"/>
+		<node name="delete" value="Löschen"/>
+		<node name="deleteBookmark" value="Lesezeichen löschen"/>
+		<node name="saveText" value="Text speichern"/>
+		<node name="editStyle" value="Stil bearbeiten…"/>
+	</node>
+	<node name="toast">
+		<node name="more" value="Mehr"/>
+		<node name="offline" value="Offline" toBeTranslated="true"/>
 	</node>
 	<node name="cancelMenu">
 		<node name="library" value="Bibliothek öffnen"/>
@@ -258,10 +277,6 @@
 		<node name="close" value="FBReader schließen"/>
 	</node>
 	<node name="style" value="Stil %s"/>
-	<node name="highlightingStyleMenu">
-		<node name="editStyle" value="Stil bearbeiten…"/>
-		<node name="deleteBookmark" value="Lesezeichen löschen"/>
-	</node>
 	<node name="editStyle">
 		<node name="name" value="Stilname"/>
 		<node name="invisible" value="Unsichtbar">
@@ -275,19 +290,20 @@
 		<node name="openInDictionary" value="Im Wörterbuch nachschlagen"/>
 		<node name="quoteFrom" value="Zitat aus '%s'"/>
 		<node name="textInBuffer" value="In die Zwischenablage kopiert:&#10;%s"/>
-		<node name="bookmarkCreated" value="Lesezeichen erstellt:&#10;%s"/>
 		<node name="clearSelection" value="Auswahl aufheben"/>
 	</node>
 	<node name="sharing">
-		<node name="sharedFrom" value="Bereitgestellt von &lt;a href=&quot;http://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
+		<node name="sharedFrom" value="Bereitgestellt von &lt;a href=&quot;https://fbreader.org/&quot;&gt;FBReader&lt;/a&gt;"/>
 	</node>
 	<node name="menu">
+		<node name="openStartScreen" value="Startbildschirm"/>
 		<node name="preferences" value="Einstellungen"/>
 		<node name="bookInfo" value="Buchinformation"/>
 		<node name="library" value="Bibliothek"/>
 		<node name="toc" value="Inhaltsverzeichnis"/>
 		<node name="day" value="Tag Modus"/>
 		<node name="night" value="Nacht Modus"/>
+		<node name="dayNight" value="Day/Night" toBeTranslated="true"/>
 		<node name="yotaSwitchToBackScreen" value="Auf den Rückseitenbildschirm umschalten"/>
 		<node name="yotaSwitchToFrontScreen" value="Auf den Frontseitenbildschirm umschalten"/>
 		<node name="networkLibrary" value="Netzwerk-Bibliothek"/>
@@ -314,6 +330,7 @@
 		<node name="screenOrientationReverseLandscape" value="Querformat kopfüber"/>
 		<node name="increaseFont" value="Schriftgröße erhöhen"/>
 		<node name="decreaseFont" value="Schriftgröße verringern"/>
+		<node name="changeFontSize" value="Zoom in/out" toBeTranslated="true"/>
 		<node name="toggleFullscreen" value="Vollbildmodus umschalten"/>
 		<node name="bookmarks" value="Lesezeichen"/>
 		<node name="help" value="Hilfe"/>
@@ -331,6 +348,9 @@
 	<node name="Preferences">
 		<node name="sync" value="Synchronisation">
 			<node name="summary" value="Bücher Netzwerk Einstellungen"/>
+			<node name="site" value="Mehr über die Synchronisation erfahren">
+				<node name="url" value="https://books.fbreader.org/help.html"/>
+			</node>
 			<node name="enable" value="Synchronisation aktivieren">
 				<node name="summaryOn" value="Synchronisiere meine Bibliothek mit dem FBReader Bücher Netzwerkserver"/>
 				<node name="summaryOnWithAccount" value="Synchronisiere meine Bibliothek als %s"/>
@@ -603,6 +623,17 @@
 				</node>
 			</node>
 		</node>
+		<node name="toast" value="Popups">
+			<node name="summary" value="Fußnoten, usw."/>
+			<node name="showFootnoteToast" value="Zeige verknüpften Text in Popups">
+				<node name="never" value="Niemals"/>
+				<node name="footnotesOnly" value="Nur für Fußnoten"/>
+				<node name="footnotesAndSuperscripts" value="Für Fußnoten und hochgestellte Verknüfungen"/>
+				<node name="allInternalLinks" value="Für alle internen Verknüpfungen"/>
+			</node>
+			<node name="footnoteToastDuration" value="Anzeigedauer für Popups"/>
+			<node name="fontSizePercent" value="Schriftgröße (Prozent von normalem Text)"/>
+		</node>
 		<node name="css" value="CSS">
 			<node name="summary" value="Cascading Style Sheets Einstellungen"/>
 			<node name="fontFamily" value="Schriftartfamilie">
@@ -650,9 +681,12 @@
 			<node name="text" value="Normaler Text"/>
 			<node name="hyperlink" value="Hyperlinks"/>
 			<node name="hyperlinkVisited" value="Besuchte Hyperlinks"/>
-			<node name="highlightingForeground" value="Search results" toBeTranslated="true"/>
+			<node name="highlightingForeground" value="Suchergebnisse"/>
 			<node name="highlightingBackground" value="Hintergrund der Suchergebnisse"/>
-			<node name="footer" value="Fußzeile"/>
+			<node name="footerOldStyle" value="Fußzeile (alte Art)"/>
+			<node name="footerBackground" value="Hintergrund der Fußzeile"/>
+			<node name="footerForeground" value="Fußzeile"/>
+			<node name="footerForegroundUnread" value="Fußzeile (ungelesen)"/>
 		</node>
 		<node name="margins" value="Ränder">
 			<node name="summary" value="Seitenränder festlegen"/>
@@ -669,9 +703,13 @@
 				<node name="show" value="Vertikal"/>
 				<node name="showAsProgress" value="Vertikal progressiv"/>
 				<node name="showAsFooter" value="Horizontal"/>
+				<node name="showAsFooterOldStyle" value="Horizontal (alte Art)"/>
 			</node>
 			<node name="footerHeight" value="Höhe der Fußleiste"/>
-			<node name="footerColor" value="Farbe der Fußleiste"/>
+			<node name="footerOldStyleColor" value="Farbe der Fußleiste (alte Art)"/>
+			<node name="footerBackgroundColor" value="Hintergrund der Fußleiste"/>
+			<node name="footerForegroundColor" value="Farbe der Fußleiste"/>
+			<node name="footerForegroundUnreadColor" value="Farbe der Fußleiste (ungelesen)"/>
 			<node name="tocMarks" value="Kapitelmarken anzeigen">
 				<node name="summaryOn" value="Kapitelmarken in der Fußzeile anzeigen"/>
 				<node name="summaryOff" value="Keine Kapitelmarken in der Fußzeile anzeigen"/>
@@ -713,6 +751,7 @@
 				<node name="none" value="Ohne Animation umblättern"/>
 				<node name="curl" value="Blättern"/>
 				<node name="slide" value="Gleiten"/>
+				<node name="slideOldStyle" value="Gleiten (alte Art)"/>
 				<node name="shift" value="Schieben"/>
 			</node>
 			<node name="animationSpeed" value="Animationsgeschwindigkeit">
@@ -736,12 +775,23 @@
 		</node>
 		<node name="dictionary" value="Wörterbuch">
 			<node name="summary" value="Wörterbucheinstellungen"/>
-			<node name="dictionary" value="Wörterbuch"/>
-			<node name="translator" value="Übersetzer"/>
+			<node name="dictionary" value="Einzelne Wörter nachschlagen in"/>
+			<node name="translator" value="Komplette Passagen übersetzen mit"/>
+			<node name="translateOffline" value="Google Translate: use offline translator (if installed)" toBeTranslated="true">
+				<node name="always" value="Always" toBeTranslated="true"/>
+				<node name="onError" value="Automatically, if online translation fails" toBeTranslated="true"/>
+				<node name="ask" value="Ask if online translation fails" toBeTranslated="true"/>
+				<node name="never" value="Never" toBeTranslated="true"/>
+			</node>
+			<node name="translationToastDuration" value="Anzeigedauer des Übersetzungs-Popups"/>
+			<node name="errorToastDuration" value="Anzeigedauer des Fehler-Popups"/>
+			<node name="sourceLanguage" value="Übersetze von">
+				<node name="detect" value="Sprache automatisch erkennen"/>
+			</node>
 			<node name="targetLanguage" value="Übersetzen in">
 				<node name="any" value="Alle Sprachen"/>
 			</node>
-			<node name="tappingAction" value="Aktion beim langen Antippen">
+			<node name="longTapAction" value="Aktion beim langen Antippen">
 				<node name="doNothing" value="Langes Antippen bewirkt nichts"/>
 				<node name="selectSingleWord" value="Langes Antippen selektiert ein einzelnes Wort"/>
 				<node name="startSelecting" value="Langes Antippen initiiert den Markierungsmodus"/>
@@ -755,7 +805,7 @@
 		<node name="images" value="Bilder">
 			<node name="summary" value="Einstellung für die Anzeige von Bildern"/>
 			<node name="backgroundColor" value="Hintergrundfarbe für Bilder"/>
-			<node name="tappingAction" value="Aktion bei langem Antippen">
+			<node name="longTapAction" value="Aktion bei langem Antippen">
 				<node name="doNothing" value="Langes Antippen bewirkt nichts"/>
 				<node name="selectImage" value="Langes Antippen selektiert das Bild"/>
 				<node name="openImageView" value="Langes Antippen öffnet die Bildanzeige"/>
@@ -769,6 +819,11 @@
 				<node name="summaryOn" value="Bildfarbe an Hintergrund anpassen"/>
 				<node name="summaryOff" value="Bildfarbe nicht anpassen"/>
 			</node>
+		</node>
+		<node name="menu" value="Menu" toBeTranslated="true">
+			<node name="summary" value="Main menu items" toBeTranslated="true"/>
+			<node name="enabled" value="Aktiviert"/>
+			<node name="disabled" value="Deaktiviert"/>
 		</node>
 		<node name="cancelMenu" value="Zurück-Menü">
 			<node name="summary" value="Aktion beim Drücken der Zurück-Taste"/>
@@ -811,7 +866,7 @@
 			<node name="summary" value="Versionsinformation, Kontakt"/>
 			<node name="version" value="Version"/>
 			<node name="site" value="Homepage">
-				<node name="url" value="http://fbreader.org/"/>
+				<node name="url" value="https://fbreader.org/"/>
 			</node>
 			<node name="email" value="E-Mail">
 				<node name="url" value="mailto:contact@fbreader.org"/>
@@ -838,16 +893,18 @@
 	</node>
 	<node name="dialog">
 		<node name="button">
+			<node name="noThanks" value="Nein, Danke"/>
 			<node name="install" value="Installieren"/>
 			<node name="update" value="Aktualisierung"/>
 			<node name="skip" value="Überspringen"/>
 			<node name="buy" value="Kaufen"/>
 			<node name="buyAndDownload" value="Kaufen und herunterladen"/>
+			<node name="download" value="Download"/>
 			<node name="continue" value="Fortsetzen"/>
 			<node name="editUrl" value="URL bearbeiten"/>
 			<node name="tryAgain" value="Erneut versuchen"/>
 			<node name="openBook" value="Lesen"/>
-			<node name="editInfo" value="Bearbeiten"/>
+			<node name="edit" value="Bearbeiten"/>
 			<node name="reloadInfo" value="Aktualisieren"/>
 			<node name="shareBook" value="Teilen"/>
 			<node name="topup" value="Konto aufladen"/>
@@ -869,6 +926,11 @@
 		<node name="backgroundAuthentication">
 			<node name="message" value="Anmeldedaten benötigt"/>
 		</node>
+		<node name="missingDictionary" value="Fehlend %s">
+			<node name="install" value="Installieren %s"/>
+			<node name="configure" value="Einstellungen"/>
+			<node name="skip" value="Überspringen"/>
+		</node>
 		<node name="installDictionary">
 			<node name="title" value="Installationsverzeichnis"/>
 			<node name="message" value="Möchten Sie %s installieren?"/>
@@ -883,9 +945,30 @@
 		<node name="redownloadFileBox">
 			<node name="message" value="Datei existiert bereits. Erneut herunterladen?"/>
 		</node>
+		<node name="litresUserRegistration">
+			<node name="title" value="Registrierter Benutzer"/>
+			<node name="login" value="Benutzername"/>
+			<node name="password" value="Passwort"/>
+			<node name="confirmPassword" value="Passwortbestätigung"/>
+			<node name="email" value="E-Mail"/>
+		</node>
+		<node name="litresAutoSignIn">
+			<node name="title" value="Anmelden"/>
+			<node name="email" value="E-Mail"/>
+			<node name="actions">
+				<node name="title" value="Fehler beim Anmelden mit der E-Mail&#10;%s Adresse"/>
+				<node name="recover" value="Konto Informationen wiederherstellen"/>
+				<node name="signIn" value="Manuell anmelden"/>
+				<node name="anotherEmail" value="Eine andere E-Mail Adresse auswählen"/>
+			</node>
+			<node name="signedIn" value="Sie sind mit der E-Mail Address %s angemeldet."/>
+			<node name="registrationSuccessful" value="Es wurde für Sie ein LitRes Konto angelegt. Weiter Informationen wurden an %s gesendet."/>
+			<node name="passwordSent" value="Ihre Konto Informationen wurden an %s gesendet. Bitte prüfen Sie ihr Postfach"/>
+		</node>
 		<node name="waitMessage">
+			<node name="translating" value="Übersetzung. Bitte warten…"/>
 			<node name="tryConnect" value="Verbindungsversuch. Bitte warten…"/>
-			<node name="downloadingFile" value="Buch wird geladen %s"/>
+			<node name="downloadingBook" value="Buch wird geladen %s"/>
 			<node name="search" value="Suche läuft. Bitte warten…"/>
 			<node name="loadInfo" value="Information wird geladen. Bitte warten…"/>
 			<node name="loadingBook" value="Buch wird geladen. Bitte warten…"/>
@@ -901,7 +984,10 @@
 			<node name="updatingCatalogsList" value="Katalogliste wird aktualisiert. Bitte warten…"/>
 			<node name="updatingAccountInformation" value="Konto-Information wird aktualisiert. Bitte waren…"/>
 			<node name="initDRMEngine" value="Initialisiere das Rechtemanagement. Bitte warten…"/>
-			<node name="acquireLicense" value="Empfange Lizenz. Bitte warten…"/>
+			<node name="acquireLicence" value="Empfange Lizenz. Bitte warten…"/>
+			<node name="registerUser" value="Neues Benutzerkonto wird registriert. Bitte warten…"/>
+			<node name="autoSignIn" value="Anmeldung. Bitte warten…"/>
+			<node name="recoverPassword" value="Passwortwiederherstellung. Bitte warten…"/>
 		</node>
 		<node name="networkError">
 			<node name="internalError" value="Interner Server-Fehler"/>
@@ -910,11 +996,19 @@
 			<node name="purchaseAlreadyPurchased" value="Das Buch wurde bereits gekauft."/>
 			<node name="bookNotPurchased" value="Das Buch wurde nicht gekauft."/>
 			<node name="downloadLimitExceeded" value="Download-Limit ist überschritten."/>
-			<node name="noUserEmail" value="Es gibt keinen registrierten Nutzer mit dieser Email-Adresse&#10;"/>
+			<node name="noUserForEmail" value="Es gibt keinen registrierten Nutzer mit dieser E-Mail-Adresse&#10;"/>
 			<node name="unsupportedOperation" value="Operation wird nicht unterstützt."/>
 			<node name="notAnOPDS" value="Dies ist kein OPDS Katalog."/>
 			<node name="noRequiredInformation" value="Die benötigte Information ist in dem Katalog nicht spezifiziert."/>
 			<node name="cacheDirectoryError" value="Es kann kein Cache-Verzeichnis angelegt werden."/>
+			<node name="usernameAlreadyInUse" value="Benutzername wird bereits verwendet."/>
+			<node name="usernameNotSpecified" value="Bitte den Benutzernamen eingeben."/>
+			<node name="passwordNotSpecified" value="Bitte ein Passwort eingeben."/>
+			<node name="passwordsDoNotMatch" value="Passwort und Passwortbestätigung müssen identisch sein."/>
+			<node name="emailNotSpecified" value="Bitte eine E-Mail-Adresse eingeben."/>
+			<node name="emailAlreadyInUse" value="Die E-Mail-Adresse ist bereits verwendet."/>
+			<node name="invalidEMail" value="Ungültige E-Mail-Adresse."/>
+			<node name="tooManyRegistrations" value="Zu viele Registrierungen von Ihrer IP-Adresse.;&#10;Bitte in einigen Minuten noch einmal versuchen."/>
 		</node>
 		<node name="AuthenticationDialog">
 			<node name="title" value="Authentifizierung"/>
@@ -992,6 +1086,14 @@
 		<node name="missingPlugin">
 			<node name="title" value="Plugin für %s Dateien ist nicht installiert. Jetzt installieren?"/>
 		</node>
+		<node name="licensing">
+			<node name="title" value="%s ist nicht lizenziert"/>
+			<node name="message" value="Jetzt im Google Play Store kaufen?"/>
+		</node>
+		<node name="retryLicensing">
+			<node name="title" value="Die Lizenz %s kann nicht überprüft werden"/>
+			<node name="message" value="Wieder versuchen"/>
+		</node>
 	</node>
 	<node name="errorMessage">
 		<node name="nativeCodeFailure" value="Fehler %s während des Lesens von '%s'"/>
@@ -1018,7 +1120,9 @@
 		<node name="emptyNetworkSearchResults" value="Es wurden leider keine Bücher gefunden."/>
 		<node name="videoServiceNotWorking" value="Der Videoservice ist nicht verfügbar."/>
 		<node name="videoPlayerNotFound" value="Kein installierter Videoplayer gefunden."/>
+		<node name="bookIsMissingTitle" value="Buch nicht gefunden"/>
 		<node name="bookIsMissing" value="Buch '%s' konnte nicht auf dem Gerät gefunden werden."/>
+		<node name="downloadFailed" value="Download fehlgeschlagen"/>
 	</node>
 	<node name="external">
 		<node name="browser" value="Browser"/>
@@ -1040,7 +1144,7 @@
 		</node>
 	</node>
 	<node name="links">
-		<node name="faqPage" value="http://fbreader.org/faq-page"/>
+		<node name="faqPage" value="https://fbreader.org/faq-page"/>
 	</node>
 	<node name="plugins" value="Plugins installieren">
 		<node name="noMorePlugins" value="Aktuell sind keine neuen Plugins verfügbar."/>
@@ -1050,8 +1154,8 @@
 		<node name="tts_plus" value="TTS+">
 			<node name="summary" value="Vorlesen"/>
 		</node>
-		<node name="calibre_server_integration" value="Calibre connection" toBeTranslated="true">
-			<node name="summary" value="Connect Calibre server in your local network" toBeTranslated="true"/>
+		<node name="calibre_server_integration" value="Calibre">
+			<node name="summary" value="Verbindung zu einem Calibre Server im lokalen Netzwerk"/>
 		</node>
 		<node name="local_opds_scanner" value="Lokaler OPDS Scanner">
 			<node name="summary" value="Suche Bücher im lokalen Netzwerk"/>
@@ -1071,6 +1175,9 @@
 		<node name="djvu" value="DjVu">
 			<node name="summary" value="Bücher im  DjVu Format lesen"/>
 		</node>
+		<node name="cbr" value="Comic">
+			<node name="summary" value="Bücher im Comic Format (CBR, CBZ) lesen"/>
+		</node>
 	</node>
 	<node name="drm">
 		<node name="encryptedSection" value="Verschlüsselter Bereich"/>
@@ -1083,5 +1190,33 @@
 		<node name="positiveLength" value="z.B.: 20px, 10pt, 0.8em, 1ex, 120%%"/>
 		<node name="length" value="z.B.: -2px, 10pt, -0.8em, 1.1ex, -40%%"/>
 		<node name="percent" value="z.B.: 125%%"/>
+	</node>
+	<node name="duration">
+		<node name="duration1" value="1 Sekunde"/>
+		<node name="duration3" value="3 Sekunden"/>
+		<node name="duration5" value="5 Sekunden"/>
+		<node name="duration10" value="10 Sekunden"/>
+		<node name="duration20" value="20 Sekunden"/>
+		<node name="duration40" value="40 Sekunden"/>
+		<node name="duration60" value="1 Minute"/>
+		<node name="duration300" value="5 Minuten"/>
+	</node>
+	<node name="dictanErrors">
+		<node name="unknown" value="Unbekannter Fehler"/>
+		<node name="noArticle" value="Kein Artikel für “%s” gefunden"/>
+		<node name="cannotOpenDictionary" value="Wörterbuch kann nicht geöffnet werden"/>
+		<node name="noDictionarySelected" value="Kein Wörterbuch ausgewählt; Bitte in den Dictan Einstellungen beheben"/>
+	</node>
+	<node name="premium" value="FBReader Premium Edition">
+		<node name="shortTitle" value="FBReader Premium"/>
+		<node name="conflict" value="Both FBReader and FBReader Premium appear to be installed. Which one would you like to run?" toBeTranslated="true"/>
+	</node>
+	<node name="widget">
+		<node name="simple">
+			<node name="selectIcon" value="Select widget icon" toBeTranslated="true"/>
+			<node name="selectAction" value="Select action" toBeTranslated="true"/>
+			<node name="book" value="Read book" toBeTranslated="true"/>
+			<node name="library" value="Open library" toBeTranslated="true"/>
+		</node>
 	</node>
 </resources>

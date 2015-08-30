@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ public class RSSChannelHandler extends AbstractRSSChannelHandler {
 	 *                   that will be read using this instance of the reader.
 	 */
 	RSSChannelHandler(String baseURL, RSSCatalogItem.State result) {
-		myCatalog = result.Loader.getTree().Item;
+		myCatalog = result.Loader.Tree.Item;
 		myBaseURL = baseURL;
 		myData = result;
 		mySkipUntilId = myData.LastLoadedId;

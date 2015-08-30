@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,7 +72,7 @@ public class SeriesListTree extends FirstLevelTree {
 	private boolean createSeriesSubtree(String seriesTitle) {
 		// TODO: pass series as parameter
 		final Series series = new Series(seriesTitle);
-		final SeriesTree temp = new SeriesTree(Collection, series, null);
+		final SeriesTree temp = new SeriesTree(Collection, PluginCollection, series, null);
 		int position = Collections.binarySearch(subtrees(), temp);
 		if (position >= 0) {
 			return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,37 +19,27 @@
 
 package org.geometerplus.android.fbreader.error;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
 
 import org.geometerplus.zlibrary.core.resources.ZLResource;
 
-import org.geometerplus.zlibrary.ui.android.R;
 import org.geometerplus.zlibrary.ui.android.error.ErrorKeys;
 import org.geometerplus.zlibrary.ui.android.error.ErrorUtil;
+import org.geometerplus.android.fbreader.util.SimpleDialogActivity;
 
-public class BookReadingErrorActivity extends Activity implements ErrorKeys {
+public class BookReadingErrorActivity extends SimpleDialogActivity implements ErrorKeys {
 	@Override
 	protected void onCreate(Bundle bundle) {
 		super.onCreate(bundle);
-		setContentView(R.layout.error_book_reading);
 
 		final ZLResource resource = ZLResource.resource("error").getResource("bookReading");
 		setTitle(resource.getResource("title").getValue());
 
-		final TextView textView = (TextView)findViewById(R.id.error_book_reading_text);
-		textView.setText(getIntent().getStringExtra(MESSAGE));
+		textView().setText(getIntent().getStringExtra(MESSAGE));
 
-		final View buttonView = findViewById(R.id.error_book_reading_buttons);
-		final ZLResource buttonResource = ZLResource.resource("dialog").getResource("button");
-
-		final Button okButton = (Button)buttonView.findViewById(R.id.ok_button);
-		okButton.setText(buttonResource.getResource("sendReport").getValue());
-		okButton.setOnClickListener(new Button.OnClickListener() {
+		okButton().setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				final Intent sendIntent = new Intent(Intent.ACTION_SEND);
 				sendIntent.putExtra(Intent.EXTRA_EMAIL, new String[] { "issues@fbreader.org" });
@@ -60,13 +50,7 @@ public class BookReadingErrorActivity extends Activity implements ErrorKeys {
 				finish();
 			}
 		});
-
-		final Button cancelButton = (Button)buttonView.findViewById(R.id.cancel_button);
-		cancelButton.setText(buttonResource.getResource("cancel").getValue());
-		cancelButton.setOnClickListener(new Button.OnClickListener() {
-			public void onClick(View v) {
-				finish();
-			}
-		});
+		cancelButton().setOnClickListener(finishListener());
+		setButtonTexts("sendReport", "cancel");
 	}
 }

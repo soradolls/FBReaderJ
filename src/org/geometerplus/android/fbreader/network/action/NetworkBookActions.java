@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -193,7 +193,7 @@ public abstract class NetworkBookActions {
 				return true;
 			case ActionCode.OPEN_BASKET:
 				new OpenCatalogAction(activity, new ActivityNetworkContext(activity))
-					.run(NetworkLibrary.Instance().getFakeBasketTree(book.Link.getBasketItem()));
+					.run(Util.networkLibrary(activity).getFakeBasketTree(book.Link.getBasketItem()));
 				return true;
 		}
 		return false;
@@ -220,7 +220,7 @@ public abstract class NetworkBookActions {
 		}
 	}
 
-	private static void tryToDeleteBook(Activity activity, final NetworkBookItem book, final boolean demo) {
+	private static void tryToDeleteBook(final Activity activity, final NetworkBookItem book, final boolean demo) {
 		final ZLResource dialogResource = ZLResource.resource("dialog");
 		final ZLResource buttonResource = dialogResource.getResource("button");
 		final ZLResource boxResource = dialogResource.getResource("deleteBookBox");
@@ -242,7 +242,7 @@ public abstract class NetworkBookActions {
 							}
 						}
 					}
-					NetworkLibrary.Instance().fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
+					Util.networkLibrary(activity).fireModelChangedEvent(NetworkLibrary.ChangeListener.Code.SomeCode);
 				}
 			})
 			.setNegativeButton(buttonResource.getResource("no").getValue(), null)

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,10 +45,8 @@ public class ManageCatalogsAction extends RootAction {
 
 	@Override
 	public void run(NetworkTree tree) {
-		final NetworkLibrary library = NetworkLibrary.Instance();
-
-		final ArrayList<String> ids = new ArrayList<String>(library.activeIds());
-		final ArrayList<String> inactiveIds = new ArrayList<String>(library.allIds());
+		final ArrayList<String> ids = new ArrayList<String>(myLibrary.activeIds());
+		final ArrayList<String> inactiveIds = new ArrayList<String>(myLibrary.allIds());
 		inactiveIds.removeAll(ids);
 
 		OrientationUtil.startActivityForResult(

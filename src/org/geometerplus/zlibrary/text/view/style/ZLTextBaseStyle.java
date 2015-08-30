@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,12 +111,22 @@ public class ZLTextBaseStyle extends ZLTextStyle {
 	}
 
 	@Override
-	public int getLeftIndent(ZLTextMetrics metrics) {
+	public int getLeftMargin(ZLTextMetrics metrics) {
 		return 0;
 	}
 
 	@Override
-	public int getRightIndent(ZLTextMetrics metrics) {
+	public int getRightMargin(ZLTextMetrics metrics) {
+		return 0;
+	}
+
+	@Override
+	public int getLeftPadding(ZLTextMetrics metrics) {
+		return 0;
+	}
+
+	@Override
+	public int getRightPadding(ZLTextMetrics metrics) {
 		return 0;
 	}
 
@@ -133,6 +143,11 @@ public class ZLTextBaseStyle extends ZLTextStyle {
 	@Override
 	public int getVerticalAlign(ZLTextMetrics metrics) {
 		return 0;
+	}
+
+	@Override
+	public boolean isVerticallyAligned() {
+		return false;
 	}
 
 	@Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,7 +33,10 @@ public abstract class NetworkDatabase {
 		return ourInstance;
 	}
 
-	protected NetworkDatabase() {
+	private final NetworkLibrary myLibrary;
+
+	protected NetworkDatabase(NetworkLibrary library) {
+		myLibrary = library;
 		ourInstance = this;
 	}
 
@@ -46,11 +49,11 @@ public abstract class NetworkDatabase {
 		switch (type) {
 			default:
 				return new OPDSCustomNetworkLink(
-					id, type, title, summary, language, infos
+					myLibrary, id, type, title, summary, language, infos
 				);
 			case Predefined:
 				return new OPDSPredefinedNetworkLink(
-					id, predefinedId, title, summary, language, infos
+					myLibrary, id, predefinedId, title, summary, language, infos
 				);
 		}
 	}

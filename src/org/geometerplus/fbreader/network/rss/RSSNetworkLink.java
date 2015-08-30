@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,8 +51,8 @@ public class RSSNetworkLink extends AbstractNetworkLink implements IPredefinedNe
 			return null;
 		}
 
-		final NetworkLibrary library = NetworkLibrary.Instance();
-		final NetworkCatalogItem catalogItem = result.Loader.getTree().Item;
+		final NetworkLibrary library = result.Loader.Tree.Library;
+		final NetworkCatalogItem catalogItem = result.Loader.Tree.Item;
 		library.startLoading(catalogItem);
 
 		return new ZLNetworkRequest.Get(url, false) {
@@ -63,12 +63,12 @@ public class RSSNetworkLink extends AbstractNetworkLink implements IPredefinedNe
 					return;
 				}
 
-				new RSSXMLReader(new RSSChannelHandler(getURL(), result), false).read(inputStream);
+				new RSSXMLReader(library, new RSSChannelHandler(getURL(), result), false).read(inputStream);
 
 				if (result.Loader.confirmInterruption() && result.LastLoadedId != null) {
 					result.LastLoadedId = null;
 				} else {
-					result.Loader.getTree().confirmAllItems();
+					result.Loader.Tree.confirmAllItems();
 				}
 			}
 

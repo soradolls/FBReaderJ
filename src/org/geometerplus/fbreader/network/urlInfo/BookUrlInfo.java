@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2010-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,7 @@ import android.net.Uri;
 
 import org.geometerplus.zlibrary.core.filetypes.FileType;
 import org.geometerplus.zlibrary.core.filetypes.FileTypeCollection;
-import org.geometerplus.zlibrary.core.util.MimeType;
-import org.geometerplus.zlibrary.core.util.MiscUtil;
+import org.geometerplus.zlibrary.core.util.*;
 
 import org.geometerplus.fbreader.Paths;
 import org.geometerplus.fbreader.formats.PluginCollection;
@@ -43,7 +42,7 @@ public class BookUrlInfo extends UrlInfo {
 
 	private static final String TOESCAPE = "<>:\"|?*\\";
 
-	public static boolean isMimeSupported(MimeType mime) {
+	public static boolean isMimeSupported(MimeType mime, SystemInfo systemInfo) {
 		if (mime == null) {
 			return false;
 		}
@@ -51,7 +50,7 @@ public class BookUrlInfo extends UrlInfo {
 		if (type == null) {
 			return false;
 		}
-		return PluginCollection.Instance().getPlugin(type) != null;
+		return PluginCollection.Instance(systemInfo).getPlugin(type) != null;
 	}
 
 	private static int mimePriority(MimeType mime) {
@@ -86,6 +85,13 @@ public class BookUrlInfo extends UrlInfo {
 			path.delete(0, 4);
 		}
 		path.insert(0, File.separator);
+
+		final int port = uri.getPort();
+		if (port != -1) {
+			path.append("_").append(port);
+			path.insert(0, File.separator);
+		}
+
 		if (resolvedReferenceType == Type.BookDemo) {
 			path.insert(0, "Demos");
 			path.insert(0, File.separator);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,12 +24,12 @@ import org.geometerplus.zlibrary.core.image.*;
 public final class ZLAndroidImageManager extends ZLImageManager {
 	@Override
 	public ZLAndroidImageData getImageData(ZLImage image) {
-		if (image instanceof ZLStreamImage) {
+		if (image instanceof ZLImageProxy) {
+			return getImageData(((ZLImageProxy)image).getRealImage());
+		} else if (image instanceof ZLStreamImage) {
 			return new InputStreamImageData((ZLStreamImage)image);
 		} else if (image instanceof ZLBitmapImage) {
 			return BitmapImageData.get((ZLBitmapImage)image);
-		} else if (image instanceof ZLImageProxy) {
-			return getImageData(((ZLImageProxy)image).getRealImage());
 		} else {
 			// unknown image type or null
 			return null;

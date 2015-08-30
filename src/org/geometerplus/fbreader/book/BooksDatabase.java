@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2009-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,38 +29,45 @@ import org.geometerplus.zlibrary.text.view.ZLTextFixedPosition;
 import org.geometerplus.zlibrary.text.view.ZLTextPosition;
 
 public abstract class BooksDatabase {
+	protected interface HistoryEvent {
+		int Added = 0;
+		int Opened = 1;
+	}
+
 	public static final class NotAvailable extends Exception {
 	}
 
-	protected Book createBook(long id, long fileId, String title, String encoding, String language) {
+	protected DbBook createBook(long id, long fileId, String title, String encoding, String language) {
 		final FileInfoSet infos = new FileInfoSet(this, fileId);
 		return createBook(id, infos.getFile(fileId), title, encoding, language);
 	}
-	protected Book createBook(long id, ZLFile file, String title, String encoding, String language) {
-		return file != null ? new Book(id, file, title, encoding, language) : null;
+	protected DbBook createBook(long id, ZLFile file, String title, String encoding, String language) {
+		return file != null ? new DbBook(id, file, title, encoding, language) : null;
 	}
-	protected void addAuthor(Book book, Author author) {
+	protected void addAuthor(DbBook book, Author author) {
 		book.addAuthorWithNoCheck(author);
 	}
-	protected void addTag(Book book, Tag tag) {
+	protected void addTag(DbBook book, Tag tag) {
 		book.addTagWithNoCheck(tag);
 	}
-	protected void setSeriesInfo(Book book, String series, String index) {
+	protected void setSeriesInfo(DbBook book, String series, String index) {
 		book.setSeriesInfoWithNoCheck(series, index);
 	}
 
 	protected abstract void executeAsTransaction(Runnable actions);
 
 	// returns map fileId -> book
-	protected abstract Map<Long,Book> loadBooks(FileInfoSet infos, boolean existing);
-	protected abstract void setExistingFlag(Collection<Book> books, boolean flag);
-	protected abstract Book loadBook(long bookId);
-	protected abstract Book loadBookByFile(long fileId, ZLFile file);
+	protected abstract Map<Long,DbBook> loadBooks(FileInfoSet infos, boolean existing);
+	protected abstract void setExistingFlag(Collection<DbBook> books, boolean flag);
+	protected abstract DbBook loadBook(long bookId);
+	protected abstract DbBook loadBookByFile(long fileId, ZLFile file);
 	protected abstract void deleteBook(long bookId);
+
+	protected abstract List<String> listLabels();
 
 	protected abstract List<Author> listAuthors(long bookId);
 	protected abstract List<Tag> listTags(long bookId);
-	protected abstract List<String> listLabels(long bookId);
+	protected abstract List<Label> listLabels(long bookId);
 	protected abstract SeriesInfo getSeriesInfo(long bookId);
 	protected abstract List<UID> listUids(long bookId);
 	protected abstract boolean hasVisibleBookmark(long bookId);
@@ -89,15 +96,17 @@ public abstract class BooksDatabase {
 	protected abstract void removeFileInfo(long fileId);
 	protected abstract void saveFileInfo(FileInfo fileInfo);
 
-	protected abstract List<Long> loadRecentBookIds();
-	protected abstract void saveRecentBookIds(final List<Long> ids);
+	protected abstract void addBookHistoryEvent(long bookId, int event);
+	protected abstract void removeBookHistoryEvents(long bookId, int event);
+	protected abstract List<Long> loadRecentBookIds(int event, int limit);
 
-	protected abstract void setLabel(long bookId, String label);
-	protected abstract void removeLabel(long bookId, String label);
+	protected abstract void addLabel(long bookId, Label label);
+	protected abstract void removeLabel(long bookId, Label label);
 
 	protected Bookmark createBookmark(
-		long id, long bookId, String bookTitle, String text,
-		Date creationDate, Date modificationDate, Date accessDate, int accessCounter,
+		long id, String uid, String versionUid,
+		long bookId, String bookTitle, String text, String originalText,
+		long creationTimestamp, Long modificationTimestamp, Long accessTimestamp,
 		String modelId,
 		int start_paragraphIndex, int start_wordIndex, int start_charIndex,
 		int end_paragraphIndex, int end_wordIndex, int end_charIndex,
@@ -105,8 +114,9 @@ public abstract class BooksDatabase {
 		int styleId
 	) {
 		return new Bookmark(
-			id, bookId, bookTitle, text,
-			creationDate, modificationDate, accessDate, accessCounter,
+			id, uid, versionUid,
+			bookId, bookTitle, text, originalText,
+			creationTimestamp, modificationTimestamp, accessTimestamp,
 			modelId,
 			start_paragraphIndex, start_wordIndex, start_charIndex,
 			end_paragraphIndex, end_wordIndex, end_charIndex,
@@ -118,13 +128,11 @@ public abstract class BooksDatabase {
 	protected abstract List<Bookmark> loadBookmarks(BookmarkQuery query);
 	protected abstract long saveBookmark(Bookmark bookmark);
 	protected abstract void deleteBookmark(Bookmark bookmark);
+	protected abstract List<String> deletedBookmarkUids();
+	protected abstract void purgeBookmarks(List<String> uids);
 
-	protected HighlightingStyle createStyle(int id, String name, int bgColor, int fgColor) {
-		return new HighlightingStyle(
-			id, name,
-			bgColor != -1 ? new ZLColor(bgColor) : null,
-			fgColor != -1 ? new ZLColor(fgColor) : null
-		);
+	protected HighlightingStyle createStyle(int id, long timestamp, String name, ZLColor bgColor, ZLColor fgColor) {
+		return new HighlightingStyle(id, timestamp, name, bgColor, fgColor);
 	}
 	protected abstract List<HighlightingStyle> loadStyles();
 	protected abstract void saveStyle(HighlightingStyle style);
@@ -138,4 +146,7 @@ public abstract class BooksDatabase {
 	protected abstract String getHash(long bookId, long lastModified) throws NotAvailable;
 	protected abstract void setHash(long bookId, String hash) throws NotAvailable;
 	protected abstract List<Long> bookIdsByHash(String hash);
+
+	protected abstract String getOptionValue(String name);
+	protected abstract void setOptionValue(String name, String value);
 }

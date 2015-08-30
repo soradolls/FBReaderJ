@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2007-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2007-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,49 +21,18 @@ package org.geometerplus.fbreader.book;
 
 import java.io.InputStream;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 import org.geometerplus.zlibrary.core.filesystem.*;
-import org.geometerplus.zlibrary.core.image.ZLImage;
 
-import org.geometerplus.fbreader.bookmodel.BookReadingException;
+import org.geometerplus.fbreader.formats.*;
 
 public abstract class BookUtil {
-	private static final WeakReference<ZLImage> NULL_IMAGE = new WeakReference<ZLImage>(null);
-	private static final WeakHashMap<Book,WeakReference<ZLImage>> ourCovers =
-		new WeakHashMap<Book,WeakReference<ZLImage>>();
-
-	public static ZLImage getCover(Book book) {
-		if (book == null) {
-			return null;
-		}
-		synchronized (book) {
-			WeakReference<ZLImage> cover = ourCovers.get(book);
-			if (cover == NULL_IMAGE) {
-				return null;
-			} else if (cover != null) {
-				final ZLImage image = cover.get();
-				if (image != null) {
-					return image;
-				}
-			}
-			ZLImage image = null;
-			try {
-				image = book.getPlugin().readCover(book.File);
-			} catch (BookReadingException e) {
-				// ignore
-			}
-			ourCovers.put(book, image != null ? new WeakReference<ZLImage>(image) : NULL_IMAGE);
-			return image;
-		}
-	}
-
-	public static String getAnnotation(Book book) {
+	public static String getAnnotation(AbstractBook book, PluginCollection pluginCollection) {
 		try {
-			return book.getPlugin().readAnnotation(book.File);
+			return getPlugin(pluginCollection, book).readAnnotation(fileByBook(book));
 		} catch (BookReadingException e) {
 			return null;
 		}
@@ -73,34 +42,24 @@ public abstract class BookUtil {
 		final Locale locale = Locale.getDefault();
 
 		ZLResourceFile file = ZLResourceFile.createResourceFile(
-			"data/help/MiniHelp." + locale.getLanguage() + "_" + locale.getCountry() + ".fb2"
+			"data/intro/intro-" + locale.getLanguage() + "_" + locale.getCountry() + ".epub"
 		);
 		if (file.exists()) {
 			return file;
 		}
 
 		file = ZLResourceFile.createResourceFile(
-			"data/help/MiniHelp." + locale.getLanguage() + ".fb2"
+			"data/intro/intro-" + locale.getLanguage() + ".epub"
 		);
 		if (file.exists()) {
 			return file;
 		}
 
-		return ZLResourceFile.createResourceFile("data/help/MiniHelp.en.fb2");
+		return ZLResourceFile.createResourceFile("data/intro/intro-en.epub");
 	}
 
-	public static boolean canRemoveBookFile(Book book) {
-		ZLFile file = book.File;
-		if (file.getPhysicalFile() == null) {
-			return false;
-		}
-		while (file instanceof ZLArchiveEntryFile) {
-			file = file.getParent();
-			if (file.children().size() != 1) {
-				return false;
-			}
-		}
-		return true;
+	public static UID createUid(AbstractBook book, String algorithm) {
+		return createUid(fileByBook(book), algorithm);
 	}
 
 	public static UID createUid(ZLFile file, String algorithm) {
@@ -135,6 +94,71 @@ public abstract class BookUtil {
 				} catch (IOException e) {
 				}
 			}
+		}
+	}
+
+	public static FormatPlugin getPlugin(PluginCollection pluginCollection, AbstractBook book) throws BookReadingException {
+		final ZLFile file = fileByBook(book);
+		final FormatPlugin plugin = pluginCollection.getPlugin(file);
+		if (plugin == null) {
+			throw new BookReadingException("pluginNotFound", file);
+		}
+		return plugin;
+	}
+
+	public static String getEncoding(AbstractBook book, PluginCollection pluginCollection) {
+		if (book.getEncodingNoDetection() == null) {
+			try {
+				BookUtil.getPlugin(pluginCollection, book).detectLanguageAndEncoding(book);
+			} catch (BookReadingException e) {
+			}
+			if (book.getEncodingNoDetection() == null) {
+				book.setEncoding("utf-8");
+			}
+		}
+		return book.getEncodingNoDetection();
+	}
+
+	public static void reloadInfoFromFile(AbstractBook book, PluginCollection pluginCollection) {
+		try {
+			readMetainfo(book, pluginCollection);
+		} catch (BookReadingException e) {
+			// ignore
+		}
+	}
+
+	static void readMetainfo(AbstractBook book, PluginCollection pluginCollection) throws BookReadingException {
+		readMetainfo(book, getPlugin(pluginCollection, book));
+	}
+
+	static void readMetainfo(AbstractBook book, FormatPlugin plugin) throws BookReadingException {
+		book.myEncoding = null;
+		book.myLanguage = null;
+		book.setTitle(null);
+		book.myAuthors = null;
+		book.myTags = null;
+		book.mySeriesInfo = null;
+		book.myUids = null;
+
+		book.myIsSaved = false;
+
+		plugin.readMetainfo(book);
+		if (book.myUids == null || book.myUids.isEmpty()) {
+			plugin.readUids(book);
+		}
+
+		if (book.isTitleEmpty()) {
+			final String fileName = fileByBook(book).getShortName();
+			final int index = fileName.lastIndexOf('.');
+			book.setTitle(index > 0 ? fileName.substring(0, index) : fileName);
+		}
+	}
+
+	public static ZLFile fileByBook(AbstractBook book) {
+		if (book instanceof DbBook) {
+			return ((DbBook)book).File;
+		} else {
+			return ZLFile.createFileByPath(book.getPath());
 		}
 	}
 }

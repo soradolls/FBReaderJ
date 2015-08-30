@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2004-2014 Geometer Plus <contact@geometerplus.com>
+ * Copyright (C) 2004-2015 FBReader.ORG Limited <contact@fbreader.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,42 +101,42 @@ void StyleSheetTable::setLength(ZLTextStyleEntry &entry, ZLTextStyleEntry::Featu
 	}
 }
 
-bool StyleSheetTable::doBreakBefore(const std::string &tag, const std::string &aClass) const {
+ZLBoolean3 StyleSheetTable::doBreakBefore(const std::string &tag, const std::string &aClass) const {
 	std::map<CSSSelector,bool>::const_iterator it = myPageBreakBeforeMap.find(CSSSelector(tag, aClass));
 	if (it != myPageBreakBeforeMap.end()) {
-		return it->second;
+		return b3Value(it->second);
 	}
 
 	it = myPageBreakBeforeMap.find(CSSSelector("", aClass));
 	if (it != myPageBreakBeforeMap.end()) {
-		return it->second;
+		return b3Value(it->second);
 	}
 
 	it = myPageBreakBeforeMap.find(CSSSelector(tag, ""));
 	if (it != myPageBreakBeforeMap.end()) {
-		return it->second;
+		return b3Value(it->second);
 	}
 
-	return false;
+	return B3_UNDEFINED;
 }
 
-bool StyleSheetTable::doBreakAfter(const std::string &tag, const std::string &aClass) const {
+ZLBoolean3 StyleSheetTable::doBreakAfter(const std::string &tag, const std::string &aClass) const {
 	std::map<CSSSelector,bool>::const_iterator it = myPageBreakAfterMap.find(CSSSelector(tag, aClass));
 	if (it != myPageBreakAfterMap.end()) {
-		return it->second;
+		return b3Value(it->second);
 	}
 
 	it = myPageBreakAfterMap.find(CSSSelector("", aClass));
 	if (it != myPageBreakAfterMap.end()) {
-		return it->second;
+		return b3Value(it->second);
 	}
 
 	it = myPageBreakAfterMap.find(CSSSelector(tag, ""));
 	if (it != myPageBreakAfterMap.end()) {
-		return it->second;
+		return b3Value(it->second);
 	}
 
-	return false;
+	return B3_UNDEFINED;
 }
 
 shared_ptr<ZLTextStyleEntry> StyleSheetTable::control(const std::string &tag, const std::string &aClass) const {
@@ -279,12 +279,35 @@ shared_ptr<ZLTextStyleEntry> StyleSheetTable::createOrUpdateControl(const Attrib
 			}
 		}
 		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_SPACE_BEFORE, split[0]);
-		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_RIGHT_INDENT, split[1]);
+		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_MARGIN_RIGHT, split[1]);
 		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_SPACE_AFTER, split[2]);
-		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_LEFT_INDENT, split[3]);
+		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_MARGIN_LEFT, split[3]);
 	}
-	setLength(*entry, ZLTextStyleEntry::LENGTH_LEFT_INDENT, styles, "margin-left");
-	setLength(*entry, ZLTextStyleEntry::LENGTH_RIGHT_INDENT, styles, "margin-right");
+	const std::string padding = value(styles, "padding");
+	if (!padding.empty()) {
+		std::vector<std::string> split = ZLStringUtil::split(padding, " ", true);
+		if (split.size() > 0) {
+			switch (split.size()) {
+				case 1:
+					split.push_back(split[0]);
+					// go through
+				case 2:
+					split.push_back(split[0]);
+					// go through
+				case 3:
+					split.push_back(split[1]);
+					break;
+			}
+		}
+		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_SPACE_BEFORE, split[0]);
+		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_PADDING_RIGHT, split[1]);
+		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_SPACE_AFTER, split[2]);
+		::trySetLength(*entry, ZLTextStyleEntry::LENGTH_PADDING_LEFT, split[3]);
+	}
+	setLength(*entry, ZLTextStyleEntry::LENGTH_MARGIN_LEFT, styles, "margin-left");
+	setLength(*entry, ZLTextStyleEntry::LENGTH_MARGIN_RIGHT, styles, "margin-right");
+	setLength(*entry, ZLTextStyleEntry::LENGTH_PADDING_LEFT, styles, "padding-left");
+	setLength(*entry, ZLTextStyleEntry::LENGTH_PADDING_RIGHT, styles, "padding-right");
 	setLength(*entry, ZLTextStyleEntry::LENGTH_FIRST_LINE_INDENT, styles, "text-indent");
 	setLength(*entry, ZLTextStyleEntry::LENGTH_SPACE_BEFORE, styles, "margin-top");
 	setLength(*entry, ZLTextStyleEntry::LENGTH_SPACE_BEFORE, styles, "padding-top");
@@ -306,6 +329,8 @@ shared_ptr<ZLTextStyleEntry> StyleSheetTable::createOrUpdateControl(const Attrib
 			::trySetLength(*entry, ZLTextStyleEntry::LENGTH_VERTICAL_ALIGN, verticalAlign);
 		}
 	}
+
+	entry->setDisplayCode(StyleSheetUtil::displayCode(value(styles, "display")));
 
 	return entry;
 }
